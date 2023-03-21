@@ -6,7 +6,7 @@ from django.db import models
 
 from eam_backend.settings import SECRET_KEY
 from Department.models import Department, Entity
-
+import jwt
 
 
 class User(models.Model):
@@ -27,4 +27,9 @@ class User(models.Model):
             return True
         else:
             return False
+    
+    def generate_token(self):
+        payload = {'exp': datetime.datetime.now() + timedelta(days=1), 'iat': datetime.utcnow(), 'username': self.username}
+        token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+        return token.decode("utf-8")
 # Create your models here.

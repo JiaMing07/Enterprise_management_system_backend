@@ -35,9 +35,16 @@ def login_normal(req: HttpRequest):
         user = User.objects.filter(username=user_name).first()
         if not user:
             return request_failed(2, "不存在该用户", status_code=404)
+        if not user.active:
+            return request_failed(3, "用户已锁定", status_code=403)
         else:
             if user.check_password(password):
-                return request_success()
+                if user.token == '':
+                    user.token = user.generate_token()
+                    user.save()
+                    return request_success(data={'token': user.token})
+                else:
+                    return request_failed(1, "用户已登录", status_code=403)
             else:
                 return request_failed(2, "密码不正确", status_code=401)
     else:
