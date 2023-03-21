@@ -1,38 +1,44 @@
 import json
 from django.http import HttpRequest, HttpResponse
 
-def check_for_board_data(body):
-    board = require(body, "board", "string", err_msg="Missing or error type of [board]")
-    
+from User.models import User
+from Department.models import Department, Entity
+from utils.utils_request import BAD_METHOD, request_failed, request_success, return_field
+from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
+from utils.utils_time import get_timestamp
+
+def check_for_user_data(body):
     # TODO Start: [Student] add checks for type of boardName and userName
-    board_name = ""
+    password = ""
     user_name = ""
-    board_name = require(body, "boardName", "string", err_msg="Missing or error type of [boardName]")
-    user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+    password = require(body, "password", "string", err_msg="Missing or error type of [password]")
+    user_name = require(body, "username", "string", err_msg="Missing or error type of [userName]")
     # TODO End: [Student] add checks for type of boardName and userName
     
-    assert 0 < len(board_name) <= 50, "Bad length of [boardName]"
+    assert 0 < len(user_name) <= 50, "Bad length of [username]"
     
     # TODO Start: [Student] add checks for length of userName and board
-    assert 0 < len(user_name) <=50, "Bad length of [userName]"
-    assert len(board) == 2500, "Bad length of [board]"
+    assert 0 < len(password) <=50, "Bad length of [password]"
     # TODO End: [Student] add checks for length of userName and board
     
     
-    # TODO Start: [Student] and more checks (you should read API docs carefully)
-    is_zero_or_one = True
-    for i in range(2500):
-        if board[i] != "0" and board[i] != "1":
-            is_zero_or_one = False
-            break
-    assert is_zero_or_one == True, "Invalid char in [board]"
-    # TODO End: [Student] and more checks (you should read API docs carefully)
-    
-    return board, board_name, user_name
+    return user_name, password
 
 # Create your views here.
 def startup(req: HttpRequest):
     return HttpResponse("Congratulations! You have successfully installed the requirements. Go ahead!")
 
 def login_normal(req: HttpRequest):
-    return HttpResponse("login_normal")
+    if req.method == "POST":
+        body = json.loads(req.body.decode("utf-8"))
+        user_name, password = check_for_user_data(body)
+        user = User.objects.filter(username=user_name).first()
+        if not user:
+            return request_failed(2, "不存在该用户", status_code=404)
+        else:
+            if user.check_password(password):
+                return request_success()
+            else:
+                return request_failed(2, "密码不正确", status_code=401)
+    else:
+        return BAD_METHOD
