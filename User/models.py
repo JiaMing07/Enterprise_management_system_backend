@@ -18,7 +18,7 @@ class User(models.Model):
     department = models.ForeignKey(Department, on_delete=models.SET(Department.root))
     entity = models.ForeignKey(Entity, on_delete=models.CASCADE)
     active = models.BooleanField(auto_created=True, default=True)
-    token = models.CharField(max_length=100, auto_created=True, default='', blank=True)
+    token = models.CharField(max_length=200, auto_created=True, default='', blank=True)
     entity_super = models.BooleanField(default=False)
     system_super = models.BooleanField(default=False)
 
@@ -29,7 +29,7 @@ class User(models.Model):
             return False
     
     def generate_token(self):
-        payload = {'exp': datetime.datetime.now() + timedelta(days=1), 'iat': datetime.utcnow(), 'username': self.username}
+        payload = {'exp': datetime.now() + timedelta(days=1), 'iat': datetime.utcnow(), 'username': self.username}
         token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
-        return token.decode("utf-8")
+        return token
 # Create your models here.
