@@ -13,11 +13,9 @@ class User(models.Model):
     '''
     User
     '''
-    # 基本信息
     username = models.CharField(max_length=50, primary_key=True, unique=True, verbose_name='用户名')
     department = models.ForeignKey(Department, on_delete=models.SET(Department.root))
     entity = models.ForeignKey(Entity, on_delete=models.CASCADE)
-    # 状态
     active = models.BooleanField(auto_created=True, default=True)
     token = models.CharField(max_length=100, auto_created=True, default='', blank=True)
     entity_super = models.BooleanField(default=False)
