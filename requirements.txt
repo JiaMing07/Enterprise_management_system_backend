@@ -10,4 +10,6 @@ coverage
 
 # TODO Start: [Student] Add dependency on uWSGI
 uwsgi
+django-mptt
+pyjwt
 # TODO End: [Student] Add dependency on uWSGI
