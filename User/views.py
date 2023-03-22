@@ -48,7 +48,31 @@ def login_normal(req: HttpRequest):
 def user_add(req: HttpRequest):
     if req.method == 'POST':
         body = json.loads(req.body.decode("utf-8"))
-        user_name = get_args(body, ['username'], ['string'])
+        user_name, entity_name, department_name, authority, password  = get_args(body, ['name', 'entity', 'department', 'authority', 'password'], ['string','string','string','string','string'])
         user = User.objects.filter(username=user_name).first()
+        is_system_super = False
+        is_entity_super = False
+        if user is not None:
+            return request_failed(1, "用户名已存在", status_code=403)
+        entity = Entity.objects.filter(name=entity_name).first()
+        department = Department.objects.filter(name=department_name).first()
+        if not entity:
+            return request_failed(1, "企业实体不存在",status_code=403)
+        if not department:
+            return request_failed(1, "部门不存在",status_code=403)
+        if authority == "system_super":
+            user = User.objects.filter(system_super=True)
+            if user is not None:
+                return request_failed(2, "不可设置此权限",status_code=403)
+            is_system_super = True
+        elif authority == "entity_super":
+            user = User.objects.filter(entity_super=True)
+            if user is not None:
+                return request_failed(2, "不可设置此权限",status_code=403)
+            is_entity_super = True
+        else:
+            user = User(username=user_name, entity=entity, department=department, system_super = is_system_super, entity_super = is_entity_super, password=password)
+            user.save()
+            return request_success()
     else:
         return BAD_METHOD
