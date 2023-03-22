@@ -6,21 +6,16 @@ from Department.models import Department, Entity
 from utils.utils_request import BAD_METHOD, request_failed, request_success, return_field
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
 from utils.utils_time import get_timestamp
+from utils.utils_getbody import get_args
 
 def check_for_user_data(body):
-    # TODO Start: [Student] add checks for type of boardName and userName
-    password = ""
     user_name = ""
     password = require(body, "password", "string", err_msg="Missing or error type of [password]")
     user_name = require(body, "username", "string", err_msg="Missing or error type of [userName]")
-    # TODO End: [Student] add checks for type of boardName and userName
     
     assert 0 < len(user_name) <= 50, "Bad length of [username]"
     
-    # TODO Start: [Student] add checks for length of userName and board
     assert 0 < len(password) <=50, "Bad length of [password]"
-    # TODO End: [Student] add checks for length of userName and board
-    
     
     return user_name, password
 
@@ -47,5 +42,13 @@ def login_normal(req: HttpRequest):
                     return request_failed(1, "用户已登录", status_code=403)
             else:
                 return request_failed(2, "密码不正确", status_code=401)
+    else:
+        return BAD_METHOD
+    
+def user_add(req: HttpRequest):
+    if req.method == 'POST':
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = get_args(body, ['username'], ['string'])
+        user = User.objects.filter(username=user_name).first()
     else:
         return BAD_METHOD
