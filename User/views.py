@@ -8,26 +8,24 @@ from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
 from utils.utils_time import get_timestamp
 
 def check_for_user_data(body):
-    # TODO Start: [Student] add checks for type of boardName and userName
     password = ""
     user_name = ""
     password = require(body, "password", "string", err_msg="Missing or error type of [password]")
     user_name = require(body, "username", "string", err_msg="Missing or error type of [userName]")
-    # TODO End: [Student] add checks for type of boardName and userName
     
     assert 0 < len(user_name) <= 50, "Bad length of [username]"
     
-    # TODO Start: [Student] add checks for length of userName and board
     assert 0 < len(password) <=50, "Bad length of [password]"
-    # TODO End: [Student] add checks for length of userName and board
     
     
     return user_name, password
 
 # Create your views here.
+@CheckRequire
 def startup(req: HttpRequest):
     return HttpResponse("Congratulations! You have successfully installed the requirements. Go ahead!")
 
+@CheckRequire
 def login_normal(req: HttpRequest):
     if req.method == "POST":
         body = json.loads(req.body.decode("utf-8"))
