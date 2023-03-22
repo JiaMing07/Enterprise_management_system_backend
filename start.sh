@@ -1,9 +1,10 @@
 #!/bin/sh
-python3 manage.py makemigrations board
+python3 manage.py makemigrations Department
+python3 manage.py makemigrations User
 python3 manage.py migrate
 
 # TODO Start: [Student] Run with uWSGI instead
-# python3 manage.py runserver 80
+# python3 manage.py runserver 8000
 uwsgi --module=DjangoHW.wsgi:application \
     --env DJANGO_SETTINGS_MODULE=DjangoHW.settings \
     --master \
