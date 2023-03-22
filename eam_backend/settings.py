@@ -24,6 +24,10 @@ SECRET_KEY = 'fcai@x(fk+u$1$xg&#iuqe4+p9t0lij2)!@78uarqjdztuez48'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+key = 'DEPLOY'
+value = os.getenv(key)
+if value is not None:
+    DEBUG = False
 
 ALLOWED_HOSTS = []
 
