@@ -29,7 +29,7 @@ value = os.getenv(key)
 if value is not None:
     DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
