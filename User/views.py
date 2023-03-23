@@ -47,7 +47,8 @@ def login_normal(req: HttpRequest):
                 return request_failed(2, "密码不正确", status_code=401)
     else:
         return BAD_METHOD
-    
+
+@CheckRequire    
 def user_add(req: HttpRequest):
     if req.method == 'POST':
         body = json.loads(req.body.decode("utf-8"))
@@ -75,6 +76,19 @@ def user_add(req: HttpRequest):
             is_entity_super = True
         
         user = User(username=user_name, entity=entity, department=department, system_super = is_system_super, entity_super = is_entity_super, password=password)
+        user.save()
+        return request_success()
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
+def logout_normal(req: HttpRequest):
+    if req.method == 'POST':
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = get_args(body, ['username'], ['string'])
+        username = user_name[0]
+        user = User.objects.filter(username=username).first()
+        user.token = ''
         user.save()
         return request_success()
     else:
