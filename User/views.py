@@ -9,6 +9,7 @@ from utils.utils_time import get_timestamp
 from utils.utils_getbody import get_args
 
 def check_for_user_data(body):
+    password = ""
     user_name = ""
     password = require(body, "password", "string", err_msg="Missing or error type of [password]")
     user_name = require(body, "username", "string", err_msg="Missing or error type of [userName]")
@@ -20,9 +21,11 @@ def check_for_user_data(body):
     return user_name, password
 
 # Create your views here.
+@CheckRequire
 def startup(req: HttpRequest):
     return HttpResponse("Congratulations! You have successfully installed the requirements. Go ahead!")
 
+@CheckRequire
 def login_normal(req: HttpRequest):
     if req.method == "POST":
         body = json.loads(req.body.decode("utf-8"))
