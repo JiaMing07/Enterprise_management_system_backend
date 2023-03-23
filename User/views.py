@@ -64,18 +64,18 @@ def user_add(req: HttpRequest):
         if not department:
             return request_failed(1, "部门不存在",status_code=403)
         if authority == "system_super":
-            user = User.objects.filter(system_super=True)
+            user = User.objects.filter(system_super=True).first()
             if user is not None:
                 return request_failed(2, "不可设置此权限",status_code=403)
             is_system_super = True
         elif authority == "entity_super":
-            user = User.objects.filter(entity_super=True)
+            user = User.objects.filter(entity_super=True).first()
             if user is not None:
                 return request_failed(2, "不可设置此权限",status_code=403)
             is_entity_super = True
-        else:
-            user = User(username=user_name, entity=entity, department=department, system_super = is_system_super, entity_super = is_entity_super, password=password)
-            user.save()
-            return request_success()
+        
+        user = User(username=user_name, entity=entity, department=department, system_super = is_system_super, entity_super = is_entity_super, password=password)
+        user.save()
+        return request_success()
     else:
         return BAD_METHOD
