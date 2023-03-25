@@ -13,4 +13,6 @@ uwsgi
 django-mptt
 pyjwt
 pyyaml
+pymysql
+mysqlclient==2.1.0
 # TODO End: [Student] Add dependency on uWSGI
