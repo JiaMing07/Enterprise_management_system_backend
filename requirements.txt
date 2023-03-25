@@ -12,4 +12,5 @@ coverage
 uwsgi
 django-mptt
 pyjwt
+yaml
 # TODO End: [Student] Add dependency on uWSGI
