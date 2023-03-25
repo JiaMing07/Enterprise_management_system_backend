@@ -5,9 +5,10 @@ stages:
   - test
   - deploy
 
-build:
+build-master:
   stage: build
   script:
+    - cp ./config.yml.bak ./config.yml
     - export BUILD_IMAGE_NAME=$CI_REGISTRY_IMAGE
     - export BUILD_IMAGE_TAG=$CI_COMMIT_REF_SLUG
     - export BUILD_IMAGE_USERNAME=$CI_REGISTRY_USER
@@ -17,6 +18,18 @@ build:
   only:
     - master
   # TODO End: [Student] Set as only master
+build-dev:
+  stage: build
+  script:
+    - cp ./config.yml.bak ./config.yml
+    - export BUILD_IMAGE_NAME=$CI_REGISTRY_IMAGE
+    - export BUILD_IMAGE_TAG=$CI_COMMIT_REF_SLUG
+    - export BUILD_IMAGE_USERNAME=$CI_REGISTRY_USER
+    - export BUILD_IMAGE_PASSWORD=$CI_REGISTRY_PASSWORD
+    - deployer build
+  except:
+    - master
+
 
 unit-test:
   # TODO Start: [Student] Set job image
@@ -25,6 +38,7 @@ unit-test:
   stage: test
   before_script:
     # TODO Start: [Student] Install dependencies
+    - cp ./config.yml.bak ./config.yml
     - pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
     # TODO End: [Student] Install dependencies
   script:
@@ -47,3 +61,10 @@ deploy:
   only:
     - master
   # TODO End: [Student] Set as only master
+
+deploy-dev:
+  stage: deploy
+  script:
+    - deployer dyno replace backend-dev "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" "$REGISTRY_USER" "$REGISTRY_PWD"
+  except:
+    - master
