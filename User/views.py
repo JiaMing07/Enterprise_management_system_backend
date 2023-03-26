@@ -15,9 +15,6 @@ def check_for_user_data(body):
     user_name = ""
     password = require(body, "password", "string", err_msg="Missing or error type of [password]")
     user_name = require(body, "username", "string", err_msg="Missing or error type of [userName]")
-    print(body)
-    print(user_name)
-    print(len(user_name))
     assert 0 < len(user_name) <= 50, "Bad length of [username]"
     
     assert 0 < len(password) <=50, "Bad length of [password]"
@@ -92,23 +89,7 @@ def logout_normal(req: HttpRequest):
         user_name = get_args(body, ['username'], ['string'])
         username = user_name[0]
         user = User.objects.filter(username=username).first()
-        # try:
-        #     token = req.COOKIES['token']
-        # except KeyError:
-        #     return request_failed(1, "token未给出",status_code=403)
-        # try:
-        #     decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
-        # except jwt.ExpiredSignatureError:
-        #     return request_failed(1, "token 超时",status_code=403)
-        # except jwt.InvalidTokenError:
-        #     return request_failed(1, "token 不合法",status_code=403)
-        # user = User.objects.filter(username=decoded['username']).first()
         if user is not None:
-            # print(user.token)
-            # print(token)
-            # if user.token != token:
-            #     print("yes")
-            #     return request_failed(1, "用户不在线，登出失败",status_code=403)
             if user.token != '':
                 user.token = ''
                 user.save()
