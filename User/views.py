@@ -119,3 +119,28 @@ def logout_normal(req: HttpRequest):
             return request_failed(1, "登出失败", status_code=403)
     else:
         return BAD_METHOD
+    
+@CheckRequire
+def user_lock(req: HttpRequest):
+    if req.method == 'POST':
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "username", "string", err_msg="Missing or error type of [username]")
+        active = require(body, "active", "int", err_msg="Missing or error type of [active]")
+
+        user = User.objects.filter(username=user_name).first()
+        if user is None:
+            return request_failed(1, "用户不存在", status_code=404)
+        if active is 1:
+            if user.active is True:
+                return request_failed(2, "用户已解锁", status_code=400)
+            user.active = True
+        elif active is 0:
+            if user.active is False:
+                return request_failed(2, "用户已锁定", status_code=400)
+            user.active = False
+        else:
+            return request_failed(-2, "无效请求", status_code=400)
+        user.save()
+        return request_success()
+    else:
+        return BAD_METHOD
