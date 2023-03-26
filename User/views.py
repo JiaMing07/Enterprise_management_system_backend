@@ -7,6 +7,8 @@ from utils.utils_request import BAD_METHOD, request_failed, request_success, ret
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
 from utils.utils_time import get_timestamp
 from utils.utils_getbody import get_args
+from eam_backend.settings import SECRET_KEY
+import jwt
 
 def check_for_user_data(body):
     password = ""
@@ -84,12 +86,31 @@ def user_add(req: HttpRequest):
 @CheckRequire
 def logout_normal(req: HttpRequest):
     if req.method == 'POST':
-        body = json.loads(req.body.decode("utf-8"))
-        user_name = get_args(body, ['username'], ['string'])
-        username = user_name[0]
-        user = User.objects.filter(username=username).first()
-        user.token = ''
-        user.save()
-        return request_success()
+        # body = json.loads(req.body.decode("utf-8"))
+        # user_name = get_args(body, ['username'], ['string'])
+        # username = user_name[0]
+        # user = User.objects.filter(username=username).first()
+        try:
+            token = req.COOKIES['token']
+        except KeyError:
+            return request_failed(1, "token未给出",status_code=403)
+        try:
+            decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        except jwt.ExpiredSignatureError:
+            return request_failed(1, "token 超时",status_code=403)
+        except jwt.InvalidTokenError:
+            return request_failed(1, "token 不合法",status_code=403)
+        user = User.objects.filter(username=decoded['username']).first()
+        if user is not None:
+            print(user.token)
+            print(token)
+            if user.token != token:
+                print("yes")
+                return request_failed(1, "用户不在线，登出失败",status_code=403)
+            user.token = ''
+            user.save()
+            return request_success()
+        else:
+            return request_failed(1, "登出失败", status_code=403)
     else:
         return BAD_METHOD
