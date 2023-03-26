@@ -9,13 +9,14 @@ from utils.utils_time import get_timestamp
 from utils.utils_getbody import get_args
 import jwt
 from eam_backend.settings import SECRET_KEY
+from eam_backend.settings import SECRET_KEY
+import jwt
 
 def check_for_user_data(body):
     password = ""
     user_name = ""
     password = require(body, "password", "string", err_msg="Missing or error type of [password]")
     user_name = require(body, "username", "string", err_msg="Missing or error type of [userName]")
-    
     assert 0 < len(user_name) <= 50, "Bad length of [username]"
     
     assert 0 < len(password) <=50, "Bad length of [password]"
@@ -92,12 +93,38 @@ def logout_normal(req: HttpRequest):
         username = user_name[0]
         user = User.objects.filter(username=username).first()
         if user is not None:
-            # if user.token != token:
-            #     return request_failed(1, "用户不在线，登出失败",status_code=403)
-            user.token = ''
-            user.save()
-            return request_success()
+            if user.token != '':
+                user.token = ''
+                user.save()
+                return request_success()
+            else:
+                return request_failed(1, "登出失败", status_code=403)
         else:
-            return request_failed(1, "登出失败",status_code=403)
+            return request_failed(1, "登出失败", status_code=403)
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
+def user_lock(req: HttpRequest):
+    if req.method == 'POST':
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "username", "string", err_msg="Missing or error type of [username]")
+        active = require(body, "active", "int", err_msg="Missing or error type of [active]")
+
+        user = User.objects.filter(username=user_name).first()
+        if user is None:
+            return request_failed(1, "用户不存在", status_code=404)
+        if active is 1:
+            if user.active is True:
+                return request_failed(2, "用户已解锁", status_code=400)
+            user.active = True
+        elif active is 0:
+            if user.active is False:
+                return request_failed(2, "用户已锁定", status_code=400)
+            user.active = False
+        else:
+            return request_failed(-2, "无效请求", status_code=400)
+        user.save()
+        return request_success()
     else:
         return BAD_METHOD

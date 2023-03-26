@@ -5,3 +5,10 @@ database:
     name: "PROJECT_DATABASE"
     user: "root"
     password: "Bughunters"
+database:
+    type: "splite3" 
+    host: "mysql.BugHunters.secoder.local"
+    port: 3306
+    name: "PROJECT_DATABASE"
+    user: "root"
+    password: "Bughunters"
