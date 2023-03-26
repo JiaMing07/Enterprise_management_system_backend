@@ -7,6 +7,8 @@ from utils.utils_request import BAD_METHOD, request_failed, request_success, ret
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
 from utils.utils_time import get_timestamp
 from utils.utils_getbody import get_args
+import jwt
+from eam_backend.settings import SECRET_KEY
 
 def check_for_user_data(body):
     password = ""
@@ -84,12 +86,18 @@ def user_add(req: HttpRequest):
 @CheckRequire
 def logout_normal(req: HttpRequest):
     if req.method == 'POST':
+        user = req.user
         body = json.loads(req.body.decode("utf-8"))
         user_name = get_args(body, ['username'], ['string'])
         username = user_name[0]
         user = User.objects.filter(username=username).first()
-        user.token = ''
-        user.save()
-        return request_success()
+        if user is not None:
+            # if user.token != token:
+            #     return request_failed(1, "用户不在线，登出失败",status_code=403)
+            user.token = ''
+            user.save()
+            return request_success()
+        else:
+            return request_failed(1, "登出失败",status_code=403)
     else:
         return BAD_METHOD

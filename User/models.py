@@ -21,6 +21,7 @@ class User(models.Model):
     token = models.CharField(max_length=200, auto_created=True, default='', blank=True)
     entity_super = models.BooleanField(default=False)
     system_super = models.BooleanField(default=False)
+    asset_super = models.BooleanField(default=False)
 
     def check_password(self, pwd):
         if pwd == self.password:
@@ -32,4 +33,20 @@ class User(models.Model):
         payload = {'exp': datetime.now() + timedelta(days=1), 'iat': datetime.utcnow(), 'username': self.username}
         token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
         return token
+    
+    def serialize(self):
+        authority = "staff"
+        if self.system_super:
+            authority="system_super"
+        if self.entity_super:
+            authority="entity_super"
+        if self.username=="admin":
+            authority="admin"
+        return {
+            "username": self.username,
+            "entity": self.entity,
+            "department": self.department,
+            "active": self.active,
+            "authority": authority
+        }
 # Create your models here.

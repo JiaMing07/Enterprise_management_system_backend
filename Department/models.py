@@ -2,6 +2,7 @@ from django.db import models
 
 # Create your models here.
 from mptt.models import MPTTModel, TreeForeignKey
+from utils.utils_request import return_field
 
 class Entity(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -17,5 +18,11 @@ class Department(MPTTModel):
     def root(cls):
         ''' return the root of the tree'''
         return cls.objects.first().get_root()
+    
+    def serialize(self):
+        return {
+            "department_name": self.name,
+            "entity_name": self.entity.name
+        }
 
 
