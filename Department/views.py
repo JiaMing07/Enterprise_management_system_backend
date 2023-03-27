@@ -50,3 +50,22 @@ def add_department(req: HttpRequest):
         return request_success()
 
     return BAD_METHOD
+
+def entity_list(req: HttpRequest,entity_name:str):
+    if req.method == 'GET':
+        body = json.loads(req.body.decode("utf-8"))
+        entity_name = get_args(body, ['entity'], ['string'])[0]
+        print(entity_name)
+        entity = Entity.objects.filter(name=entity_name).first()
+        if entity is not None:
+            users = User.objects.filter(entity=entity)
+            user_list = []
+            for user in users:
+                user_list.append(return_field(user.serialize(), ['username', 'department', 'active', 'authority']))
+            return request_success({
+                'name':entity_name,
+                'user_list': user_list
+            })
+        else:
+            return request_failed(1, "企业实体不存在", status_code=403)
+    return BAD_METHOD

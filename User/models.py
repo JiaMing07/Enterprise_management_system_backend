@@ -35,18 +35,30 @@ class User(models.Model):
         return token
     
     def serialize(self):
-        authority = "staff"
+        authority = ""
         if self.system_super:
-            authority="system_super"
+            authority+="system_super"
         if self.entity_super:
-            authority="entity_super"
-        if self.username=="admin":
-            authority="admin"
+            if authority != "":
+                authority += " "
+            authority+="entity_super"
+        if self.asset_super:
+            if authority != "":
+                authority += " "
+            authority+="asset_super"
+        if authority == "":
+            authority = "staff"
+        is_active = ""
+        if self.active:
+            is_active="未被锁定"
+        else:
+            is_active="锁定"
         return {
             "username": self.username,
             "entity": self.entity,
-            "department": self.department,
-            "active": self.active,
-            "authority": authority
+            "department": self.department.name,
+            "active": is_active,
+            "authority": authority, 
+            "token": self.token,
         }
 # Create your models here.

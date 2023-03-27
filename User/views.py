@@ -9,8 +9,6 @@ from utils.utils_time import get_timestamp
 from utils.utils_getbody import get_args
 import jwt
 from eam_backend.settings import SECRET_KEY
-from eam_backend.settings import SECRET_KEY
-import jwt
 
 def check_for_user_data(body):
     password = ""
@@ -43,7 +41,11 @@ def login_normal(req: HttpRequest):
                 if user.token == '':
                     user.token = user.generate_token()
                     user.save()
-                    return request_success(data={'token': user.token})
+                    return request_success(data={'token': user.token,
+                                                'system_super':user.system_super, 
+                                                'entity_super': user.entity_super,
+                                                'asset_super': user.asset_super,
+                                                'department': user.department.name})
                 else:
                     return request_failed(1, "用户已登录", status_code=403)
             else:
@@ -86,6 +88,7 @@ def user_add(req: HttpRequest):
     
 @CheckRequire
 def logout_normal(req: HttpRequest):
+    print(req.COOKIES)
     if req.method == 'POST':
         user = req.user
         body = json.loads(req.body.decode("utf-8"))
