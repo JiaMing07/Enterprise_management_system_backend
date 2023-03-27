@@ -9,11 +9,6 @@ from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
 from utils.utils_time import get_timestamp
 from utils.utils_getbody import get_args
 
-# Create your views here.
-@CheckRequire
-def startup(req: HttpRequest):
-    return HttpResponse("Congratulations! You have successfully installed the requirements. Go ahead!")
-# Create your views here.
 
 @CheckRequire
 def add_entity(req: HttpRequest):
