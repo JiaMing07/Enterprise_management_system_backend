@@ -53,9 +53,6 @@ def add_department(req: HttpRequest):
 
 def entity_list(req: HttpRequest,entity_name:str):
     if req.method == 'GET':
-        body = json.loads(req.body.decode("utf-8"))
-        entity_name = get_args(body, ['entity'], ['string'])[0]
-        print(entity_name)
         entity = Entity.objects.filter(name=entity_name).first()
         if entity is not None:
             users = User.objects.filter(entity=entity)
@@ -67,5 +64,5 @@ def entity_list(req: HttpRequest,entity_name:str):
                 'user_list': user_list
             })
         else:
-            return request_failed(1, "企业实体不存在", status_code=403)
+            return request_failed(-2, "企业实体不存在", status_code=403)
     return BAD_METHOD
