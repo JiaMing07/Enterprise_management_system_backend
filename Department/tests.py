@@ -61,7 +61,7 @@ class UserTests(TestCase):
         res = self.get_entity_add(name)
 
         self.assertEqual(res.json()['code'], -3)
-        self.assertEqual(res.json()['info'], 'bad method')
+        self.assertEqual(res.json()['info'], 'Bad method')
 
     def test_department_add(self):
         department = 'de1'
