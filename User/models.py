@@ -21,6 +21,7 @@ class User(models.Model):
     token = models.CharField(max_length=200, auto_created=True, default='', blank=True)
     entity_super = models.BooleanField(default=False)
     system_super = models.BooleanField(default=False)
+    asset_super = models.BooleanField(default=False)
 
     def check_password(self, pwd):
         if pwd == self.password:

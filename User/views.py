@@ -1,4 +1,5 @@
 import json
+import hashlib
 from django.http import HttpRequest, HttpResponse
 
 from User.models import User
@@ -36,6 +37,9 @@ def login_normal(req: HttpRequest):
         if not user.active:
             return request_failed(3, "用户已锁定", status_code=403)
         else:
+            md5 = hashlib.md5()
+            md5.update(password.encode('utf-8'))
+            password = md5.hexdigest()
             if user.check_password(password):
                 if user.token == '':
                     user.token = user.generate_token()
@@ -55,6 +59,7 @@ def user_add(req: HttpRequest):
         user = User.objects.filter(username=user_name).first()
         is_system_super = False
         is_entity_super = False
+        is_asset_super = False
         if user is not None:
             return request_failed(1, "用户名已存在", status_code=403)
         entity = Entity.objects.filter(name=entity_name).first()
@@ -73,8 +78,15 @@ def user_add(req: HttpRequest):
             if user is not None:
                 return request_failed(2, "不可设置此权限",status_code=403)
             is_entity_super = True
-        
-        user = User(username=user_name, entity=entity, department=department, system_super = is_system_super, entity_super = is_entity_super, password=password)
+        elif authority == "asset_super":
+            user = User.objects.filter(asset_super=True).first()
+            if user is not None:
+                return request_failed(2, "不可设置此权限",status_code=403)
+            is_asset_super = True
+        md5 = hashlib.md5()
+        md5.update(password.encode('utf-8'))
+        pwd = md5.hexdigest()
+        user = User(username=user_name, entity=entity, department=department, system_super = is_system_super, entity_super = is_entity_super, asset_super = is_asset_super, password=pwd)
         user.save()
         return request_success()
     else:
