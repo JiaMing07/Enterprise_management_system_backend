@@ -25,8 +25,12 @@ class User(models.Model):
 
     def check_password(self, pwd):
         if pwd == self.password:
+            print("True")
             return True
         else:
+            print("False")
+            print(pwd)
+            print(self.password)
             return False
     
     def generate_token(self):
