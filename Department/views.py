@@ -49,3 +49,11 @@ def add_department(req: HttpRequest):
         return request_success()
 
     return BAD_METHOD
+
+@CheckRequire
+def entity_all(req: HttpRequest):
+    if req.method == 'GET':
+        entities = Entity.objects.all()
+        entity_list = [entity.name for entity in entities]
+        return request_success({"entity": {"name": entity_list}})
+    return BAD_METHOD
