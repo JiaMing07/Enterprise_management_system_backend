@@ -1,5 +1,5 @@
 database:
-    type: "sqlite3" 
+    type: "mysql" 
     host: "mysql.BugHunters.secoder.local"
     port: 3306
     name: "PROJECT_DATABASE"
