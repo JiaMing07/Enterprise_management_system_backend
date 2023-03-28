@@ -21,15 +21,42 @@ class User(models.Model):
     token = models.CharField(max_length=200, auto_created=True, default='', blank=True)
     entity_super = models.BooleanField(default=False)
     system_super = models.BooleanField(default=False)
+    asset_super = models.BooleanField(default=False)
 
     def check_password(self, pwd):
         if pwd == self.password:
+            print("True")
             return True
         else:
+            print("False")
+            print(pwd)
+            print(self.password)
             return False
     
     def generate_token(self):
         payload = {'exp': datetime.now() + timedelta(days=1), 'iat': datetime.utcnow(), 'username': self.username}
         token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
         return token
+    
+    def check_authen(self):
+        if self.system_super == True:
+            return "system_super"
+        elif self.entity_super == True:
+            return "entity_super"
+        elif self.asset_super == True:
+            return "asset_super"
+        else:
+            return "staff"
+    
+    def set_authen(self, authority):
+        is_system_super = False
+        is_entity_super = False
+        is_asset_super = False
+        if authority == "system_super":
+            is_system_super = True
+        elif authority == "entity_super":
+            is_entity_super = True
+        elif authority == "asset_super":
+            is_asset_super = True
+        return is_system_super, is_entity_super, is_asset_super
 # Create your models here.

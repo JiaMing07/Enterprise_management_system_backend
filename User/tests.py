@@ -2,6 +2,7 @@ import random
 from django.test import TestCase, Client
 from User.models import User
 from Department.models import Department, Entity
+import hashlib
 
 # Create your tests here.
 class UserTests(TestCase):
@@ -12,7 +13,12 @@ class UserTests(TestCase):
     def setUp(self):
         ent = Entity.objects.create(id=1, name='ent')
         dep = Department.objects.create(id=1, name='dep', entity=ent)
-        User.objects.create(username='Alice', password='123', department=dep, entity=ent)
+        password='123'
+        md5 = hashlib.md5()
+        md5.update(password.encode('utf-8'))
+        pwd = md5.hexdigest()
+        print(pwd)
+        User.objects.create(username='Alice', password=pwd, department=dep, entity=ent)
 
     # Utility functions
     def post_user_login_normal(self, username, password):
@@ -100,7 +106,7 @@ class UserTests(TestCase):
         username = 'Alice'
         password = '123'
         res = self.post_user_login_normal(username, password)
-
+        print(res.json()['info'])
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
         
