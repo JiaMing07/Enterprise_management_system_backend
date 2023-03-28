@@ -63,6 +63,14 @@ class UserTests(TestCase):
         self.assertEqual(res.json()['code'], -3)
         self.assertEqual(res.json()['info'], 'Bad method')
 
+        name = ''
+        for i in range(60):
+            name += 'a'
+        res = self.post_entity_add(name)
+
+        self.assertEqual(res.json()['code'], -2)
+        self.assertEqual(res.json()['info'], 'Bad length of [entity_name]')
+
     def test_department_add(self):
         department = 'de1'
         entity = 'en'
@@ -74,6 +82,13 @@ class UserTests(TestCase):
         res = self.post_department_add(department, entity, parent)
         self.assertEqual(res.json()['code'], 1)
         self.assertEqual(res.json()['info'], "该部门已存在")
+
+        department = 'de5'
+        entity = 'en'
+        parent = 'de1'
+        res = self.post_department_add(department, entity, parent)
+
+        self.assertEqual(res.json()['code'], 0)
 
         department = 'de2'
         entity = 'en1'
@@ -87,3 +102,29 @@ class UserTests(TestCase):
         res = self.post_department_add(department, entity, parent)
         self.assertEqual(res.json()['code'], 1)
         self.assertEqual(res.json()['info'], "父部门不存在")
+
+        entity = ''
+        for i in range(60):
+            entity += 'a'
+        res = self.post_department_add(department, entity, parent)
+
+        self.assertEqual(res.json()['code'], -2)
+        self.assertEqual(res.json()['info'], 'Bad length of [entity_name]')
+
+        entity = 'en'
+        department = ''
+        for i in range(40):
+            department += 'a'
+        res = self.post_department_add(department, entity, parent)
+
+        self.assertEqual(res.json()['code'], -2)
+        self.assertEqual(res.json()['info'], 'Bad length of [department_name]')
+
+        parent = ''
+        department = 'de4'
+        for i in range(40):
+            parent += 'a'
+        res = self.post_department_add(department, entity, parent)
+
+        self.assertEqual(res.json()['code'], -2)
+        self.assertEqual(res.json()['info'], 'Bad length of [parent_name]')

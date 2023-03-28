@@ -8,13 +8,14 @@ from utils.utils_request import BAD_METHOD, request_failed, request_success, ret
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
 from utils.utils_time import get_timestamp
 from utils.utils_getbody import get_args
-
+from utils.utils_checklength import checklength
 
 @CheckRequire
 def add_entity(req: HttpRequest):
     if req.method == 'POST':
         body = json.loads(req.body.decode("utf-8"))
         entity_name = get_args(body, ["name"], ['string'])[0]
+        checklength(entity_name, 0, 50, "entity_name")
         entity = Entity.objects.filter(name=entity_name).first()
         if entity is not None:
             return request_failed(1, "企业实体已存在", status_code=403)
@@ -28,6 +29,9 @@ def add_department(req: HttpRequest):
     if req.method == 'POST':
         body = json.loads(req.body.decode("utf-8"))
         entity_name, department_name, parent_name = get_args(body, ["entity", "department", "parent"], ["string", "string", "string"])
+        checklength(entity_name, 0, 50, "entity_name")
+        checklength(department_name, 0, 30, "department_name")
+        checklength(parent_name, -1, 30, "parent_name")
         entity = Entity.objects.filter(name = entity_name).first()
         parent = Department.objects.filter(name=parent_name).first()
         if parent_name == "":
