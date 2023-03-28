@@ -128,3 +128,11 @@ class UserTests(TestCase):
 
         self.assertEqual(res.json()['code'], -2)
         self.assertEqual(res.json()['info'], 'Bad length of [parent_name]')
+
+        en = 'en1'
+        self.post_entity_add(en)
+        department = 'de_1'
+        parent = 'de1'
+        res = self.post_department_add(department, en, parent)
+        self.assertEqual(res.json()['code'], 2)
+        self.assertEqual(res.json()['info'], '父部门不属于该企业实体')
