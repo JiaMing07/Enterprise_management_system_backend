@@ -8,6 +8,7 @@ from utils.utils_request import BAD_METHOD, request_failed, request_success, ret
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
 from utils.utils_time import get_timestamp
 from utils.utils_getbody import get_args
+from utils.utils_checklength import checklength
 from eam_backend.settings import SECRET_KEY
 import jwt
 
@@ -58,6 +59,9 @@ def user_add(req: HttpRequest):
     if req.method == 'POST':
         body = json.loads(req.body.decode("utf-8"))
         user_name, entity_name, department_name, authority, password  = get_args(body, ['name', 'entity', 'department', 'authority', 'password'], ['string','string','string','string','string'])
+        checklength(user_name, 0, 50, "username")
+        checklength(entity_name, 0, 50, "entity_name")
+        checklength(department_name, 0, 30, "department_name")
         user = User.objects.filter(username=user_name).first()
         is_system_super = False
         is_entity_super = False
@@ -100,6 +104,7 @@ def logout_normal(req: HttpRequest):
         body = json.loads(req.body.decode("utf-8"))
         user_name = get_args(body, ['username'], ['string'])
         username = user_name[0]
+        checklength(username, 0, 50, "username")
         user = User.objects.filter(username=username).first()
         if user is not None:
             if user.token != '':
@@ -119,7 +124,7 @@ def user_lock(req: HttpRequest):
         body = json.loads(req.body.decode("utf-8"))
         user_name = require(body, "username", "string", err_msg="Missing or error type of [username]")
         active = require(body, "active", "int", err_msg="Missing or error type of [active]")
-
+        checklength(user_name, 0, 50, "username")
         user = User.objects.filter(username=user_name).first()
         if user is None:
             return request_failed(1, "用户不存在", status_code=404)
