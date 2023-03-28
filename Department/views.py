@@ -44,7 +44,6 @@ def add_department(req: HttpRequest):
             return request_failed(2, "父部门不属于该企业实体", status_code=403)
         department = Department.objects.filter(name=department_name).first()
         if department is not None:
-            print(department.name)
             return request_failed(1, "该部门已存在", status_code=403)
         department = Department(name=department_name, entity=entity, parent=parent)
         department.save()
@@ -53,9 +52,31 @@ def add_department(req: HttpRequest):
     return BAD_METHOD
 
 @CheckRequire
-def entity_all(req: HttpRequest):
+def entity_list(req: HttpRequest):
     if req.method == 'GET':
         entities = Entity.objects.all()
-        entity_list = [entity.name for entity in entities]
-        return request_success({"entity": {"name": entity_list}})
-    return BAD_METHOD
+        return_data = {
+            "entities": [
+                return_field(entity.serialize(), ["id", "name"])
+            for entity in entities],
+        }
+        return request_success(return_data)
+    else:
+        return BAD_METHOD
+
+@CheckRequire
+def entity_entityName_department_list(req: HttpRequest, entityName: any):
+    idx = require({"entityName": entityName}, "entityName", "string", err_msg="Bad param [entityName]", err_code=-1)
+    checklength(entityName, 0, 50, "entityName")
+
+    if req.method == 'GET':
+        entity = Entity.objects.filter(name=entityName).first()
+
+        if entity:
+            return request_success(
+                return_field(entity.serialize(), ["name", "departments"])
+            )
+        else:
+            return request_failed(1, "entity not found", status_code=404)
+    else:
+        return BAD_METHOD
