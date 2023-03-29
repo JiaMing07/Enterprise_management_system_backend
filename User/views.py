@@ -42,7 +42,6 @@ def login_normal(req: HttpRequest):
             md5 = hashlib.md5()
             md5.update(password.encode('utf-8'))
             password = md5.hexdigest()
-            print(password)
             if user.check_password(password):
                 if user.token == '':
                     user.token = user.generate_token()
@@ -106,7 +105,6 @@ def user_add(req: HttpRequest):
     
 @CheckRequire
 def logout_normal(req: HttpRequest):
-    print(req.COOKIES)
     if req.method == 'POST':
         user = req.user
         body = json.loads(req.body.decode("utf-8"))
@@ -151,67 +149,6 @@ def user_lock(req: HttpRequest):
     else:
         return BAD_METHOD
 
-@CheckRequire
-def user_edit(req: HttpRequest):
-    if req.method == 'POST':
-        body = json.loads(req.body.decode("utf-8"))
-        user_name, pwd, pwd_new, department_name, authority = get_args(body, ['name', 'password', 'new_password', 'department', 'authority'], ['string','string','string','string', 'string'])
-
-        user = User.objects.filter(username=user_name).first()
-
-        if user is None:
-            return request_failed(1, "用户不存在", status_code=404)
-        if not user.check_password(pwd):
-            return request_failed(2, "密码不正确", status_code=401)
-        
-        # 有修改password的需求
-        if pwd_new is not None:
-            # check format
-            pwd_new = require(body, "new_password", "string", err_msg="Missing or error type of [new password]")
-            
-            # encryption
-            md5 = hashlib.md5()
-            md5.update(pwd_new.encode('utf-8'))
-            new_pwd = md5.hexdigest()
-
-            # if same with old one
-            if user.check_password(new_pwd):
-                return request_failed(2, "与原密码相同", status_code=205)
-            else:
-                user.password = new_pwd
-
-        # 有修改authority的需求
-        if authority is not None:
-            ### 目前未考虑各种管理员最多有多少人
-
-            # check format
-            if authority != ("system_super" or "entity_super" or "asset_super"):
-                return request_failed(1, "身份不存在", status_code=403)
-            # if same with old one
-            if authority == user.check_authen():
-                return request_failed(2, "新身份与原身份相同", status_code=205)
-            # diff then change
-            else:
-                user.system_super, user.entity_super, user.asset_super = user.set_authen(authority=authority)
-
-        # 有修改department的需求
-        if department_name is not None:
-            # check format
-            department = Department.objects.filter(name=department_name).first()
-            if not department:
-                return request_failed(1, "部门不存在", status_code=403)
-            # if same with old one
-            if department_name == user.department:
-                return request_failed(2, "与原部门相同", status_code=205)
-            # diff then change
-            else:
-                user.department = department_name
-        
-        user.save()
-        return request_success()
-    
-    else:
-        return BAD_METHOD
     
 @CheckRequire
 def user_list(req: HttpRequest):
@@ -221,7 +158,7 @@ def user_list(req: HttpRequest):
         for entity in entities:
             users = User.objects.filter(entity=entity)
             for user in users:
-                user_list.append(return_field(user.serialize(), ["username", "entity", "department", "active"]))
+                user_list.append(return_field(user.serialize(), ["username", "entity", "department", "active", "authority"]))
         return_data = {
             "users": user_list,
         }

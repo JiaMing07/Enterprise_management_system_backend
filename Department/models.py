@@ -23,6 +23,7 @@ class Entity(models.Model):
 
     def serialize(self):
         departments = Department.objects.filter(entity=self)
+        departments = departments.exclude(name=self.name)
         return {
             "id": self.id, 
             "name": self.name, 

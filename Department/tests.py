@@ -46,16 +46,19 @@ class UserTests(TestCase):
         return self.client.get("/entity/add", data=payload, content_type="application/json")
     
     def get_entity_entityName_department_list(self, entity_name):
-        return self.client.get(f"/entity/{entity_name}/list")
+        return self.client.get(f"/entity/{entity_name}/department/list")
     
     def post_entity_entityName_department_list(self, entity_name):
-        return self.client.post(f"/entity/{entity_name}/list")
+        return self.client.post(f"/entity/{entity_name}/department/list")
     
     def get_entity_list(self):
         return self.client.get("/entity/list")
     
-    def get_entity_entityName_department_list(self, entityName):
-        return self.client.get(f"/entity/{entityName}/department/list")
+    def get_entity_name_list(self, entity_name):
+        return self.client.get(f"/entity/{entity_name}/list")
+    
+    def post_entity_name_list(self, entity_name):
+        return self.client.post(f"/entity/{entity_name}/list")
     
     def test_entity_add(self):
         name = 'en1'
@@ -145,8 +148,8 @@ class UserTests(TestCase):
         department = 'de_1'
         parent = 'de1'
         res = self.post_department_add(department, en, parent)
-        self.assertEqual(res.json()['code'], 2)
-        self.assertEqual(res.json()['info'], '父部门不属于该企业实体')
+        self.assertEqual(res.json()['code'], 1)
+        self.assertEqual(res.json()['info'], '父部门不存在')
 
     def test_get_entity_list(self):
         res = self.get_entity_list()
@@ -167,5 +170,33 @@ class UserTests(TestCase):
 
         entityName = '1' * 51
         res = self.get_entity_entityName_department_list(entityName)
+        print(res)
         self.assertEqual(res.json()['code'] , -2)
         self.assertEqual(res.status_code, 400)
+
+        entityName = 'en'
+        res = self.post_entity_entityName_department_list(entityName)
+        self.assertEqual(res.json()['code'], -3)
+        self.assertEqual(res.json()['info'], 'Bad method')
+
+    def test_entity_name_list(self):
+        entity_name = 'en'
+        res = self.get_entity_name_list(entity_name)
+        self.assertEqual(res.json()['code'] , 0)
+        self.assertEqual(res.json()['name'] , 'en')
+        self.assertEqual(res.status_code, 200)
+
+        entity_name = 'en1'
+        res = self.get_entity_name_list(entity_name)
+        self.assertEqual(res.json()['code'] , -2)
+        self.assertEqual(res.json()['info'], '企业实体不存在')
+
+        entityName = '1' * 51
+        res = self.get_entity_name_list(entityName)
+        self.assertEqual(res.json()['code'] , -2)
+        self.assertEqual(res.json()['info'], 'Bad length of [entity_name]')
+
+        entityName = 'en'
+        res = self.post_entity_name_list(entityName)
+        self.assertEqual(res.json()['code'], -3)
+        self.assertEqual(res.json()['info'], 'Bad method')
