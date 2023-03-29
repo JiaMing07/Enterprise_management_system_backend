@@ -30,6 +30,15 @@ class UserTests(TestCase):
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post("/user/login/normal", data=payload, content_type="application/json")
     
+    def get_user_login_normal(self, username, password):
+        payload = {
+            'username': username,
+            'password': password
+        }
+
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.get("/user/login/normal", data=payload, content_type="application/json")
+
     def post_user_login_feishu(self, username_feishu, password_feishu):
         payload = {
             'username_feishu': username_feishu,
@@ -47,6 +56,14 @@ class UserTests(TestCase):
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post("/user/logout/normal", data=payload, content_type="application/json")
     
+    def get_user_logout_normal(self, username):
+        payload = {
+            'username': username
+        }
+
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.get("/user/logout/normal", data=payload, content_type="application/json")
+    
     def post_user_add(self, name, entity, department, authority, password):
         payload = {
             'name': name,
@@ -59,6 +76,18 @@ class UserTests(TestCase):
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post("/user/add", data=payload, content_type="application/json")
     
+    def get_user_add(self, name, entity, department, authority, password):
+        payload = {
+            'name': name,
+            'entity': entity,
+            'department': department,
+            'authority': authority,
+            'password': password
+        }
+
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.get("/user/add", data=payload, content_type="application/json")
+    
     def post_user_list(self, entity):
         payload = {
             'entity': entity
@@ -67,6 +96,14 @@ class UserTests(TestCase):
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post("/user/list", data=payload, content_type="application/json")
     
+    def get_user_list(self, entity):
+        payload = {
+            'entity': entity
+        }
+
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.get("/user/list", data=payload, content_type="application/json")
+
     def post_user_edit(self, username, password, department, authority):
         payload = {
             'username': username,
@@ -87,11 +124,26 @@ class UserTests(TestCase):
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post("/user/lock", data=payload, content_type="application/json")
     
+    def get_user_lock(self, username, active):
+        payload = {
+            'username': username,
+            'active': active
+        }
+
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.get("/user/lock", data=payload, content_type="application/json")
+    
     def get_user_username(self, username):
         return self.client.get(f"/user/{username}")
     
     def get_user_assets_username(self, username):
         return self.client.get(f"/user/assets/{username}")
+    
+    def get_user_list(self):
+        return self.client.get(f"/user/list")
+    
+    def post_user_list(self):
+        return self.client.post(f"/user/list")
     
     # Now start testcases. 
 
@@ -114,6 +166,11 @@ class UserTests(TestCase):
 
         self.assertEqual(res.json()['code'], 1)
 
+        res = self.get_user_login_normal(username, password)
+
+        self.assertEqual(res.json()['code'], -3)
+        self.assertEqual(res.json()['info'], 'Bad method')
+
     # login and logout
     def test_user_logout_normal(self):
         username = 'Alice'
@@ -127,6 +184,11 @@ class UserTests(TestCase):
 
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
+
+        res = self.get_user_logout_normal(username)
+
+        self.assertEqual(res.json()['code'], -3)
+        self.assertEqual(res.json()['info'], 'Bad method')
 
         res = self.post_user_login_normal(username, password)
 
@@ -175,6 +237,13 @@ class UserTests(TestCase):
 
         res = self.post_user_login_normal(username, password)
         self.assertEqual(res.json()['code'], 2)
+
+        # Bad method
+        res = self.get_user_add(username, entity, department, authority, password)
+
+        self.assertEqual(res.json()['code'], -3)
+        self.assertEqual(res.json()['info'], 'Bad method')
+
 
     def test_user_lock(self):
         # user not found
@@ -229,3 +298,19 @@ class UserTests(TestCase):
 
         user = User.objects.filter(username=username).first()
         self.assertTrue(user.active)
+
+        #bad method
+        res = self.get_user_lock(username, active)
+
+        self.assertEqual(res.json()['code'], -3)
+        self.assertEqual(res.json()['info'], 'Bad method')
+
+    def test_get_user_list(self):
+        res = self.get_user_list()
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.status_code, 200)
+
+        res = self.post_user_list()
+
+        self.assertEqual(res.json()['code'], -3)
+        self.assertEqual(res.json()['info'], 'Bad method')

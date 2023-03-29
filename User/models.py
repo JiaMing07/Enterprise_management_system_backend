@@ -23,6 +23,10 @@ class User(models.Model):
     system_super = models.BooleanField(default=False)
     asset_super = models.BooleanField(default=False)
 
+
+    def __str__(self) -> str:
+        return f"User {self.username} of {self.entity.name}'s department {self.department.name}"
+
     def check_password(self, pwd):
         if pwd == self.password:
             return True
@@ -33,4 +37,55 @@ class User(models.Model):
         payload = {'exp': datetime.now() + timedelta(days=1), 'iat': datetime.utcnow(), 'username': self.username}
         token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
         return token
+    
+    def serialize(self):
+        authority = ""
+        if self.system_super:
+            authority+="system_super"
+        if self.entity_super:
+            if authority != "":
+                authority += " "
+            authority+="entity_super"
+        if self.asset_super:
+            if authority != "":
+                authority += " "
+            authority+="asset_super"
+        if authority == "":
+            authority = "staff"
+        is_active = ""
+        if self.active:
+            is_active="未被锁定"
+        else:
+            is_active="锁定"
+        return {
+            "username": self.username,
+            "entity": self.entity.name,
+            "department": self.department.name,
+            "active_str": is_active,
+            "active": self.active,
+            "authority": authority, 
+            "token": self.token,
+        }
+    
+    def check_authen(self):
+        if self.system_super == True:
+            return "system_super"
+        elif self.entity_super == True:
+            return "entity_super"
+        elif self.asset_super == True:
+            return "asset_super"
+        else:
+            return "staff"
+    
+    def set_authen(self, authority):
+        is_system_super = False
+        is_entity_super = False
+        is_asset_super = False
+        if authority == "system_super":
+            is_system_super = True
+        elif authority == "entity_super":
+            is_entity_super = True
+        elif authority == "asset_super":
+            is_asset_super = True
+        return is_system_super, is_entity_super, is_asset_super
 # Create your models here.

@@ -42,12 +42,17 @@ def login_normal(req: HttpRequest):
             md5 = hashlib.md5()
             md5.update(password.encode('utf-8'))
             password = md5.hexdigest()
-            print(password)
             if user.check_password(password):
                 if user.token == '':
                     user.token = user.generate_token()
                     user.save()
-                    return request_success(data={'token': user.token})
+                    return request_success(data={'token': user.token,
+                                                'system_super':user.system_super, 
+                                                'entity_super': user.entity_super,
+                                                'asset_super': user.asset_super,
+                                                'department': user.department.name,
+                                                'entity': user.entity.name,
+                                                'active': user.active})
                 else:
                     return request_failed(1, "用户已登录", status_code=403)
             else:
@@ -102,6 +107,7 @@ def user_add(req: HttpRequest):
 @CheckRequire
 def logout_normal(req: HttpRequest):
     if req.method == 'POST':
+        user = req.user
         body = json.loads(req.body.decode("utf-8"))
         user_name = get_args(body, ['username'], ['string'])
         username = user_name[0]
@@ -141,5 +147,22 @@ def user_lock(req: HttpRequest):
             return request_failed(-2, "无效请求", status_code=400)
         user.save()
         return request_success()
+    else:
+        return BAD_METHOD
+
+    
+@CheckRequire
+def user_list(req: HttpRequest):
+    if req.method == 'GET':
+        entities = Entity.objects.all()
+        user_list = []
+        for entity in entities:
+            users = User.objects.filter(entity=entity)
+            for user in users:
+                user_list.append(return_field(user.serialize(), ["username", "entity", "department", "active", "authority"]))
+        return_data = {
+            "users": user_list,
+        }
+        return request_success(return_data)
     else:
         return BAD_METHOD
