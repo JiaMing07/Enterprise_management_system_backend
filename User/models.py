@@ -23,6 +23,17 @@ class User(models.Model):
     system_super = models.BooleanField(default=False)
     asset_super = models.BooleanField(default=False)
 
+    def serialize(self):
+        return {
+            "username": self.username, 
+            "entity": self.entity.name,
+            "department": self.department.name,
+            "active" : self.active
+        }
+    
+    def __str__(self) -> str:
+        return f"User {self.username} of {self.entity.name}'s department {self.department.name}"
+
     def check_password(self, pwd):
         if pwd == self.password:
             print("True")

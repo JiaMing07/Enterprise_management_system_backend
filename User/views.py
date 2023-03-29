@@ -199,3 +199,19 @@ def user_edit(req: HttpRequest):
     
     else:
         return BAD_METHOD
+    
+@CheckRequire
+def user_list(req: HttpRequest):
+    if req.method == 'GET':
+        entities = Entity.objects.all()
+        user_list = []
+        for entity in entities:
+            users = User.objects.filter(entity=entity)
+            for user in users:
+                user_list.append(return_field(user.serialize(), ["username", "entity", "department", "active"]))
+        return_data = {
+            "users": user_list,
+        }
+        return request_success(return_data)
+    else:
+        return BAD_METHOD
