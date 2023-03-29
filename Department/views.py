@@ -36,6 +36,7 @@ def add_department(req: HttpRequest):
         if entity is None:
             return request_failed(1, "企业实体不存在", status_code=403)
         if parent_name == "":
+            parent_name = entity_name
             parent = Department.objects.filter(name=entity_name).first()
             if parent is None:
                 parent = Department(name=entity_name, entity=entity, parent=Department.root())
