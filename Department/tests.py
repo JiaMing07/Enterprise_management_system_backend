@@ -45,6 +45,12 @@ class UserTests(TestCase):
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.get("/entity/add", data=payload, content_type="application/json")
     
+    def get_entity_entityName_department_list(self, entity_name):
+        return self.client.get(f"/entity/{entity_name}/list")
+    
+    def post_entity_entityName_department_list(self, entity_name):
+        return self.client.post(f"/entity/{entity_name}/list")
+    
     def test_entity_add(self):
         name = 'en1'
         res = self.post_entity_add(name)
@@ -136,3 +142,21 @@ class UserTests(TestCase):
         print(res.json()['info'])
         self.assertEqual(res.json()['code'], 1)
         self.assertEqual(res.json()['info'], '父部门不存在')
+
+    def test_entity_entityName_department_list(self):
+        entityName = 'en'
+        res = self.get_entity_entityName_department_list(entityName)
+        self.assertEqual(res.json()['code'] , 0)
+        self.assertEqual(res.json()['name'] , 'en')
+        self.assertEqual(res.status_code, 200)
+
+        entityName = 'en1'
+        res = self.get_entity_entityName_department_list(entityName)
+        self.assertEqual(res.json()['code'] , 1)
+        self.assertEqual(res.status_code, 404)
+
+        entityName = '1' * 51
+        res = self.get_entity_entityName_department_list(entityName)
+        self.assertEqual(res.json()['code'] , -2)
+        self.assertEqual(res.status_code, 400)
+

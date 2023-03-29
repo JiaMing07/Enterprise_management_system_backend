@@ -54,18 +54,19 @@ def add_department(req: HttpRequest):
 
     return BAD_METHOD
 
-def entity_list(req: HttpRequest,entity_name:str):
+@CheckRequire
+def entity_entityName_department_list(req: HttpRequest, entityName: any):
+    idx = require({"entityName": entityName}, "entityName", "string", err_msg="Bad param [entityName]", err_code=-1)
+    checklength(entityName, 0, 50, "entityName")
+
     if req.method == 'GET':
-        entity = Entity.objects.filter(name=entity_name).first()
-        if entity is not None:
-            users = User.objects.filter(entity=entity)
-            user_list = []
-            for user in users:
-                user_list.append(return_field(user.serialize(), ['username', 'department', 'active', 'authority']))
-            return request_success({
-                'name':entity_name,
-                'user_list': user_list
-            })
+        entity = Entity.objects.filter(name=entityName).first()
+
+        if entity:
+            return request_success(
+                return_field(entity.serialize(), ["name", "departments"])
+            )
         else:
-            return request_failed(-2, "企业实体不存在", status_code=403)
-    return BAD_METHOD
+            return request_failed(1, "entity not found", status_code=404)
+    else:
+        return BAD_METHOD

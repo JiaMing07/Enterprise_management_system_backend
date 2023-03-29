@@ -10,7 +10,7 @@ class Entity(models.Model):
 
 class Department(MPTTModel):
     ''' department of an employer'''
-    id = models.BigAutoField(primary_key=True,  unique=True)
+    id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=30)
     entity = models.ForeignKey(Entity, on_delete=models.CASCADE)
     parent = TreeForeignKey('self', blank=True, null=True, on_delete=models.CASCADE)
