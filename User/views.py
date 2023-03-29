@@ -155,7 +155,7 @@ def user_lock(req: HttpRequest):
 def user_edit(req: HttpRequest):
     if req.method == 'POST':
         body = json.loads(req.body.decode("utf-8"))
-        user_name = json.loads(req.body.decode("utf-8")).get('name')
+        user_name = json.loads(req.body.decode("utf-8")).get('username')
         password = json.loads(req.body.decode("utf-8")).get('password')
         department_name = json.loads(req.body.decode("utf-8")).get('department')
         authority = json.loads(req.body.decode("utf-8")).get('authority')
@@ -185,7 +185,7 @@ def user_edit(req: HttpRequest):
         if authority is not None:
             ### 目前未考虑各种管理员最多有多少人
             # check format
-            auth = ["system_super", "entity_super", "asset_super"]
+            auth = ["system_super", "entity_super", "asset_super", "staff"]
             if authority not in auth:
                 return request_failed(1, "身份不存在", status_code=403)
             # if same with old one
@@ -206,10 +206,12 @@ def user_edit(req: HttpRequest):
                 return request_failed(3, "与原部门相同", status_code=205)
             # diff then change
             else:
-                user.department = department_name
+                user.department = department
         
         user.save()
         return request_success()
+    else:
+        return BAD_METHOD
     
 @CheckRequire
 def user_list(req: HttpRequest):

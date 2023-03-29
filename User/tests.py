@@ -17,7 +17,6 @@ class UserTests(TestCase):
         md5 = hashlib.md5()
         md5.update(password.encode('utf-8'))
         pwd = md5.hexdigest()
-        print(pwd)
         User.objects.create(username='Alice', password=pwd, department=dep, entity=ent)
 
     # Utility functions
@@ -106,7 +105,7 @@ class UserTests(TestCase):
 
     def post_user_edit(self, username, password, department, authority):
         payload = {
-            'name': username,
+            'username': username,
             'password': password,
             'department': department,
             'authority': authority,
@@ -114,6 +113,17 @@ class UserTests(TestCase):
 
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post("/user/edit", data=payload, content_type="application/json")
+    
+    def get_user_edit(self, username, password, department, authority):
+        payload = {
+            'name': username,
+            'password': password,
+            'department': department,
+            'authority': authority,
+        }
+
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.get("/user/edit", data=payload, content_type="application/json")
     
     def post_user_lock(self, username, active):
         payload = {
@@ -158,7 +168,6 @@ class UserTests(TestCase):
         username = 'Alice'
         password = '123'
         res = self.post_user_login_normal(username, password)
-        print(res.json()['info'])
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
         
@@ -298,6 +307,13 @@ class UserTests(TestCase):
 
         user = User.objects.filter(username=username).first()
         self.assertTrue(user.active)
+
+        #bad method
+        res = self.get_user_lock(username, active)
+
+        self.assertEqual(res.json()['code'], -3)
+        self.assertEqual(res.json()['info'], 'Bad method')
+
     
     def test_user_edit(self):
         # user not found
@@ -386,12 +402,12 @@ class UserTests(TestCase):
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
 
-        #bad method
-        res = self.get_user_lock(username, active)
-
+        # bad method
+        res = self.get_user_edit(username, password, department, authority)
         self.assertEqual(res.json()['code'], -3)
         self.assertEqual(res.json()['info'], 'Bad method')
 
+        
     def test_get_user_list(self):
         res = self.get_user_list()
         self.assertEqual(res.json()['code'], 0)
