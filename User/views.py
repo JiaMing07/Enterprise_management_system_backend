@@ -59,9 +59,9 @@ def user_add(req: HttpRequest):
         if user is not None:
             return request_failed(1, "用户名已存在", status_code=403)
         entity = Entity.objects.filter(name=entity_name).first()
-        department = Department.objects.filter(name=department_name).first()
         if not entity:
             return request_failed(1, "企业实体不存在",status_code=403)
+        department = Department.objects.filter(entity=entity).filter(name=department_name).first()
         if not department:
             return request_failed(1, "部门不存在",status_code=403)
         if authority == "system_super":

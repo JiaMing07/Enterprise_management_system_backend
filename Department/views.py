@@ -33,16 +33,19 @@ def add_department(req: HttpRequest):
         checklength(department_name, 0, 30, "department_name")
         checklength(parent_name, -1, 30, "parent_name")
         entity = Entity.objects.filter(name = entity_name).first()
-        parent = Department.objects.filter(name=parent_name).first()
-        if parent_name == "":
-            parent = Department.objects.filter(id=1).first()
         if entity is None:
             return request_failed(1, "企业实体不存在", status_code=403)
+        if parent_name == "":
+            parent = Department.objects.filter(name=entity_name).first()
+            if parent is None:
+                parent = Department(name=entity_name, entity=entity, parent=Department.root())
+                parent.save()
+        parent = Department.objects.filter(entity=entity).filter(name=parent_name).first()
         if parent is None:
             return request_failed(1, "父部门不存在", status_code=403)
         if parent.entity.name != entity.name:
             return request_failed(2, "父部门不属于该企业实体", status_code=403)
-        department = Department.objects.filter(name=department_name).first()
+        department = Department.objects.filter(entity=entity).filter(name=department_name).first()
         if department is not None:
             return request_failed(1, "该部门已存在", status_code=403)
         department = Department(name=department_name, entity=entity, parent=parent)

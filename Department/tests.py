@@ -1,4 +1,3 @@
-import random
 from django.test import TestCase, Client
 from User.models import User
 from Department.models import Department, Entity
