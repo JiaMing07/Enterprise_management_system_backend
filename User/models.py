@@ -23,6 +23,17 @@ class User(models.Model):
     system_super = models.BooleanField(default=False)
     asset_super = models.BooleanField(default=False)
 
+    def serialize(self):
+        return {
+            "username": self.username, 
+            "entity": self.entity.name,
+            "department": self.department.name,
+            "active" : self.active
+        }
+    
+    def __str__(self) -> str:
+        return f"User {self.username} of {self.entity.name}'s department {self.department.name}"
+
     def check_password(self, pwd):
         if pwd == self.password:
             return True
@@ -62,4 +73,26 @@ class User(models.Model):
             "authority": authority, 
             "token": self.token,
         }
+    
+    def check_authen(self):
+        if self.system_super == True:
+            return "system_super"
+        elif self.entity_super == True:
+            return "entity_super"
+        elif self.asset_super == True:
+            return "asset_super"
+        else:
+            return "staff"
+    
+    def set_authen(self, authority):
+        is_system_super = False
+        is_entity_super = False
+        is_asset_super = False
+        if authority == "system_super":
+            is_system_super = True
+        elif authority == "entity_super":
+            is_entity_super = True
+        elif authority == "asset_super":
+            is_asset_super = True
+        return is_system_super, is_entity_super, is_asset_super
 # Create your models here.

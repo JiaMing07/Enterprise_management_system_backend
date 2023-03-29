@@ -93,6 +93,9 @@ class UserTests(TestCase):
     def get_user_assets_username(self, username):
         return self.client.get(f"/user/assets/{username}")
     
+    def get_user_list(self):
+        return self.client.get(f"/user/list")
+    
     # Now start testcases. 
 
     # Repeat the login
@@ -229,3 +232,8 @@ class UserTests(TestCase):
 
         user = User.objects.filter(username=username).first()
         self.assertTrue(user.active)
+
+    def test_get_user_list(self):
+        res = self.get_user_list()
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.status_code, 200)

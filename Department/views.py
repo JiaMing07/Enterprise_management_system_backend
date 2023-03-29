@@ -55,6 +55,19 @@ def add_department(req: HttpRequest):
     return BAD_METHOD
 
 @CheckRequire
+def entity_list(req: HttpRequest):
+    if req.method == 'GET':
+        entities = Entity.objects.all()
+        return_data = {
+            "entities": [
+                return_field(entity.serialize(), ["id", "name"])
+            for entity in entities],
+        }
+        return request_success(return_data)
+    else:
+        return BAD_METHOD
+
+@CheckRequire
 def entity_entityName_department_list(req: HttpRequest, entityName: any):
     idx = require({"entityName": entityName}, "entityName", "string", err_msg="Bad param [entityName]", err_code=-1)
     checklength(entityName, 0, 50, "entityName")

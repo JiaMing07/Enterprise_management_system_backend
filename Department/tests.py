@@ -51,6 +51,12 @@ class UserTests(TestCase):
     def post_entity_entityName_department_list(self, entity_name):
         return self.client.post(f"/entity/{entity_name}/list")
     
+    def get_entity_list(self):
+        return self.client.get("/entity/list")
+    
+    def get_entity_entityName_department_list(self, entityName):
+        return self.client.get(f"/entity/{entityName}/department/list")
+    
     def test_entity_add(self):
         name = 'en1'
         res = self.post_entity_add(name)
@@ -139,11 +145,15 @@ class UserTests(TestCase):
         department = 'de_1'
         parent = 'de1'
         res = self.post_department_add(department, en, parent)
-        print(res.json()['info'])
-        self.assertEqual(res.json()['code'], 1)
-        self.assertEqual(res.json()['info'], '父部门不存在')
+        self.assertEqual(res.json()['code'], 2)
+        self.assertEqual(res.json()['info'], '父部门不属于该企业实体')
 
-    def test_entity_entityName_department_list(self):
+    def test_get_entity_list(self):
+        res = self.get_entity_list()
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.status_code, 200)
+
+    def test_get_entity_entityName_department_list(self):
         entityName = 'en'
         res = self.get_entity_entityName_department_list(entityName)
         self.assertEqual(res.json()['code'] , 0)
@@ -159,4 +169,3 @@ class UserTests(TestCase):
         res = self.get_entity_entityName_department_list(entityName)
         self.assertEqual(res.json()['code'] , -2)
         self.assertEqual(res.status_code, 400)
-
