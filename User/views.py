@@ -45,7 +45,8 @@ def login_normal(req: HttpRequest):
                                                 'system_super':user.system_super, 
                                                 'entity_super': user.entity_super,
                                                 'asset_super': user.asset_super,
-                                                'department': user.department.name})
+                                                'department': user.department.name,
+                                                'entity': user.entity.name})
                 else:
                     return request_failed(1, "用户已登录", status_code=403)
             else:

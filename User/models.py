@@ -55,9 +55,10 @@ class User(models.Model):
             is_active="锁定"
         return {
             "username": self.username,
-            "entity": self.entity,
+            "entity": self.entity.name,
             "department": self.department.name,
-            "active": is_active,
+            "active_str": is_active,
+            "active": self.active,
             "authority": authority, 
             "token": self.token,
         }
