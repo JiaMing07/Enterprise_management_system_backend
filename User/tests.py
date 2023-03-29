@@ -67,13 +67,12 @@ class UserTests(TestCase):
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post("/user/list", data=payload, content_type="application/json")
     
-    def post_user_edit(self, username, password, new_password, department, authority):
+    def post_user_edit(self, username, password, department, authority):
         payload = {
             'username': username,
             'password': password,
-            'new_password': new_password,
             'department': department,
-            'authority': authority
+            'authority': authority,
         }
 
         payload = {k: v for k, v in payload.items() if v is not None}
