@@ -163,7 +163,7 @@ def user_edit(req: HttpRequest):
 
             # if same with old one
             if user.check_password(new_pwd):
-                return request_failed(2, "与原密码相同", status_code=205)
+                return request_failed(3, "与原密码相同", status_code=205)
             else:
                 user.password = new_pwd
 
@@ -176,7 +176,7 @@ def user_edit(req: HttpRequest):
                 return request_failed(1, "身份不存在", status_code=403)
             # if same with old one
             if authority == user.check_authen():
-                return request_failed(2, "新身份与原身份相同", status_code=205)
+                return request_failed(3, "新身份与原身份相同", status_code=205)
             # diff then change
             else:
                 user.system_super, user.entity_super, user.asset_super = user.set_authen(authority=authority)
@@ -189,7 +189,7 @@ def user_edit(req: HttpRequest):
                 return request_failed(1, "部门不存在", status_code=403)
             # if same with old one
             if department_name == user.department:
-                return request_failed(2, "与原部门相同", status_code=205)
+                return request_failed(3, "与原部门相同", status_code=205)
             # diff then change
             else:
                 user.department = department_name
