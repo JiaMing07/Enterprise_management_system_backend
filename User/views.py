@@ -142,7 +142,10 @@ def user_lock(req: HttpRequest):
 def user_edit(req: HttpRequest):
     if req.method == 'POST':
         body = json.loads(req.body.decode("utf-8"))
-        user_name, password, department_name, authority = get_args(body, ['name', 'password', 'department', 'authority'], ['string','string','string','string', 'string'])
+        user_name = json.loads(req.body.decode("utf-8")).get('name')
+        password = json.loads(req.body.decode("utf-8")).get('password')
+        department_name = json.loads(req.body.decode("utf-8")).get('department')
+        authority = json.loads(req.body.decode("utf-8")).get('authority')
 
         user = User.objects.filter(username=user_name).first()
 
@@ -152,8 +155,8 @@ def user_edit(req: HttpRequest):
         # 有修改password的需求
         if password is not None:
             # check format
-            password = require(body, "new_password", "string", err_msg="Missing or error type of [new password]")
-            
+            password = require(body, "password", "string", err_msg="Missing or error type of [new password]")
+
             # encryption
             md5 = hashlib.md5()
             md5.update(password.encode('utf-8'))
@@ -168,9 +171,9 @@ def user_edit(req: HttpRequest):
         # 有修改authority的需求
         if authority is not None:
             ### 目前未考虑各种管理员最多有多少人
-
             # check format
-            if authority != ("system_super" or "entity_super" or "asset_super"):
+            auth = ["system_super", "entity_super", "asset_super"]
+            if authority not in auth:
                 return request_failed(1, "身份不存在", status_code=403)
             # if same with old one
             if authority == user.check_authen():
@@ -186,7 +189,7 @@ def user_edit(req: HttpRequest):
             if not department:
                 return request_failed(1, "部门不存在", status_code=403)
             # if same with old one
-            if department_name == user.department:
+            if department_name == user.department.name:
                 return request_failed(3, "与原部门相同", status_code=205)
             # diff then change
             else:

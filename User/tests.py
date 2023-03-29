@@ -69,7 +69,7 @@ class UserTests(TestCase):
     
     def post_user_edit(self, username, password, department, authority):
         payload = {
-            'username': username,
+            'name': username,
             'password': password,
             'department': department,
             'authority': authority,
@@ -251,8 +251,8 @@ class UserTests(TestCase):
         # new password same, 3
         username = 'Bob'
         password = '456'
-        department = None
-        authority = None
+        department = 'dep'
+        authority = 'entity_super'
         res = self.post_user_edit(username, password, department, authority)
         self.assertEqual(res.json()['code'], 3)
 
@@ -298,7 +298,7 @@ class UserTests(TestCase):
         res = self.post_user_edit(username, password, department, authority)
         self.assertEqual(res.json()['code'], 1)
 
-        # edit authority same 3
+        # edit department same 3
         username = 'Bob'
         password = None
         department = 'dep'
