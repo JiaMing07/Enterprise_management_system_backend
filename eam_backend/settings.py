@@ -89,11 +89,11 @@ if env["database"]["type"] == "mysql":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.mysql",
-            "NAME": env["database"]["name"],
-            "USER": env["database"]["user"],
-            "PASSWORD": env["database"]["password"],
-            "HOST": env["database"]["host"],
-            "PORT": env["database"]["port"],
+            "NAME": "PROJECT_DATABASE",
+            "USER": "root",
+            "PASSWORD": "bughunters",
+            "HOST": "mysql.BugHunters.secoder.local",
+            "PORT": 3306,
             "OPTIONS": {"charset": "utf8mb4"},
         },
     }
@@ -104,6 +104,7 @@ else:
             'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
         }
     }
+
 
 
 # Password validation
