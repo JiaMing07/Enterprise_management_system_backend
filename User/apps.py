@@ -1,5 +1,6 @@
 from django.apps import AppConfig
 from django.db.utils import IntegrityError, OperationalError
+import hashlib
 
 def init_entity():
     from Department.models import Entity
@@ -25,6 +26,9 @@ def admin_user():
     from .models import User
     if not User.objects.filter(username='admin').exists():
         password = 'admin'
+        md5 = hashlib.md5()
+        md5.update(password.encode('utf-8'))
+        password = md5.hexdigest()
         admin = User(username='admin', password=password, department=Department.root(), entity=Entity.objects.filter(name='admin_entity').first(), system_super=True)
         admin.save()
 
@@ -36,17 +40,28 @@ def add_users():
         entity.save()
     else:
         entity = Entity.objects.filter(name='entity_1').first()
-    if not Department.objects.filter(name='entity_1').exists():
-        department = Department(name='entity_1', parent=Department.root(), entity=entity)
+    if not Department.objects.filter(entity=entity).filter(name='department_1').exists():
+        parent = Department.objects.filter(name='entity_1')
+        if not parent:
+            parent = Department(name='entity_1', parent=Department.root(), entity=entity)
+            parent.save()
+        department = Department(name='department_1', parent=parent, entity=entity)
+        department.save()
     else:
         department = Department.objects.filter(name='entity_1').first()
-    if not User.objects.filter(name='Alice'):
+    if not User.objects.filter(username='Alice'):
         password='123'
+        md5 = hashlib.md5()
+        md5.update(password.encode('utf-8'))
+        password = md5.hexdigest()
         user_1 = User(username='Alice', password=password, department=department, entity=entity)
         user_1.save()
-    if not User.objects.filter(name='Bob'):
+    if not User.objects.filter(username='Bob'):
         password='456'
-        user_2 =  User(username='Alice', password=password, department=department, entity=entity)
+        md5 = hashlib.md5()
+        md5.update(password.encode('utf-8'))
+        password = md5.hexdigest()
+        user_2 =  User(username='Bob', password=password, department=department, entity=entity)
         user_2.save()
 
 class UserConfig(AppConfig):
@@ -58,5 +73,6 @@ class UserConfig(AppConfig):
             init_entity()
             init_department()
             admin_user()
+            add_users()
         except (OperationalError, IntegrityError):
             pass

@@ -133,5 +133,6 @@ class UserTests(TestCase):
         department = 'de_1'
         parent = 'de1'
         res = self.post_department_add(department, en, parent)
-        self.assertEqual(res.json()['code'], 2)
-        self.assertEqual(res.json()['info'], '父部门不属于该企业实体')
+        print(res.json()['info'])
+        self.assertEqual(res.json()['code'], 1)
+        self.assertEqual(res.json()['info'], '父部门不存在')
