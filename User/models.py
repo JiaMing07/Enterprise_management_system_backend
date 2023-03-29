@@ -33,4 +33,33 @@ class User(models.Model):
         payload = {'exp': datetime.now() + timedelta(days=1), 'iat': datetime.utcnow(), 'username': self.username}
         token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
         return token
+    
+    def serialize(self):
+        authority = ""
+        if self.system_super:
+            authority+="system_super"
+        if self.entity_super:
+            if authority != "":
+                authority += " "
+            authority+="entity_super"
+        if self.asset_super:
+            if authority != "":
+                authority += " "
+            authority+="asset_super"
+        if authority == "":
+            authority = "staff"
+        is_active = ""
+        if self.active:
+            is_active="未被锁定"
+        else:
+            is_active="锁定"
+        return {
+            "username": self.username,
+            "entity": self.entity.name,
+            "department": self.department.name,
+            "active_str": is_active,
+            "active": self.active,
+            "authority": authority, 
+            "token": self.token,
+        }
 # Create your models here.

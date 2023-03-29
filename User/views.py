@@ -47,7 +47,12 @@ def login_normal(req: HttpRequest):
                 if user.token == '':
                     user.token = user.generate_token()
                     user.save()
-                    return request_success(data={'token': user.token})
+                    return request_success(data={'token': user.token,
+                                                'system_super':user.system_super, 
+                                                'entity_super': user.entity_super,
+                                                'asset_super': user.asset_super,
+                                                'department': user.department.name,
+                                                'entity': user.entity.name})
                 else:
                     return request_failed(1, "用户已登录", status_code=403)
             else:
@@ -101,7 +106,9 @@ def user_add(req: HttpRequest):
     
 @CheckRequire
 def logout_normal(req: HttpRequest):
+    print(req.COOKIES)
     if req.method == 'POST':
+        user = req.user
         body = json.loads(req.body.decode("utf-8"))
         user_name = get_args(body, ['username'], ['string'])
         username = user_name[0]
