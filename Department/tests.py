@@ -170,7 +170,6 @@ class UserTests(TestCase):
 
         entityName = '1' * 51
         res = self.get_entity_entityName_department_list(entityName)
-        print(res)
         self.assertEqual(res.json()['code'] , -2)
         self.assertEqual(res.status_code, 400)
 
