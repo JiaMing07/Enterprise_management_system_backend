@@ -152,6 +152,66 @@ def user_lock(req: HttpRequest):
 
     
 @CheckRequire
+def user_edit(req: HttpRequest):
+    if req.method == 'POST':
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = json.loads(req.body.decode("utf-8")).get('name')
+        password = json.loads(req.body.decode("utf-8")).get('password')
+        department_name = json.loads(req.body.decode("utf-8")).get('department')
+        authority = json.loads(req.body.decode("utf-8")).get('authority')
+
+        user = User.objects.filter(username=user_name).first()
+
+        if user is None:
+            return request_failed(1, "用户不存在", status_code=404)
+    
+        # 有修改password的需求
+        if password is not None:
+            # check format
+            password = require(body, "password", "string", err_msg="Missing or error type of [new password]")
+
+            # encryption
+            md5 = hashlib.md5()
+            md5.update(password.encode('utf-8'))
+            new_pwd = md5.hexdigest()
+
+            # if same with old one
+            if user.check_password(new_pwd):
+                return request_failed(3, "与原密码相同", status_code=205)
+            else:
+                user.password = new_pwd
+
+        # 有修改authority的需求
+        if authority is not None:
+            ### 目前未考虑各种管理员最多有多少人
+            # check format
+            auth = ["system_super", "entity_super", "asset_super"]
+            if authority not in auth:
+                return request_failed(1, "身份不存在", status_code=403)
+            # if same with old one
+            if authority == user.check_authen():
+                return request_failed(3, "新身份与原身份相同", status_code=205)
+            # diff then change
+            else:
+                user.system_super, user.entity_super, user.asset_super = user.set_authen(authority=authority)
+
+        # 有修改department的需求
+        if department_name is not None:
+            # check format
+            department = Department.objects.filter(name=department_name).first()
+            if not department:
+                return request_failed(1, "部门不存在", status_code=403)
+            # if same with old one
+            if department_name == user.department.name:
+                return request_failed(3, "与原部门相同", status_code=205)
+            # diff then change
+            else:
+                user.department = department_name
+        
+        user.save()
+        return request_success()
+    
+@CheckRequire
 def user_list(req: HttpRequest):
     if req.method == 'GET':
         entities = Entity.objects.all()

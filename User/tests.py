@@ -106,10 +106,10 @@ class UserTests(TestCase):
 
     def post_user_edit(self, username, password, department, authority):
         payload = {
-            'username': username,
+            'name': username,
             'password': password,
             'department': department,
-            'authority': authority
+            'authority': authority,
         }
 
         payload = {k: v for k, v in payload.items() if v is not None}
@@ -298,6 +298,93 @@ class UserTests(TestCase):
 
         user = User.objects.filter(username=username).first()
         self.assertTrue(user.active)
+    
+    def test_user_edit(self):
+        # user not found
+        username = 'Bob'
+        password = '123'
+        department = 'dep'
+        authority = 'entity_super'
+        res = self.post_user_edit(username, password, department, authority)
+        self.assertEqual(res.json()['code'], 1)
+
+        username = 'Bob'
+        entity = 'ent'
+        department = 'dep'
+        authority = 'entity_super'
+        password = '456'
+        res = self.post_user_add(username, entity, department, authority, password)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        # new password same, 3
+        username = 'Bob'
+        password = '456'
+        department = 'dep'
+        authority = 'entity_super'
+        res = self.post_user_edit(username, password, department, authority)
+        self.assertEqual(res.json()['code'], 3)
+
+        # edit pwd success
+        username = 'Bob'
+        password = '789'
+        department = None
+        authority = None
+        res = self.post_user_edit(username, password, department, authority)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        # authority not correct, 1
+        username = 'Bob'
+        password = None
+        department = None
+        authority = 'Human'
+        res = self.post_user_edit(username, password, department, authority)
+        self.assertEqual(res.json()['code'], 1)
+
+        # edit authority same 3
+        username = 'Bob'
+        password = None
+        department = None
+        authority = 'entity_super'
+        res = self.post_user_edit(username, password, department, authority)
+        self.assertEqual(res.json()['code'], 3)
+
+        # authority success
+        username = 'Bob'
+        password = None
+        department = None
+        authority = 'asset_super'
+        res = self.post_user_edit(username, password, department, authority)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        # department not correct, 1
+        username = 'Bob'
+        password = None
+        department = 'de'
+        authority = None
+        res = self.post_user_edit(username, password, department, authority)
+        self.assertEqual(res.json()['code'], 1)
+
+        # edit department same 3
+        username = 'Bob'
+        password = None
+        department = 'dep'
+        authority = None
+        res = self.post_user_edit(username, password, department, authority)
+        self.assertEqual(res.json()['code'], 3)
+
+        # now we only have one dep, so test afterwards
+
+        # edit both pwd and auth
+        username = 'Bob'
+        password = '456'
+        department = None
+        authority = 'entity_super'
+        res = self.post_user_edit(username, password, department, authority)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
 
         #bad method
         res = self.get_user_lock(username, active)
