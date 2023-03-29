@@ -44,6 +44,13 @@ def require(body, key, type="string", err_msg=None, err_code=-2):
         except:
             raise KeyError(err_msg, err_code)
     
+    elif type == "bool":
+        try:
+            val = bool(val)
+            return val
+        except:
+            raise KeyError(err_msg, err_code)
+    
     elif type == "string":
         try:
             val = str(val)
