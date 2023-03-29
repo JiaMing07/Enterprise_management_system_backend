@@ -70,7 +70,7 @@ def user_add(req: HttpRequest):
                 return request_failed(2, "不可设置此权限",status_code=403)
             is_system_super = True
         elif authority == "entity_super":
-            user = User.objects.filter(entity_super=True).first()
+            user = User.objects.filter(entity=entity).filter(entity_super=True).first()
             if user is not None:
                 return request_failed(2, "不可设置此权限",status_code=403)
             is_entity_super = True
