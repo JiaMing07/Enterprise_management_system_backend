@@ -142,23 +142,21 @@ def user_lock(req: HttpRequest):
 def user_edit(req: HttpRequest):
     if req.method == 'POST':
         body = json.loads(req.body.decode("utf-8"))
-        user_name, pwd, pwd_new, department_name, authority = get_args(body, ['name', 'password', 'new_password', 'department', 'authority'], ['string','string','string','string', 'string'])
+        user_name, password, department_name, authority = get_args(body, ['name', 'password', 'department', 'authority'], ['string','string','string','string', 'string'])
 
         user = User.objects.filter(username=user_name).first()
 
         if user is None:
             return request_failed(1, "用户不存在", status_code=404)
-        if not user.check_password(pwd):
-            return request_failed(2, "密码不正确", status_code=401)
         
         # 有修改password的需求
-        if pwd_new is not None:
+        if password is not None:
             # check format
-            pwd_new = require(body, "new_password", "string", err_msg="Missing or error type of [new password]")
+            password = require(body, "new_password", "string", err_msg="Missing or error type of [new password]")
             
             # encryption
             md5 = hashlib.md5()
-            md5.update(pwd_new.encode('utf-8'))
+            md5.update(password.encode('utf-8'))
             new_pwd = md5.hexdigest()
 
             # if same with old one
