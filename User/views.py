@@ -135,11 +135,11 @@ def user_lock(req: HttpRequest):
         user = User.objects.filter(username=user_name).first()
         if user is None:
             return request_failed(1, "用户不存在", status_code=404)
-        if active is 1:
+        if active == 1:
             if user.active is True:
                 return request_failed(2, "用户已解锁", status_code=400)
             user.active = True
-        elif active is 0:
+        elif active == 0:
             if user.active is False:
                 return request_failed(2, "用户已锁定", status_code=400)
             user.active = False
@@ -198,7 +198,7 @@ def user_edit(req: HttpRequest):
         # 有修改department的需求
         if department_name is not None:
             # check format
-            department = Department.objects.filter(name=department_name).first()
+            department = Department.objects.filter(name=department_name).filter(entity=user.entity).first()
             if not department:
                 return request_failed(1, "部门不存在", status_code=403)
             # if same with old one
