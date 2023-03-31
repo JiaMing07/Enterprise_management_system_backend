@@ -15,7 +15,7 @@ class User(models.Model):
     '''
     username = models.CharField(max_length=50, primary_key=True, unique=True, verbose_name='用户名')
     password = models.CharField(max_length = 50, default='123456')
-    department = models.ForeignKey(Department, on_delete=models.SET(Department.root))
+    department = models.ForeignKey(Department, on_delete=models.CASCADE)
     entity = models.ForeignKey(Entity, on_delete=models.CASCADE)
     active = models.BooleanField(auto_created=True, default=True)
     token = models.CharField(max_length=200, auto_created=True, default='', blank=True)

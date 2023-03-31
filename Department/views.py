@@ -102,3 +102,17 @@ def entity_entity_name_list(req: HttpRequest,entity_name: str):
         else:
             return request_failed(-2, "企业实体不存在", status_code=403)
     return BAD_METHOD
+
+@CheckRequire
+def entity_delete(req: HttpRequest, entity_name: str):
+    if req.method == 'DELETE':
+        checklength(entity_name,0, 50, "entity_name")
+        entity = Entity.objects.filter(name=entity_name).first()
+        if entity is None:
+            return request_failed(1, "企业实体不存在", status_code=403)
+        if entity.name == 'admin_entity':
+            return request_failed(2, "不可删除超级管理员所在的企业实体", status_code=403)
+        entity.delete()
+        return request_success()
+    else:
+        return BAD_METHOD
