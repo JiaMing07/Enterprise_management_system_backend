@@ -91,9 +91,6 @@ def user_add(req: HttpRequest):
                 return request_failed(2, "不可设置此权限",status_code=403)
             is_entity_super = True
         elif authority == "asset_super":
-            user = User.objects.filter(entity=entity).filter(department=department).filter(asset_super=True).first()
-            if user is not None:
-                return request_failed(2, "不可设置此权限",status_code=403)
             is_asset_super = True
         md5 = hashlib.md5()
         md5.update(password.encode('utf-8'))

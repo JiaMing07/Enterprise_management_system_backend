@@ -247,6 +247,30 @@ class UserTests(TestCase):
         res = self.post_user_login_normal(username, password)
         self.assertEqual(res.json()['code'], 2)
 
+        # system_super is existed
+        username = 'David'
+        authority = 'system_super'
+
+        res = self.post_user_add(username, entity, department, authority, password)
+        self.assertEqual(res.json()['code'], 0)
+
+        username = 'Emily'
+        authority = 'system_super'
+
+        res = self.post_user_add(username, entity, department, authority, password)
+        self.assertEqual(res.json()['code'], 2)
+
+        # asset_super
+        authority = 'asset_super'
+
+        res = self.post_user_add(username, entity, department, authority, password)
+        self.assertEqual(res.json()['code'], 0)
+
+        username = 'Fliss'
+
+        res = self.post_user_add(username, entity, department, authority, password)
+        self.assertEqual(res.json()['code'], 0)
+
         # Bad method
         res = self.get_user_add(username, entity, department, authority, password)
 
