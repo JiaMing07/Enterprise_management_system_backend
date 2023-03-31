@@ -15,4 +15,5 @@ pyjwt
 pyyaml
 pymysql
 mysqlclient==2.1.0
+cryptograph
 # TODO End: [Student] Add dependency on uWSGI
