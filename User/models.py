@@ -88,4 +88,35 @@ class User(models.Model):
         elif authority == "asset_super":
             is_asset_super = True
         return is_system_super, is_entity_super, is_asset_super
+    
+class Menu(models.Model):
+    '''
+    menu
+    '''
+    id = models.BigAutoField(primary_key=True)
+    first = models.CharField(max_length=50)
+    second = models.CharField(max_lenth=50)
+    entity_show = models.BooleanField(default=False)
+    asset_show = models.BooleanField(default=False)
+    staff_show = models.BooleanField(default=False)
+
+    def __str__(self) -> str:
+        return f'{self.first}_{self.second}'
+    
+    def set_authority(self, au: list):
+        entity_show=False
+        asset_show=False
+        staff_show=False
+        for authority in au:
+            if authority == 'entity_super':
+                entity_show = True
+            if authority == 'asset_super':
+                asset_show = True
+            if authority == 'staff':
+                staff_show = True
+        return entity_show, asset_show, staff_show
+    
+    class Meta:
+        unique_together = ['first', 'second']
 # Create your models here.
+

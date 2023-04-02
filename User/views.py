@@ -2,7 +2,7 @@ import json
 import hashlib
 from django.http import HttpRequest, HttpResponse
 
-from User.models import User
+from User.models import User, Menu
 from Department.models import Department, Entity
 from utils.utils_request import BAD_METHOD, request_failed, request_success, return_field
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
@@ -225,3 +225,29 @@ def user_list(req: HttpRequest):
         return request_success(return_data)
     else:
         return BAD_METHOD
+
+@CheckRequire
+def user_menu(req: HttpRequest):
+    if req.method == 'POST':
+        body = json.loads(req.body.decode("utf-8"))
+        first, second, authority = get_args(body, ["first", "second", "authority"], ["string", "string", "string"])
+        checklength(first, 0, 50, "first")
+        checklength(second, -1, 50, "second")
+        authorities = ['entity_super', 'asset_super', 'staff']
+        authority = authority.split('/')
+        if second == "":
+            menu = Menu.objects.filter(first=first).filter(second=second).first()
+            if menu is not None:
+                return request_failed(1, "一级菜单已存在", status_code=403)
+        else:
+            menu = Menu.objects.filter(first=first).filter(second=second).first()
+            if menu is not None:
+                return request_failed(2, "二级菜单已存在", status_code=403)
+                
+        for au in authority:
+            if au not in authorities:
+                return request_failed(3, "权限不存在",status_code=403)
+        menu = Menu(first=first, second=second)
+        menu.entity_show, menu.asset_show, menu.staff_show = menu.set_authority(au)
+        menu.save()
+    return BAD_METHOD
