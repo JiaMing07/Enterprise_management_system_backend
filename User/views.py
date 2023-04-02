@@ -230,9 +230,10 @@ def user_list(req: HttpRequest):
 def user_menu(req: HttpRequest):
     if req.method == 'POST':
         body = json.loads(req.body.decode("utf-8"))
-        first, second, authority = get_args(body, ["first", "second", "authority"], ["string", "string", "string"])
+        first, second, authority, url = get_args(body, ["first", "second", "authority", "url"], ["string", "string", "string", "string"])
         checklength(first, 0, 50, "first")
         checklength(second, -1, 50, "second")
+        check_for_user_data(url, 0, 500, "url")
         authorities = ['entity_super', 'asset_super', 'staff']
         authority = authority.split('/')
         if second == "":
@@ -247,7 +248,33 @@ def user_menu(req: HttpRequest):
         for au in authority:
             if au not in authorities:
                 return request_failed(3, "权限不存在",status_code=403)
-        menu = Menu(first=first, second=second)
+        menu = Menu(first=first, second=second, url=url)
         menu.entity_show, menu.asset_show, menu.staff_show = menu.set_authority(au)
         menu.save()
+    elif req.method == 'GET':
+        cookies = req.COOKIES['token']
+        try:
+            token = cookies['Token']
+        except KeyError:
+            return 'Token 未给出'
+        try:
+            decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        except jwt.ExpiredSignatureError:
+            return 'Token 已过期'
+        except jwt.InvalidTokenError:
+            return 'Token 不合法'
+        user: User = User.objects.get(username=decoded['username'])
+        if user.token != token:
+            return '用户不在线'
+        authority = user.check_authen()
+        if authority == 'entity_super':
+            menu_list = Menu.objects.filter(entity_show=True)
+        elif authority == 'asset_super':
+            menu_list = Menu.objects.filter(asset_show=True)
+        elif authority == 'staff':
+            menu_list = Menu.objects.filter(staff_show=True)
+        return_data = {
+            "menu": [menu.serialize() for menu in menu_list]
+        }
+        return request_success()
     return BAD_METHOD

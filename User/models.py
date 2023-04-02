@@ -95,7 +95,8 @@ class Menu(models.Model):
     '''
     id = models.BigAutoField(primary_key=True)
     first = models.CharField(max_length=50)
-    second = models.CharField(max_lenth=50)
+    second = models.CharField(max_length=50)
+    url = models.CharField(max_length=500)
     entity_show = models.BooleanField(default=False)
     asset_show = models.BooleanField(default=False)
     staff_show = models.BooleanField(default=False)
@@ -115,6 +116,13 @@ class Menu(models.Model):
             if authority == 'staff':
                 staff_show = True
         return entity_show, asset_show, staff_show
+    
+    def serialize(self):
+        return {
+            "first": self.first,
+            "second": self.second,
+            "url": self.url
+        }
     
     class Meta:
         unique_together = ['first', 'second']
