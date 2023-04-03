@@ -1,8 +1,9 @@
 import random
 from django.test import TestCase, Client
-from User.models import User
+from User.models import User, Menu
 from Department.models import Department, Entity
 import hashlib
+from http import cookies
 
 # Create your tests here.
 class UserTests(TestCase):
@@ -154,6 +155,23 @@ class UserTests(TestCase):
     
     def post_user_list(self):
         return self.client.post(f"/user/list")
+    
+    def get_user_menu(self):
+        return self.client.get(f"/user/menu")
+    
+    def post_user_menu(self, first, second, url, authority):
+        payload = {
+            'first': first,
+            'second': second,
+            'authority': authority,
+            'url': url
+        }
+
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.post("/user/menu", data=payload, content_type="application/json")
+    
+    def delete_user_menu(self):
+        return self.client.delete("/user/menu")
     
     # Now start testcases. 
 
@@ -441,3 +459,82 @@ class UserTests(TestCase):
 
         self.assertEqual(res.json()['code'], -3)
         self.assertEqual(res.json()['info'], 'Bad method')
+
+    def test_user_menu(self):
+        # method = POST
+        first = 'f_1'
+        second = ''
+        url = 'test'
+        authority = 'entity_super/asset_super'
+
+        res = self.post_user_menu(first, second, url, authority)
+        self.assertEqual(res.json()['code'], 0)
+        # test repeat first
+        first = 'f_1'
+        second = ''
+        url = 'test'
+        authority = 'entity_super/asset_super'
+
+        res = self.post_user_menu(first, second, url, authority)
+        self.assertEqual(res.json()['code'], 1)
+
+        first = 'f_1'
+        second = 's_1'
+        url = 'test'
+        authority = 'staff/asset_super'
+
+        res = self.post_user_menu(first, second, url, authority)
+        self.assertEqual(res.json()['code'], 0)
+        #test repeat second
+        first = 'f_1'
+        second = 's_1'
+        url = 'test'
+        authority = 'entity_super/asset_super'
+
+        res = self.post_user_menu(first, second, url, authority)
+        self.assertEqual(res.json()['code'], 2)
+
+        # test non-existed authority
+        first = 'f_1'
+        second = 's_2'
+        url = 'test'
+        authority = 'user'
+
+        res = self.post_user_menu(first, second, url, authority)
+        self.assertEqual(res.json()['code'], 3)
+
+        #test out-range length
+        url = 'u'*501
+        res = self.post_user_menu(first, second, url, authority)
+        self.assertEqual(res.json()['code'], -2)
+        url = 'test'
+
+        second = 's'*51
+        res = self.post_user_menu(first, second, url, authority)
+        self.assertEqual(res.json()['code'], -2)
+        second = 's_2'
+
+        first = 'f' * 51
+        res = self.post_user_menu(first, second, url, authority)
+        self.assertEqual(res.json()['code'], -2)
+        # method= GET
+        username = 'Alice'
+        password='123'
+        user = User.objects.filter(username='Alice').first()
+        user.token = user.generate_token()
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['Token'] = Token
+        self.client.cookies = c
+        print(Token)
+        res = self.get_user_menu()
+
+        self.assertEqual(res.json()['code'], 0)
+        get_list = res.json()['menu']
+        menu_list = Menu.objects.filter(staff_show=True)
+        index=0
+        print(get_list)
+        for menu in get_list:
+            self.assertEqual(menu['first'], menu_list[index].first)
+            self.assertEqual(menu['second'], menu_list[index].second)

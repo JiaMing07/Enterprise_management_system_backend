@@ -233,7 +233,7 @@ def user_menu(req: HttpRequest):
         first, second, authority, url = get_args(body, ["first", "second", "authority", "url"], ["string", "string", "string", "string"])
         checklength(first, 0, 50, "first")
         checklength(second, -1, 50, "second")
-        check_for_user_data(url, 0, 500, "url")
+        checklength(url, -1, 500, "url")
         authorities = ['entity_super', 'asset_super', 'staff']
         authority = authority.split('/')
         if second == "":
@@ -249,20 +249,21 @@ def user_menu(req: HttpRequest):
             if au not in authorities:
                 return request_failed(3, "权限不存在",status_code=403)
         menu = Menu(first=first, second=second, url=url)
-        menu.entity_show, menu.asset_show, menu.staff_show = menu.set_authority(au)
+        menu.entity_show, menu.asset_show, menu.staff_show = menu.set_authority(authority)
         menu.save()
+        return request_success()
     elif req.method == 'GET':
-        cookies = req.COOKIES['token']
+        # cookies = req.COOKIES['Token']
         try:
-            token = cookies['Token']
+            token = req.COOKIES['Token']
         except KeyError:
-            return 'Token 未给出'
+            return 'Token未给出'
         try:
             decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         except jwt.ExpiredSignatureError:
-            return 'Token 已过期'
+            return 'Token已过期'
         except jwt.InvalidTokenError:
-            return 'Token 不合法'
+            return 'Token不合法'
         user: User = User.objects.get(username=decoded['username'])
         if user.token != token:
             return '用户不在线'
@@ -272,9 +273,10 @@ def user_menu(req: HttpRequest):
         elif authority == 'asset_super':
             menu_list = Menu.objects.filter(asset_show=True)
         elif authority == 'staff':
+            print("staff")
             menu_list = Menu.objects.filter(staff_show=True)
         return_data = {
             "menu": [menu.serialize() for menu in menu_list]
         }
-        return request_success()
+        return request_success(return_data)
     return BAD_METHOD

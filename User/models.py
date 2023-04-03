@@ -96,7 +96,7 @@ class Menu(models.Model):
     id = models.BigAutoField(primary_key=True)
     first = models.CharField(max_length=50)
     second = models.CharField(max_length=50)
-    url = models.CharField(max_length=500)
+    url = models.CharField(max_length=500,default='')
     entity_show = models.BooleanField(default=False)
     asset_show = models.BooleanField(default=False)
     staff_show = models.BooleanField(default=False)
@@ -109,6 +109,7 @@ class Menu(models.Model):
         asset_show=False
         staff_show=False
         for authority in au:
+            print(f'authority: {authority}')
             if authority == 'entity_super':
                 entity_show = True
             if authority == 'asset_super':
