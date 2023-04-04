@@ -60,6 +60,17 @@ class UserTests(TestCase):
     def post_entity_name_list(self, entity_name):
         return self.client.post(f"/entity/{entity_name}/list")
     
+    def delete_department(self, entity_name, department_name):
+        payload = {
+            'entity': entity_name,
+            'department': department_name,
+        }
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.delete("/department/delete", data=payload, content_type="application/json")
+    
+    def get_department_delete(self):
+        return self.client.get(f"/department/delete")
+
     def test_entity_add(self):
         name = 'en1'
         res = self.post_entity_add(name)
@@ -199,3 +210,63 @@ class UserTests(TestCase):
         res = self.post_entity_name_list(entityName)
         self.assertEqual(res.json()['code'], -3)
         self.assertEqual(res.json()['info'], 'Bad method')
+
+    def test_department_delete(self):
+        entity_name = 'en0'
+        department_name = 'de0'
+        parent_name = ''
+
+        # add entity
+        res = self.post_entity_add(entity_name)
+        self.assertEqual(res.json()['code'], 0)
+
+        # add department
+        res = self.post_department_add(department_name, entity_name, parent_name)
+        self.assertEqual(res.json()['code'], 0)
+
+        # department_name length wrong
+        entity_name = 'en0'
+        department_name = '1234567890123456789012345678901234' # > 30
+        res = self.delete_department(entity_name, department_name)
+        self.assertEqual(res.json()['info'], "Bad length of [department_name]")
+
+        # entity_name length wrong, code 400
+        entity_name = '123456789012345678901234567890123456789012345678901234567890' # > 50
+        department_name = 'de0'
+        res = self.delete_department(entity_name, department_name)
+        self.assertEqual(res.json()['info'], "Bad length of [entity_name]")
+
+        # entity not exist, 1
+        entity_name = 'en1'
+        department_name = 'de0'
+        res = self.delete_department(entity_name, department_name)
+        self.assertEqual(res.json()['info'], "企业实体不存在")
+        self.assertEqual(res.status_code, 403)
+        self.assertEqual(res.json()['code'], 1)
+
+        # department not exist, 1
+        entity_name = 'en0'
+        department_name = 'de1'
+        res = self.delete_department(entity_name, department_name)
+        self.assertEqual(res.json()['code'], 1)
+
+        # admin_entity, 2
+        entity_name = 'admin_entity'
+        res = self.post_entity_add(entity_name)
+        self.assertEqual(res.json()['code'], 0)
+
+        department_name = 'de1'
+        res = self.delete_department(entity_name, department_name)
+        self.assertEqual(res.json()['code'], 2)
+        self.assertEqual(res.json()['info'], "不可删除超级管理员所在的企业实体")
+
+        # delete success
+        entity_name = 'en0'
+        department_name = 'de0'
+        res = self.delete_department(entity_name, department_name)
+        self.assertEqual(res.json()['code'], 0)
+
+        # bad method
+        res = self.get_department_delete()
+        self.assertEqual(res.json()['code'], -3)
+        self.assertEqual(res.json()['info'], "Bad method")
