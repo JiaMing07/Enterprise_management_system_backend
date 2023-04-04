@@ -87,11 +87,13 @@ def user_add(req: HttpRequest):
                 return request_failed(2, "不可设置此权限",status_code=403)
             is_system_super = True
         elif authority == "entity_super":
+            CheckAuthority(req, "system_super")
             user = User.objects.filter(entity=entity).filter(entity_super=True).first()
             if user is not None:
                 return request_failed(2, "不可设置此权限",status_code=403)
             is_entity_super = True
         elif authority == "asset_super":
+            CheckAuthority(req, "entity_super")
             is_asset_super = True
         md5 = hashlib.md5()
         md5.update(password.encode('utf-8'))
@@ -272,4 +274,21 @@ def user_menu(req: HttpRequest):
             "menu": [menu.serialize() for menu in menu_list]
         }
         return request_success(return_data)
+    if req.method == 'DELETE':
+        CheckAuthority(req, "entity_super")
+        body = json.loads(req.body.decode("utf-8"))
+        first, second= get_args(body, ["first", "second"], ["string", "string"])
+        checklength(first, 0, 50, "first")
+        checklength(second, -1, 50, "second")
+        if second == "":
+            menus = Menu.objects.filter(first=first)
+            if menu is None:
+                return request_failed(1, "一级菜单不存在", status_code=403)
+            for menu in menus:
+                menu.delete()
+        else:
+            menu = Menu.objects.filter(first=first).filter(second=second).first()
+            if menu is not None:
+                return request_failed(2, "二级菜单不存在", status_code=403)
+            menu.delete()
     return BAD_METHOD

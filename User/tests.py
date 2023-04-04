@@ -3,6 +3,10 @@ from django.test import TestCase, Client
 from User.models import User, Menu
 from Department.models import Department, Entity
 import hashlib
+import datetime
+import jwt
+import time
+from eam_backend.settings import SECRET_KEY
 from http import cookies
 
 # Create your tests here.
@@ -19,6 +23,7 @@ class UserTests(TestCase):
         md5.update(password.encode('utf-8'))
         pwd = md5.hexdigest()
         User.objects.create(username='Alice', password=pwd, department=dep, entity=ent)
+        User.objects.create(username='test_user', password=pwd, department=dep, entity=ent)
 
     # Utility functions
     def post_user_login_normal(self, username, password):
@@ -242,6 +247,15 @@ class UserTests(TestCase):
 
         department = 'dep'
 
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("system_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
         res = self.post_user_add(username, entity, department, authority, password)
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
@@ -249,6 +263,7 @@ class UserTests(TestCase):
         res = self.post_user_login_normal(username, password)
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
+
 
         # repeat the username
         password = '789'
@@ -265,12 +280,8 @@ class UserTests(TestCase):
         res = self.post_user_login_normal(username, password)
         self.assertEqual(res.json()['code'], 2)
 
-        # system_super is existed
-        username = 'David'
-        authority = 'system_super'
-
-        res = self.post_user_add(username, entity, department, authority, password)
-        self.assertEqual(res.json()['code'], 0)
+        
+        # system_super is existed test_user
 
         username = 'Emily'
         authority = 'system_super'
@@ -279,6 +290,8 @@ class UserTests(TestCase):
         self.assertEqual(res.json()['code'], 2)
 
         # asset_super
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
         authority = 'asset_super'
 
         res = self.post_user_add(username, entity, department, authority, password)
@@ -358,6 +371,14 @@ class UserTests(TestCase):
 
     
     def test_user_edit(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("system_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
         # user not found
         username = 'Bob'
         password = '123'
@@ -461,6 +482,14 @@ class UserTests(TestCase):
         self.assertEqual(res.json()['info'], 'Bad method')
 
     def test_user_menu(self):
+        user = User.objects.filter(username='Alice').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
         # method = POST
         first = 'f_1'
         second = ''
@@ -517,36 +546,73 @@ class UserTests(TestCase):
         first = 'f' * 51
         res = self.post_user_menu(first, second, url, authority)
         self.assertEqual(res.json()['code'], -2)
+        first = 'f_1'
+
+        # test authority
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("asset_super") 
+        user.save()
+        res = self.post_user_menu(first, second, url, authority)
+        print(res.json()['info'])
+        self.assertEqual(res.json()['code'], -2)
+        self.assertEqual(res.json()['info'], '没有操作权限')
+
+        # test token
+        # token 
+        Token = Token[:-1]
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+        res = self.post_user_menu(first, second, url, authority)
+        self.assertEqual(res.json()['code'], -2)
+        self.assertEqual(res.json()['info'], 'Token不合法')
+
+        # token does not exist
+        Token = ''
+        c = cookies.SimpleCookie()
+        c['Token'] = Token
+        self.client.cookies = c
+        res = self.post_user_menu(first, second, url, authority)
+        self.assertEqual(res.json()['code'], -2)
+        self.assertEqual(res.json()['info'], 'Token未给出')
+
+        # token expired
+        payload = {'exp': datetime.datetime.now() + datetime.timedelta(seconds=1), 'iat': datetime.datetime.utcnow(), 'username': 'Alice'}
+        time.sleep(2)
+        Token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+        res = self.post_user_menu(first, second, url, authority)
+        self.assertEqual(res.json()['code'], -2)
+        self.assertEqual(res.json()['info'], 'Token已过期')
 
         # method= GET
-        username = 'Alice'
-        password='123'
-        user = User.objects.filter(username='Alice').first()
         user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
         user.save()
         Token = user.token
         c = cookies.SimpleCookie()
-        c['Token'] = Token
+        c['token'] = Token
         self.client.cookies = c
         res = self.get_user_menu()
 
         self.assertEqual(res.json()['code'], 0)
         get_list = res.json()['menu']
-        menu_list = Menu.objects.filter(staff_show=True)
+        menu_list = Menu.objects.filter(entity_show=True)
         index=0
         for menu in get_list:
             self.assertEqual(menu['first'], menu_list[index].first)
             self.assertEqual(menu['second'], menu_list[index].second)
 
         # check entity_super
-        authority = 'entity_super'
+        authority = 'staff'
         user.system_super, user.entity_super, user.asset_super = user.set_authen(authority=authority)
         user.save()
         res = self.get_user_menu()
 
         self.assertEqual(res.json()['code'], 0)
         get_list = res.json()['menu']
-        menu_list = Menu.objects.filter(entity_show=True)
+        menu_list = Menu.objects.filter(staff_show=True)
         index=0
         for menu in get_list:
             self.assertEqual(menu['first'], menu_list[index].first)
@@ -562,13 +628,8 @@ class UserTests(TestCase):
         get_list = res.json()['menu']
         menu_list = Menu.objects.filter(asset_show=True)
         index=0
-        print(get_list)
-        print('-------')
-        print(menu_list)
         for menu in get_list:
             self.assertEqual(menu['first'], menu_list[index].first)
-            print(f"{menu['first']} {menu_list[index].first}")
-            print(f"{menu['second']} {menu_list[index].second}")
             self.assertEqual(menu['second'], menu_list[index].second)
             index += 1
             # print(f"{menu['second']} {menu_list[index].second}")

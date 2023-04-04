@@ -41,7 +41,7 @@ def add_users():
     else:
         entity = Entity.objects.filter(name='entity_1').first()
     if not Department.objects.filter(entity=entity).filter(name='department_1').exists():
-        parent = Department.objects.filter(name='entity_1')
+        parent = Department.objects.filter(name='entity_1').first()
         if not parent:
             parent = Department(name='entity_1', parent=Department.root(), entity=entity)
             parent.save()

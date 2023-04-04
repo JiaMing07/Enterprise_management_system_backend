@@ -36,6 +36,5 @@ def CompareAuthority(req: HttpRequest, au):
    
 def CheckAuthority(req: HttpRequest, au: str):
     msg = CompareAuthority(req, au)
-    print(msg)
     assert msg == "ok", f"{msg}"
 
