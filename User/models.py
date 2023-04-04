@@ -23,31 +23,49 @@ class User(models.Model):
     system_super = models.BooleanField(default=False)
     asset_super = models.BooleanField(default=False)
 
-    def serialize(self):
-        return {
-            "username": self.username, 
-            "entity": self.entity.name,
-            "department": self.department.name,
-            "active" : self.active
-        }
-    
+
     def __str__(self) -> str:
         return f"User {self.username} of {self.entity.name}'s department {self.department.name}"
 
     def check_password(self, pwd):
         if pwd == self.password:
-            print("True")
             return True
         else:
-            print("False")
-            print(pwd)
-            print(self.password)
             return False
     
     def generate_token(self):
         payload = {'exp': datetime.now() + timedelta(days=1), 'iat': datetime.utcnow(), 'username': self.username}
         token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
         return token
+    
+    def serialize(self):
+        authority = ""
+        if self.system_super:
+            authority+="system_super"
+        if self.entity_super:
+            if authority != "":
+                authority += " "
+            authority+="entity_super"
+        if self.asset_super:
+            if authority != "":
+                authority += " "
+            authority+="asset_super"
+        if authority == "":
+            authority = "staff"
+        is_active = ""
+        if self.active:
+            is_active="未被锁定"
+        else:
+            is_active="锁定"
+        return {
+            "username": self.username,
+            "entity": self.entity.name,
+            "department": self.department.name,
+            "active_str": is_active,
+            "active": self.active,
+            "authority": authority, 
+            "token": self.token,
+        }
     
     def check_authen(self):
         if self.system_super == True:

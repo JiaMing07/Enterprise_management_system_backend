@@ -3,13 +3,27 @@ from utils.utils_request import return_field
 
 # Create your models here.
 from mptt.models import MPTTModel, TreeForeignKey
+from utils.utils_request import return_field
 
 class Entity(models.Model):
     id = models.BigAutoField(primary_key=True)
-    name = models.CharField(max_length=128, unique=True)
+    name = models.CharField(max_length=128)
 
     def serialize(self):
         departments = Department.objects.filter(entity=self)
+        return {
+            "id": self.id, 
+            "name": self.name, 
+            "departments": [ return_field(department.serialize(), ["id", "departmentName", "entityName", "parentName"])
+                       for department in departments ]
+        }
+    
+    def __str__(self) -> str:
+        return self.name
+
+    def serialize(self):
+        departments = Department.objects.filter(entity=self)
+        departments = departments.exclude(name=self.name)
         return {
             "id": self.id, 
             "name": self.name, 

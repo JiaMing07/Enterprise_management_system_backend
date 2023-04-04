@@ -8,6 +8,7 @@ from utils.utils_request import BAD_METHOD, request_failed, request_success, ret
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
 from utils.utils_time import get_timestamp
 from utils.utils_getbody import get_args
+from utils.utils_checklength import checklength
 from eam_backend.settings import SECRET_KEY
 import jwt
 
@@ -45,7 +46,13 @@ def login_normal(req: HttpRequest):
                 if user.token == '':
                     user.token = user.generate_token()
                     user.save()
-                    return request_success(data={'token': user.token})
+                    return request_success(data={'token': user.token,
+                                                'system_super':user.system_super, 
+                                                'entity_super': user.entity_super,
+                                                'asset_super': user.asset_super,
+                                                'department': user.department.name,
+                                                'entity': user.entity.name,
+                                                'active': user.active})
                 else:
                     return request_failed(1, "用户已登录", status_code=403)
             else:
@@ -58,6 +65,9 @@ def user_add(req: HttpRequest):
     if req.method == 'POST':
         body = json.loads(req.body.decode("utf-8"))
         user_name, entity_name, department_name, authority, password  = get_args(body, ['name', 'entity', 'department', 'authority', 'password'], ['string','string','string','string','string'])
+        checklength(user_name, 0, 50, "username")
+        checklength(entity_name, 0, 50, "entity_name")
+        checklength(department_name, 0, 30, "department_name")
         user = User.objects.filter(username=user_name).first()
         is_system_super = False
         is_entity_super = False
@@ -65,9 +75,9 @@ def user_add(req: HttpRequest):
         if user is not None:
             return request_failed(1, "用户名已存在", status_code=403)
         entity = Entity.objects.filter(name=entity_name).first()
-        department = Department.objects.filter(name=department_name).first()
         if not entity:
             return request_failed(1, "企业实体不存在",status_code=403)
+        department = Department.objects.filter(entity=entity).filter(name=department_name).first()
         if not department:
             return request_failed(1, "部门不存在",status_code=403)
         if authority == "system_super":
@@ -76,12 +86,12 @@ def user_add(req: HttpRequest):
                 return request_failed(2, "不可设置此权限",status_code=403)
             is_system_super = True
         elif authority == "entity_super":
-            user = User.objects.filter(entity_super=True).first()
+            user = User.objects.filter(entity=entity).filter(entity_super=True).first()
             if user is not None:
                 return request_failed(2, "不可设置此权限",status_code=403)
             is_entity_super = True
         elif authority == "asset_super":
-            user = User.objects.filter(asset_super=True).first()
+            user = User.objects.filter(entity=entity).filter(department=department).filter(asset_super=True).first()
             if user is not None:
                 return request_failed(2, "不可设置此权限",status_code=403)
             is_asset_super = True
@@ -97,9 +107,11 @@ def user_add(req: HttpRequest):
 @CheckRequire
 def logout_normal(req: HttpRequest):
     if req.method == 'POST':
+        user = req.user
         body = json.loads(req.body.decode("utf-8"))
         user_name = get_args(body, ['username'], ['string'])
         username = user_name[0]
+        checklength(username, 0, 50, "username")
         user = User.objects.filter(username=username).first()
         if user is not None:
             if user.token != '':
@@ -119,15 +131,15 @@ def user_lock(req: HttpRequest):
         body = json.loads(req.body.decode("utf-8"))
         user_name = require(body, "username", "string", err_msg="Missing or error type of [username]")
         active = require(body, "active", "int", err_msg="Missing or error type of [active]")
-
+        checklength(user_name, 0, 50, "username")
         user = User.objects.filter(username=user_name).first()
         if user is None:
             return request_failed(1, "用户不存在", status_code=404)
-        if active is 1:
+        if active == 1:
             if user.active is True:
                 return request_failed(2, "用户已解锁", status_code=400)
             user.active = True
-        elif active is 0:
+        elif active == 0:
             if user.active is False:
                 return request_failed(2, "用户已锁定", status_code=400)
             user.active = False
@@ -138,45 +150,47 @@ def user_lock(req: HttpRequest):
     else:
         return BAD_METHOD
 
+    
 @CheckRequire
 def user_edit(req: HttpRequest):
     if req.method == 'POST':
         body = json.loads(req.body.decode("utf-8"))
-        user_name, pwd, pwd_new, department_name, authority = get_args(body, ['name', 'password', 'new_password', 'department', 'authority'], ['string','string','string','string', 'string'])
+        user_name = json.loads(req.body.decode("utf-8")).get('username')
+        password = json.loads(req.body.decode("utf-8")).get('password')
+        department_name = json.loads(req.body.decode("utf-8")).get('department')
+        authority = json.loads(req.body.decode("utf-8")).get('authority')
 
         user = User.objects.filter(username=user_name).first()
 
         if user is None:
             return request_failed(1, "用户不存在", status_code=404)
-        if not user.check_password(pwd):
-            return request_failed(2, "密码不正确", status_code=401)
-        
+    
         # 有修改password的需求
-        if pwd_new is not None:
+        if password is not None:
             # check format
-            pwd_new = require(body, "new_password", "string", err_msg="Missing or error type of [new password]")
-            
+            password = require(body, "password", "string", err_msg="Missing or error type of [new password]")
+
             # encryption
             md5 = hashlib.md5()
-            md5.update(pwd_new.encode('utf-8'))
+            md5.update(password.encode('utf-8'))
             new_pwd = md5.hexdigest()
 
             # if same with old one
             if user.check_password(new_pwd):
-                return request_failed(2, "与原密码相同", status_code=205)
+                return request_failed(3, "与原密码相同", status_code=205)
             else:
                 user.password = new_pwd
 
         # 有修改authority的需求
         if authority is not None:
             ### 目前未考虑各种管理员最多有多少人
-
             # check format
-            if authority != ("system_super" or "entity_super" or "asset_super"):
+            auth = ["system_super", "entity_super", "asset_super", "staff"]
+            if authority not in auth:
                 return request_failed(1, "身份不存在", status_code=403)
             # if same with old one
             if authority == user.check_authen():
-                return request_failed(2, "新身份与原身份相同", status_code=205)
+                return request_failed(3, "新身份与原身份相同", status_code=205)
             # diff then change
             else:
                 user.system_super, user.entity_super, user.asset_super = user.set_authen(authority=authority)
@@ -184,19 +198,18 @@ def user_edit(req: HttpRequest):
         # 有修改department的需求
         if department_name is not None:
             # check format
-            department = Department.objects.filter(name=department_name).first()
+            department = Department.objects.filter(name=department_name).filter(entity=user.entity).first()
             if not department:
                 return request_failed(1, "部门不存在", status_code=403)
             # if same with old one
-            if department_name == user.department:
-                return request_failed(2, "与原部门相同", status_code=205)
+            if department_name == user.department.name:
+                return request_failed(3, "与原部门相同", status_code=205)
             # diff then change
             else:
-                user.department = department_name
+                user.department = department
         
         user.save()
         return request_success()
-    
     else:
         return BAD_METHOD
     
@@ -208,7 +221,7 @@ def user_list(req: HttpRequest):
         for entity in entities:
             users = User.objects.filter(entity=entity)
             for user in users:
-                user_list.append(return_field(user.serialize(), ["username", "entity", "department", "active"]))
+                user_list.append(return_field(user.serialize(), ["username", "entity", "department", "active", "authority"]))
         return_data = {
             "users": user_list,
         }

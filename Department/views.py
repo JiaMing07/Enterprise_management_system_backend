@@ -32,17 +32,20 @@ def add_department(req: HttpRequest):
         checklength(entity_name, 0, 50, "entity_name")
         checklength(department_name, 0, 30, "department_name")
         checklength(parent_name, -1, 30, "parent_name")
+        print(Entity.objects.filter(name='entity_2'))
         entity = Entity.objects.filter(name = entity_name).first()
-        parent = Department.objects.filter(name=parent_name).first()
-        if parent_name == "":
-            parent = Department.objects.filter(id=1).first()
         if entity is None:
             return request_failed(1, "企业实体不存在", status_code=403)
+        if parent_name == "":
+            parent_name = entity_name
+            parent = Department.objects.filter(name=entity_name).first()
+            if parent is None:
+                parent = Department(name=entity_name, entity=entity, parent=Department.root())
+                parent.save()
+        parent = Department.objects.filter(entity=entity).filter(name=parent_name).first()
         if parent is None:
             return request_failed(1, "父部门不存在", status_code=403)
-        if parent.entity.name != entity.name:
-            return request_failed(2, "父部门不属于该企业实体", status_code=403)
-        department = Department.objects.filter(name=department_name).first()
+        department = Department.objects.filter(entity=entity).filter(name=department_name).first()
         if department is not None:
             return request_failed(1, "该部门已存在", status_code=403)
         department = Department(name=department_name, entity=entity, parent=parent)
@@ -101,3 +104,22 @@ def entity_entityName_department_list(req: HttpRequest, entityName: any):
 
     else:
         return BAD_METHOD
+
+@CheckRequire
+def entity_entity_name_list(req: HttpRequest,entity_name: str):
+    if req.method == 'GET':
+        if not 0 < len(entity_name) <=50:
+            return request_failed(-2, "Bad length of [entity_name]", status_code=400)
+        entity = Entity.objects.filter(name=entity_name).first()
+        if entity is not None:
+            users = User.objects.filter(entity=entity)
+            user_list = []
+            for user in users:
+                user_list.append(return_field(user.serialize(), ['username', 'department', 'active', 'authority']))
+            return request_success({
+                'name':entity_name,
+                'user_list': user_list
+            })
+        else:
+            return request_failed(-2, "企业实体不存在", status_code=403)
+    return BAD_METHOD
