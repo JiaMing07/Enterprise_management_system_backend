@@ -155,6 +155,9 @@ class UserTests(TestCase):
     def post_user_list(self):
         return self.client.post(f"/user/list")
     
+    def delete_user_userName(self, userName):
+        return self.client.delete(f"/user/{userName}")
+    
     # Now start testcases. 
 
     # Repeat the login
@@ -417,3 +420,42 @@ class UserTests(TestCase):
 
         self.assertEqual(res.json()['code'], -3)
         self.assertEqual(res.json()['info'], 'Bad method')
+
+    def test_delete_user_userName(self):
+        username = 'Bob'
+        entity = 'ent'
+        department = 'dep'
+        authority = 'entity_super'
+        password = '456'
+
+        res = self.post_user_add(username, entity, department, authority, password)
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.post_user_login_normal(username, password)
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.post_user_logout_normal(username)
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.delete_user_userName(username)
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.delete_user_userName(username)
+        self.assertEqual(res.json()['code'], 1)
+        self.assertEqual(res.status_code, 404)
+
+        res = self.post_user_login_normal(username, password)
+        self.assertEqual(res.json()['code'], 2)
+
+        authority = 'system_super'
+        res = self.post_user_add(username, entity, department, authority, password)
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.delete_user_userName(username)
+        self.assertEqual(res.json()['code'], 2)
+        self.assertEqual(res.status_code, 403)
+
+        username = 'a' * 51
+        res = self.delete_user_userName(username)
+        self.assertEqual(res.json()['code'], -2)
+        self.assertEqual(res.status_code, 400)
