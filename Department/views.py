@@ -84,7 +84,7 @@ def entity_entityName_department_list(req: HttpRequest, entityName: any):
                 break
             else:
                 department = parent
-        department_dict = {}
+        department_list = []
         queue = []
         queue.append(department)
         while len(queue) != 0:
@@ -94,11 +94,15 @@ def entity_entityName_department_list(req: HttpRequest, entityName: any):
             for child in children_dep:
                 queue.append(child)
                 children_dep_name.append(child.name)
-            department_dict[dep.name] = children_dep_name
+            department_data = {
+                "departmentName": dep.name,
+                "sub-departments": children_dep_name,
+            }
+            department_list.append(department_data) 
 
         return_data = {
             "entityName": entityName,
-            "departments": department_dict,
+            "departments": department_list,
         }
         return request_success(return_data)
 
