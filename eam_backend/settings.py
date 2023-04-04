@@ -106,7 +106,6 @@ elif env["database"]["type"] == "postgreSQL":
             "PASSWORD": "bughunters",
             "HOST": "postgreSQL.BugHunters.secoder.local",
             "PORT": 5432,
-            "OPTIONS": {"charset": "utf8"},
             "TEST":{
                 'NAME': 'mytestdatabase',
             },
