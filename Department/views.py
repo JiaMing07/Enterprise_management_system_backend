@@ -80,7 +80,7 @@ def entity_entityName_department_list(req: HttpRequest, entityName: any):
         department = Department.objects.filter(entity=entity).first()
         while True:
             parent = department.get_ancestors(ascending=True).first()
-            if parent.entity != entity:
+            if (parent is None or parent.entity != entity):
                 break
             else:
                 department = parent
