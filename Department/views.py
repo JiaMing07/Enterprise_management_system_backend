@@ -102,3 +102,34 @@ def entity_entity_name_list(req: HttpRequest,entity_name: str):
         else:
             return request_failed(-2, "企业实体不存在", status_code=403)
     return BAD_METHOD
+
+@CheckRequire
+def department_delete(req: HttpRequest):
+    
+    if req.method == 'DELETE':
+        # check for correct format
+        body = json.loads(req.body.decode("utf-8"))
+        entity_name, department_name = get_args(body, ["entity", "department"], ["string", "string"])
+        assert 0 < len(department_name) <= 30, "Bad length of [department_name]"
+        assert 0 < len(entity_name) <= 50, "Bad length of [entity_name]"
+
+        # filter entity
+        entity = Entity.objects.filter(name=entity_name).first()
+        if entity is None:
+            return request_failed(1, "企业实体不存在", status_code=403)
+        if entity.name == 'admin_entity':
+            return request_failed(2, "不可删除超级管理员所在的企业实体", status_code=403)
+
+        # filter department
+        department_ = Department.objects.filter(name=department_name).filter(entity=entity).first()
+        if department_ is None:
+            return request_failed(1, "部门不存在", status_code=403)
+        if department_.name == 'admin_department':
+            return request_failed(2, "不可删除超级管理员所在的部门", status_code=403)
+        
+        # delete
+        department_.delete()
+        return request_success()
+
+    else:
+        return BAD_METHOD
