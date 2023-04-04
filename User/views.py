@@ -9,6 +9,7 @@ from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
 from utils.utils_time import get_timestamp
 from utils.utils_getbody import get_args
 from utils.utils_checklength import checklength
+from utils.utils_checkauthority import CheckAuthority, CheckToken
 from eam_backend.settings import SECRET_KEY
 import jwt
 
@@ -229,6 +230,7 @@ def user_list(req: HttpRequest):
 @CheckRequire
 def user_menu(req: HttpRequest):
     if req.method == 'POST':
+        CheckAuthority(req, "entity_super")
         body = json.loads(req.body.decode("utf-8"))
         first, second, authority, url = get_args(body, ["first", "second", "authority", "url"], ["string", "string", "string", "string"])
         checklength(first, 0, 50, "first")
@@ -253,27 +255,18 @@ def user_menu(req: HttpRequest):
         menu.save()
         return request_success()
     elif req.method == 'GET':
-        # cookies = req.COOKIES['Token']
-        try:
-            token = req.COOKIES['Token']
-        except KeyError:
-            return 'Token未给出'
-        try:
-            decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
-        except jwt.ExpiredSignatureError:
-            return 'Token已过期'
-        except jwt.InvalidTokenError:
-            return 'Token不合法'
+        CheckToken(req)
+        token = req.COOKIES['token'] 
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         user: User = User.objects.get(username=decoded['username'])
         if user.token != token:
-            return '用户不在线'
+            return request_failed(-6, "用户不在线", status_code=403)
         authority = user.check_authen()
         if authority == 'entity_super':
             menu_list = Menu.objects.filter(entity_show=True)
         elif authority == 'asset_super':
             menu_list = Menu.objects.filter(asset_show=True)
         elif authority == 'staff':
-            print("staff")
             menu_list = Menu.objects.filter(staff_show=True)
         return_data = {
             "menu": [menu.serialize() for menu in menu_list]

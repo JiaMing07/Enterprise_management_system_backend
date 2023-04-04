@@ -517,6 +517,7 @@ class UserTests(TestCase):
         first = 'f' * 51
         res = self.post_user_menu(first, second, url, authority)
         self.assertEqual(res.json()['code'], -2)
+
         # method= GET
         username = 'Alice'
         password='123'
@@ -527,14 +528,47 @@ class UserTests(TestCase):
         c = cookies.SimpleCookie()
         c['Token'] = Token
         self.client.cookies = c
-        print(Token)
         res = self.get_user_menu()
 
         self.assertEqual(res.json()['code'], 0)
         get_list = res.json()['menu']
         menu_list = Menu.objects.filter(staff_show=True)
         index=0
-        print(get_list)
         for menu in get_list:
             self.assertEqual(menu['first'], menu_list[index].first)
             self.assertEqual(menu['second'], menu_list[index].second)
+
+        # check entity_super
+        authority = 'entity_super'
+        user.system_super, user.entity_super, user.asset_super = user.set_authen(authority=authority)
+        user.save()
+        res = self.get_user_menu()
+
+        self.assertEqual(res.json()['code'], 0)
+        get_list = res.json()['menu']
+        menu_list = Menu.objects.filter(entity_show=True)
+        index=0
+        for menu in get_list:
+            self.assertEqual(menu['first'], menu_list[index].first)
+            self.assertEqual(menu['second'], menu_list[index].second)
+
+        # check asset_super
+        authority = 'asset_super'
+        user.system_super, user.entity_super, user.asset_super = user.set_authen(authority=authority)
+        user.save()
+        res = self.get_user_menu()
+
+        self.assertEqual(res.json()['code'], 0)
+        get_list = res.json()['menu']
+        menu_list = Menu.objects.filter(asset_show=True)
+        index=0
+        print(get_list)
+        print('-------')
+        print(menu_list)
+        for menu in get_list:
+            self.assertEqual(menu['first'], menu_list[index].first)
+            print(f"{menu['first']} {menu_list[index].first}")
+            print(f"{menu['second']} {menu_list[index].second}")
+            self.assertEqual(menu['second'], menu_list[index].second)
+            index += 1
+            # print(f"{menu['second']} {menu_list[index].second}")
