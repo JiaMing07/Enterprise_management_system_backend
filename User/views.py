@@ -181,16 +181,25 @@ def user_edit(req: HttpRequest):
         # 有修改authority的需求
         if authority is not None:
             ### 目前未考虑各种管理员最多有多少人
+            # system_super = 1, entity_super = 1/entity, asset_super = n, staff = n
+            
             # check format
             auth = ["system_super", "entity_super", "asset_super", "staff"]
             if authority not in auth:
                 return request_failed(1, "身份不存在", status_code=403)
+            
             # if same with old one
             if authority == user.check_authen():
                 return request_failed(3, "新身份与原身份相同", status_code=205)
+            
+            # check one entity_super
+            if authority == "entity_super":
+                has_entity = User.objects.filter(entity=user.entity).filter(entity_super=True).first()
+                if has_entity:
+                    return request_failed(4, "该企业已存在系统管理员", status_code=205)
+
             # diff then change
-            else:
-                user.system_super, user.entity_super, user.asset_super = user.set_authen(authority=authority)
+            user.system_super, user.entity_super, user.asset_super = user.set_authen(authority=authority)
 
         # 有修改department的需求
         if department_name is not None:

@@ -393,6 +393,23 @@ class UserTests(TestCase):
         res = self.post_user_edit(username, password, department, authority)
         self.assertEqual(res.json()['code'], 3)
 
+        # entity_super can only be 1
+        username = 'Camellia'
+        entity = 'ent'
+        department = 'dep'
+        authority = 'asset_super'
+        password = '456'
+        res = self.post_user_add(username, entity, department, authority, password)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        username = 'Camellia'
+        password = None
+        department = None
+        authority = 'entity_super'
+        res = self.post_user_edit(username, password, department, authority)
+        self.assertEqual(res.json()['code'], 4)
+
         # authority success
         username = 'Bob'
         password = None
