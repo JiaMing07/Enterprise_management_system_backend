@@ -102,9 +102,9 @@ elif env["database"]["type"] == "postgreSQL":
         "default": {
             "ENGINE": "django.db.backends.postgresql",
             "NAME": "PROJECT_DATABASE",
-            "USER": "root",
+            "USER": "PROJECT_DATABASE",
             "PASSWORD": "bughunters",
-            "HOST": "django.db.backends.postgresql.BugHunters.secoder.local",
+            "HOST": "postgreSQL.BugHunters.secoder.local",
             "PORT": 5432,
             "OPTIONS": {"charset": "utf8"},
             "TEST":{

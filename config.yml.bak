@@ -3,5 +3,5 @@ database:
     host: "postgreSQL.BugHunters.secoder.local"
     port: 5432
     name: "PROJECT_DATABASE"
-    user: "root"
+    user: "PROJECT_DATABASE"
     password: "bughunters"
