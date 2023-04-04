@@ -175,8 +175,14 @@ class UserTests(TestCase):
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post("/user/menu", data=payload, content_type="application/json")
     
-    def delete_user_menu(self):
-        return self.client.delete("/user/menu")
+    def delete_user_menu(self, first, second):
+        payload = {
+            'first': first,
+            'second': second,
+        }
+
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.delete("/user/menu", data=payload, content_type="application/json")
     
     # Now start testcases. 
 
@@ -482,7 +488,7 @@ class UserTests(TestCase):
         self.assertEqual(res.json()['info'], 'Bad method')
 
     def test_user_menu(self):
-        user = User.objects.filter(username='Alice').first()
+        user = User.objects.filter(username='test_user').first()
         user.token = user.generate_token()
         user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
         user.save()
@@ -632,4 +638,24 @@ class UserTests(TestCase):
             self.assertEqual(menu['first'], menu_list[index].first)
             self.assertEqual(menu['second'], menu_list[index].second)
             index += 1
-            # print(f"{menu['second']} {menu_list[index].second}")
+            
+        # method delete
+        # add 2 menu
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+        first = 'f_2'
+        second = ''
+        url = 'test'
+        authority = 'entity_super/asset_super'
+
+        res = self.post_user_menu(first, second, url, authority)
+        self.assertEqual(res.json()['code'], 0)
+
+        first = 'f_2'
+        second = 's_1'
+        url = 'test'
+        authority = 'entity_super/asset_super'
+
+        res = self.post_user_menu(first, second, url, authority)
+        self.assertEqual(res.json()['code'], 0)
+
