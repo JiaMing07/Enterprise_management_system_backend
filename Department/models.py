@@ -60,5 +60,14 @@ class Department(MPTTModel):
     
     def __str__(self) -> str:
         return f"{self.entity.name}'s department {self.name}"
-
-
+    
+    def sub_tree(self):
+        children_list = []
+        children = self.get_children()
+        for child in children:
+            children_list.append(child.sub_tree())
+        
+        return {
+            "departmentName": self.name,
+            "sub-departments": children_list,
+        }

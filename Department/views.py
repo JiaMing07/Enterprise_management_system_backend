@@ -84,25 +84,10 @@ def entity_entityName_department_list(req: HttpRequest, entityName: any):
                 break
             else:
                 department = parent
-        department_list = []
-        queue = []
-        queue.append(department)
-        while len(queue) != 0:
-            dep = queue.pop(0)
-            children_dep = dep.get_children()
-            children_dep_name = []
-            for child in children_dep:
-                queue.append(child)
-                children_dep_name.append(child.name)
-            department_data = {
-                "departmentName": dep.name,
-                "sub-departments": children_dep_name,
-            }
-            department_list.append(department_data) 
 
         return_data = {
             "entityName": entityName,
-            "departments": department_list,
+            "departments": department.sub_tree(),
         }
         return request_success(return_data)
 
