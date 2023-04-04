@@ -1,5 +1,5 @@
 database:
-    type: "sqlite3" 
+    type: "postgreSQL" 
     host: "postgreSQL.BugHunters.secoder.local"
     port: 5432
     name: "PROJECT_DATABASE"
