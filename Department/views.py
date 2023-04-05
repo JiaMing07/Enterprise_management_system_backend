@@ -109,8 +109,8 @@ def entity_entity_name_list(req: HttpRequest,entity_name: str):
 
 @CheckRequire
 def department_delete(req: HttpRequest):
-    
     if req.method == 'DELETE':
+        CheckAuthority(req, "entity_super")
         # check for correct format
         entity_name = json.loads(req.body.decode("utf-8")).get('entity')
         department_name = json.loads(req.body.decode("utf-8")).get('department')

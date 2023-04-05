@@ -272,6 +272,15 @@ class DepartmentTests(TestCase):
         self.assertEqual(res.json()['info'], 'Bad method')
 
     def test_department_delete(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("system_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
         entity_name = 'en0'
         department_name = 'de0'
         parent_name = ''
@@ -281,6 +290,8 @@ class DepartmentTests(TestCase):
         self.assertEqual(res.json()['code'], 0)
 
         # add department
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
         res = self.post_department_add(department_name, entity_name, parent_name)
         self.assertEqual(res.json()['code'], 0)
 
@@ -311,10 +322,14 @@ class DepartmentTests(TestCase):
         self.assertEqual(res.json()['code'], 1)
 
         # admin_entity, 2
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("system_super")
+        user.save()
         entity_name = 'admin_entity'
         res = self.post_entity_add(entity_name)
         self.assertEqual(res.json()['code'], 0)
 
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
         department_name = 'de1'
         res = self.delete_department(entity_name, department_name)
         self.assertEqual(res.json()['code'], 2)
