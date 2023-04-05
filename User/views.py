@@ -84,14 +84,14 @@ def user_add(req: HttpRequest):
                 return request_failed(2, "不可设置此权限",status_code=403)
             is_system_super = True
         elif authority == "entity_super":
-            CheckAuthority(req, "system_super")
+            CheckAuthority(req, ["system_super"])
             user = User.objects.filter(entity=entity).filter(entity_super=True).first()
             if user is not None:
                 return request_failed(2, "不可设置此权限",status_code=403)
             department_name = entity_name
             is_entity_super = True
         elif authority == "asset_super":
-            CheckAuthority(req, "entity_super")
+            CheckAuthority(req, ["entity_super"])
             is_asset_super = True
         department = Department.objects.filter(entity=entity).filter(name=department_name).first()
         if not department:
@@ -129,7 +129,7 @@ def logout_normal(req: HttpRequest):
 @CheckRequire
 def user_lock(req: HttpRequest):
     if req.method == 'POST':
-        CheckAuthority(req, "entity_super")
+        CheckAuthority(req, ["entity_super"])
         body = json.loads(req.body.decode("utf-8"))
         user_name = require(body, "username", "string", err_msg="Missing or error type of [username]")
         active = require(body, "active", "int", err_msg="Missing or error type of [active]")
@@ -156,7 +156,6 @@ def user_lock(req: HttpRequest):
 @CheckRequire
 def user_edit(req: HttpRequest):
     if req.method == 'POST':
-        CheckAuthority(req, "entity_super")
         body = json.loads(req.body.decode("utf-8"))
         user_name = json.loads(req.body.decode("utf-8")).get('username')
         password = json.loads(req.body.decode("utf-8")).get('password')
@@ -167,7 +166,10 @@ def user_edit(req: HttpRequest):
 
         if user is None:
             return request_failed(1, "用户不存在", status_code=404)
-    
+        if user.entity_super:
+            CheckAuthority(req, ["system_super"])
+        else:
+            CheckAuthority(req, ["entity_super"])
         # 有修改password的需求
         if password is not None:
             # check format
@@ -244,7 +246,7 @@ def user_list(req: HttpRequest):
 @CheckRequire
 def user_menu(req: HttpRequest):
     if req.method == 'POST':
-        CheckAuthority(req, "entity_super")
+        CheckAuthority(req, ["entity_super"])
         body = json.loads(req.body.decode("utf-8"))
         first, second, authority, url = get_args(body, ["first", "second", "authority", "url"], ["string", "string", "string", "string"])
         checklength(first, 0, 50, "first")
@@ -287,7 +289,7 @@ def user_menu(req: HttpRequest):
         }
         return request_success(return_data)
     elif req.method == 'DELETE':
-        CheckAuthority(req, "entity_super")
+        CheckAuthority(req, ["entity_super"])
         body = json.loads(req.body.decode("utf-8"))
         first, second= get_args(body, ["first", "second"], ["string", "string"])
         checklength(first, 0, 50, "first")
