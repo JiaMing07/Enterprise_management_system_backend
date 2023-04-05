@@ -67,6 +67,23 @@ class DepartmentTests(TestCase):
     def post_entity_name_list(self, entity_name):
         return self.client.post(f"/entity/{entity_name}/list")
     
+    def get_entity_entityName_entitySuper(self, entityName):
+        return self.client.get(f"/entity/{entityName}/entitySuper")
+    
+    def post_user_add(self, name, entity, department, authority, password):
+        payload = {
+            'name': name,
+            'entity': entity,
+            'department': department,
+            'authority': authority,
+            'password': password
+        }
+
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.post("/user/add", data=payload, content_type="application/json")
+    
+    # Now start testcases. 
+    
     def delete_department(self, entity_name, department_name):
         payload = {
             'entity': entity_name,
@@ -270,6 +287,37 @@ class DepartmentTests(TestCase):
         res = self.post_entity_name_list(entityName)
         self.assertEqual(res.json()['code'], -3)
         self.assertEqual(res.json()['info'], 'Bad method')
+
+    def test_get_entity_entityName_entitySuper(self):
+        entity = 'en'
+        res = self.get_entity_entityName_entitySuper(entity)
+        self.assertEqual(res.json()['code'], 2)
+        self.assertEqual(res.status_code, 404)
+
+        username = 'Bob'
+        entity = 'en'
+        department = 'dep'
+        authority = 'entity_super'
+        password = '456'
+
+        res = self.post_user_add(username, entity, department, authority, password)
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.get_entity_entityName_entitySuper(entity)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['username'], 'Bob')
+
+        entity = 'en1'
+        res = self.get_entity_entityName_entitySuper(entity)
+        self.assertEqual(res.json()['code'], 1)
+        self.assertEqual(res.status_code, 404)
+
+        entity = 'a' * 51
+        res = self.get_entity_entityName_entitySuper(entity)
+        self.assertEqual(res.json()['code'], -2)
+        self.assertEqual(res.status_code, 400)
+
 
     def test_department_delete(self):
         user = User.objects.filter(username='test_user').first()

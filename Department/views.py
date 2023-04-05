@@ -118,6 +118,21 @@ def entity_entity_name_list(req: HttpRequest,entity_name: str):
     return BAD_METHOD
 
 @CheckRequire
+def entity_entityName_entitySuper(req: HttpRequest, entityName: str):
+    checklength(entityName, 0, 50, "entityName")
+    if req.method == 'GET':
+        entity = Entity.objects.filter(name=entityName).first()
+        if entity:
+            user = User.objects.filter(entity=entity, entity_super=True).first()
+            if user:
+                return_data = return_field(user.serialize(), ['username', 'entity', 'department', 'active'])
+                return request_success(return_data)
+            else:
+                return request_failed(2, "企业未设置企业管理员", status_code=404)
+        else:
+            return request_failed(1, "entity not found", status_code=404)
+    return BAD_METHOD
+@CheckRequire
 def department_delete(req: HttpRequest):
     if req.method == 'DELETE':
         CheckAuthority(req, ["entity_super"])
