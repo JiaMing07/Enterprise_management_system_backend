@@ -703,3 +703,22 @@ class UserTests(TestCase):
         res = self.post_user_menu(first, second, url, authority)
         self.assertEqual(res.json()['code'], 0)
 
+        first = 'f_3'
+        second = ''
+        res = self.delete_user_menu(first, second)
+        self.assertEqual(res.json()['code'], 1)
+        self.assertEqual(res.json()['info'], '一级菜单不存在')
+
+        first = 'f_2'
+        second = 's_2'
+        res = self.delete_user_menu(first, second)
+        self.assertEqual(res.json()['code'], 2)
+        self.assertEqual(res.json()['info'], '二级菜单不存在')
+
+        second = 's_1'
+        res = self.delete_user_menu(first, second)
+        self.assertEqual(res.json()['code'], 0)
+
+        second = ''
+        res = self.delete_user_menu(first, second)
+        self.assertEqual(res.json()['code'], 0)
