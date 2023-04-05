@@ -97,6 +97,20 @@ if env["database"]["type"] == "mysql":
             "OPTIONS": {"charset": "utf8mb4"},
         },
     }
+elif env["database"]["type"] == "postgreSQL":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": "PROJECT_DATABASE",
+            "USER": "PROJECT_DATABASE",
+            "PASSWORD": "bughunters",
+            "HOST": "postgreSQL.BugHunters.secoder.local",
+            "PORT": 5432,
+            "TEST":{
+                'NAME': 'mytestdatabase',
+            },
+        },
+    }
 else:
     DATABASES = {
         'default': {

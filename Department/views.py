@@ -9,10 +9,12 @@ from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
 from utils.utils_time import get_timestamp
 from utils.utils_getbody import get_args
 from utils.utils_checklength import checklength
+from utils.utils_checkauthority import CheckAuthority, CheckToken
 
 @CheckRequire
 def add_entity(req: HttpRequest):
     if req.method == 'POST':
+        CheckAuthority(req, "system_super")
         body = json.loads(req.body.decode("utf-8"))
         entity_name = get_args(body, ["name"], ['string'])[0]
         checklength(entity_name, 0, 50, "entity_name")
@@ -21,18 +23,20 @@ def add_entity(req: HttpRequest):
             return request_failed(1, "企业实体已存在", status_code=403)
         entity = Entity(name=entity_name)
         entity.save()
+        department = Department(name=entity_name, entity=entity, parent=Department.root())
+        department.save()
         return request_success() 
     return BAD_METHOD
 
 @CheckRequire
 def add_department(req: HttpRequest):
     if req.method == 'POST':
+        CheckAuthority(req, "entity_super")
         body = json.loads(req.body.decode("utf-8"))
         entity_name, department_name, parent_name = get_args(body, ["entity", "department", "parent"], ["string", "string", "string"])
         checklength(entity_name, 0, 50, "entity_name")
         checklength(department_name, 0, 30, "department_name")
         checklength(parent_name, -1, 30, "parent_name")
-        print(Entity.objects.filter(name='entity_2'))
         entity = Entity.objects.filter(name = entity_name).first()
         if entity is None:
             return request_failed(1, "企业实体不存在", status_code=403)
@@ -102,3 +106,18 @@ def entity_entity_name_list(req: HttpRequest,entity_name: str):
         else:
             return request_failed(-2, "企业实体不存在", status_code=403)
     return BAD_METHOD
+
+@CheckRequire
+def entity_delete(req: HttpRequest, entity_name: str):
+    if req.method == 'DELETE':
+        CheckAuthority(req, "system_super")
+        checklength(entity_name,0, 50, "entity_name")
+        entity = Entity.objects.filter(name=entity_name).first()
+        if entity is None:
+            return request_failed(1, "企业实体不存在", status_code=403)
+        if entity.name == 'admin_entity':
+            return request_failed(2, "不可删除超级管理员所在的企业实体", status_code=403)
+        entity.delete()
+        return request_success()
+    else:
+        return BAD_METHOD

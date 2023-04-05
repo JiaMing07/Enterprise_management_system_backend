@@ -41,7 +41,7 @@ def add_users():
     else:
         entity = Entity.objects.filter(name='entity_1').first()
     if not Department.objects.filter(entity=entity).filter(name='department_1').exists():
-        parent = Department.objects.filter(name='entity_1')
+        parent = Department.objects.filter(name='entity_1').first()
         if not parent:
             parent = Department(name='entity_1', parent=Department.root(), entity=entity)
             parent.save()
@@ -64,6 +64,23 @@ def add_users():
         user_2 =  User(username='Bob', password=password, department=department, entity=entity)
         user_2.save()
 
+def add_menu():
+    from Department.models import Department, Entity
+    from .models import User, Menu
+    if not Menu.objects.filter(first='首页').filter(second='').exists():
+        menu_1 = Menu(first="首页",second="",url="https://eam-frontend-bughunters.app.secoder.net/super_manager")
+        menu_1.save()
+    if not Menu.objects.filter(first='用户管理').filter(second='').exists():
+        menu_2 = Menu(first="用户管理",second="",url="https://eam-frontend-bughunters.app.secoder.net/user_manage", entity_show=True)
+        menu_2.save()
+    if not Menu.objects.filter(first='资产管理').filter(second='').exists():
+        menu_3 = Menu(first="资产管理", second="", url="https://eam-frontend-bughunters.app.secoder.net",asset_show=True)
+        menu_3.save()
+    if not Menu.objects.filter(first='查看事项').filter(second='审批情况').exists():
+        menu_4 = Menu(first="查看事项", second="审批情况", url="https://eam-frontend-bughunters.app.secoder.net/asset",staff_show=True)
+        menu_4.save()
+
+
 class UserConfig(AppConfig):
     name = 'User'
 
@@ -74,5 +91,6 @@ class UserConfig(AppConfig):
             init_department()
             admin_user()
             add_users()
+            add_menu()
         except (OperationalError, IntegrityError):
             pass

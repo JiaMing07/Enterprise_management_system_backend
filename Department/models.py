@@ -33,6 +33,7 @@ class Entity(models.Model):
     
     def __str__(self) -> str:
         return self.name
+    
 
 class Department(MPTTModel):
     ''' department of an employer'''

@@ -43,8 +43,10 @@ unit-test:
     # TODO End: [Student] Install dependencies
   script:
     # TODO Start: [Student] Migrate and run tests
-    # - python3 manage.py makemigrations board
-    # - python3 manage.py migrate
+    - python3 manage.py makemigrations
+    # - python3 manage.py makemigrations Department
+    - python3 manage.py migrate
+    - python manage.py createcachetable
     - sh ./test.sh
     # TODO End: [Student] Migrate and run tests
   after_script:

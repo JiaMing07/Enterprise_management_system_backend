@@ -15,7 +15,7 @@ class User(models.Model):
     '''
     username = models.CharField(max_length=50, primary_key=True, unique=True, verbose_name='用户名')
     password = models.CharField(max_length = 50, default='123456')
-    department = models.ForeignKey(Department, on_delete=models.SET(Department.root))
+    department = models.ForeignKey(Department, on_delete=models.CASCADE)
     entity = models.ForeignKey(Entity, on_delete=models.CASCADE)
     active = models.BooleanField(auto_created=True, default=True)
     token = models.CharField(max_length=200, auto_created=True, default='', blank=True)
@@ -88,4 +88,44 @@ class User(models.Model):
         elif authority == "asset_super":
             is_asset_super = True
         return is_system_super, is_entity_super, is_asset_super
+    
+class Menu(models.Model):
+    '''
+    menu
+    '''
+    id = models.BigAutoField(primary_key=True)
+    first = models.CharField(max_length=50)
+    second = models.CharField(max_length=50)
+    url = models.CharField(max_length=500,default='')
+    entity_show = models.BooleanField(default=False)
+    asset_show = models.BooleanField(default=False)
+    staff_show = models.BooleanField(default=False)
+
+    def __str__(self) -> str:
+        return f'{self.first}_{self.second}'
+    
+    def set_authority(self, au: list):
+        entity_show=False
+        asset_show=False
+        staff_show=False
+        for authority in au:
+            # print(f'authority: {authority}')
+            if authority == 'entity_super':
+                entity_show = True
+            if authority == 'asset_super':
+                asset_show = True
+            if authority == 'staff':
+                staff_show = True
+        return entity_show, asset_show, staff_show
+    
+    def serialize(self):
+        return {
+            "first": self.first,
+            "second": self.second,
+            "url": self.url
+        }
+    
+    class Meta:
+        unique_together = ['first', 'second']
 # Create your models here.
+

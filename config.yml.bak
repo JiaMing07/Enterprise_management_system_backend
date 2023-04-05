@@ -2,6 +2,6 @@ database:
     type: "sqlite3" 
     host: "mysql.BugHunters.secoder.local"
     port: 3306
-    name: "PROJECT_DATABASE"
-    user: "root"
-    password: "Bughunters"
+    name: "root"
+    user: "PROJECT_DATABASE"
+    password: "bughunters"
