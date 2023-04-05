@@ -11,7 +11,6 @@ def CheckToken(req: HttpRequest):
     try:
         token = req.COOKIES['token']
     except KeyError:
-        # return request_failed(-6, "Token未给出", status_code=403)
         raise KeyError("Token未给出")
     try:
         decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
