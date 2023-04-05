@@ -109,7 +109,6 @@ class Menu(models.Model):
         asset_show=False
         staff_show=False
         for authority in au:
-            # print(f'authority: {authority}')
             if authority == 'entity_super':
                 entity_show = True
             if authority == 'asset_super':
