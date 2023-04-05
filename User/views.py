@@ -68,7 +68,7 @@ def user_add(req: HttpRequest):
         user_name, entity_name, department_name, authority, password  = get_args(body, ['name', 'entity', 'department', 'authority', 'password'], ['string','string','string','string','string'])
         checklength(user_name, 0, 50, "username")
         checklength(entity_name, 0, 50, "entity_name")
-        checklength(department_name, 0, 30, "department_name")
+        checklength(department_name, -1, 30, "department_name")
         user = User.objects.filter(username=user_name).first()
         is_system_super = False
         is_entity_super = False
@@ -78,9 +78,6 @@ def user_add(req: HttpRequest):
         entity = Entity.objects.filter(name=entity_name).first()
         if not entity:
             return request_failed(1, "企业实体不存在",status_code=403)
-        department = Department.objects.filter(entity=entity).filter(name=department_name).first()
-        if not department:
-            return request_failed(1, "部门不存在",status_code=403)
         if authority == "system_super":
             user = User.objects.filter(system_super=True).first()
             if user is not None:
@@ -91,10 +88,14 @@ def user_add(req: HttpRequest):
             user = User.objects.filter(entity=entity).filter(entity_super=True).first()
             if user is not None:
                 return request_failed(2, "不可设置此权限",status_code=403)
+            department_name = entity_name
             is_entity_super = True
         elif authority == "asset_super":
             CheckAuthority(req, "entity_super")
             is_asset_super = True
+        department = Department.objects.filter(entity=entity).filter(name=department_name).first()
+        if not department:
+            return request_failed(1, "部门不存在",status_code=403)
         md5 = hashlib.md5()
         md5.update(password.encode('utf-8'))
         pwd = md5.hexdigest()
@@ -299,7 +300,8 @@ def user_menu(req: HttpRequest):
                 menu.delete()
         else:
             menu = Menu.objects.filter(first=first).filter(second=second).first()
-            if menu is not None:
+            if menu is None:
                 return request_failed(2, "二级菜单不存在", status_code=403)
             menu.delete()
+        return request_success()
     return BAD_METHOD

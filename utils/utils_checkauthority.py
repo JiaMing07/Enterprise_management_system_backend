@@ -31,8 +31,6 @@ def CompareAuthority(req: HttpRequest, au):
     if user.token != token:
         return "用户不在线"
     if user.check_authen() != au:
-        print(user.check_authen())
-        print(au)
         return "没有操作权限"
     return "ok"
    

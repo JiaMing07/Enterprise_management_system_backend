@@ -1,13 +1,20 @@
 from django.test import TestCase, Client
 from User.models import User
 from Department.models import Department, Entity
+import hashlib
+from http import cookies
 # Create your tests here.
 
-class UserTests(TestCase):
+class DepartmentTests(TestCase):
     def setUp(self):
         ent = Entity.objects.create(id=1, name='en')
         dep = Department.objects.create(id=1, name='dep', entity=ent)
-        User.objects.create(username='Alice', password='123', department=dep, entity=ent)
+        password='123'
+        md5 = hashlib.md5()
+        md5.update(password.encode('utf-8'))
+        pwd = md5.hexdigest()
+        User.objects.create(username='Alice', password=pwd, department=dep, entity=ent)
+        User.objects.create(username='test_user', password=pwd, department=dep, entity=ent)
 
     def post_department_add(self, department_name, entity_name, parent_name):
         payload = {
@@ -67,6 +74,14 @@ class UserTests(TestCase):
         return self.client.get(f"/entity/{entity_name}/delete")
     
     def test_entity_add(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("system_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
         # successfully add
         name = 'en1'
         res = self.post_entity_add(name)
@@ -95,7 +110,24 @@ class UserTests(TestCase):
         self.assertEqual(res.json()['code'], -2)
         self.assertEqual(res.json()['info'], 'Bad length of [entity_name]')
 
+        # bad authority
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+        name = 'en2'
+        res = self.post_entity_add(name)
+
+        self.assertEqual(res.json()['code'], -2)
+        self.assertEqual(res.json()['info'], '没有操作权限')
+
     def test_department_add(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
         # successfully add department
         department = 'de1'
         entity = 'en'
@@ -161,8 +193,12 @@ class UserTests(TestCase):
         self.assertEqual(res.json()['code'], -2)
         self.assertEqual(res.json()['info'], 'Bad length of [parent_name]')
 
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("system_super")
+        user.save()
         en = 'en1'
         self.post_entity_add(en)
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
         department = 'de_1'
         parent = 'de1'
         res = self.post_department_add(department, en, parent)
@@ -225,6 +261,14 @@ class UserTests(TestCase):
         self.assertEqual(res.json()['info'], 'Bad method')
 
     def test_entity_entity_name_delete(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("system_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
         entity_name = 'en1'
         res = self.post_entity_add(entity_name)
 

@@ -17,7 +17,8 @@ class UserTests(TestCase):
     # Initializer
     def setUp(self):
         ent = Entity.objects.create(id=1, name='ent')
-        dep = Department.objects.create(id=1, name='dep', entity=ent)
+        dep_ent = Department.objects.create(id=1, name='ent', entity=ent)
+        dep = Department.objects.create(id=2, name='dep', entity=ent)
         password='123'
         md5 = hashlib.md5()
         md5.update(password.encode('utf-8'))
@@ -234,25 +235,6 @@ class UserTests(TestCase):
         self.assertEqual(res.json()['info'], 'Succeed')
 
     def test_user_add(self):
-        username = 'Bob'
-        # entity not found
-        entity = 'en'
-        department = 'dep'
-        authority = 'entity_super'
-        password = '456'
-
-        res = self.post_user_add(username, entity, department, authority, password)
-        self.assertEqual(res.json()['code'], 1)
-
-        entity = 'ent'
-        # department not found
-        department = 'de'
-
-        res = self.post_user_add(username, entity, department, authority, password)
-        self.assertEqual(res.json()['code'], 1)
-
-        department = 'dep'
-
         user = User.objects.filter(username='test_user').first()
         user.token = user.generate_token()
         user.system_super, user.entity_super, user.asset_super = user.set_authen("system_super")
@@ -261,7 +243,31 @@ class UserTests(TestCase):
         c = cookies.SimpleCookie()
         c['token'] = Token
         self.client.cookies = c
+        username = 'Bob'
+        # entity not found
+        entity = 'en'
+        department = 'dep'
+        authority = 'asset_super'
+        password = '456'
 
+        res = self.post_user_add(username, entity, department, authority, password)
+        self.assertEqual(res.json()['code'], 1)
+
+        entity = 'ent'
+        # department not found
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+        department = 'de'
+
+        res = self.post_user_add(username, entity, department, authority, password)
+        self.assertEqual(res.json()['code'], 1)
+
+        department = 'dep'
+
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("system_super")
+        user.save()
+
+        authority = 'entity_super'
         res = self.post_user_add(username, entity, department, authority, password)
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
@@ -485,7 +491,7 @@ class UserTests(TestCase):
         # edit department same 3
         username = 'Bob'
         password = None
-        department = 'dep'
+        department = 'ent'
         authority = None
         res = self.post_user_edit(username, password, department, authority)
         self.assertEqual(res.json()['code'], 3)
@@ -597,7 +603,6 @@ class UserTests(TestCase):
         user.system_super, user.entity_super, user.asset_super = user.set_authen("asset_super") 
         user.save()
         res = self.post_user_menu(first, second, url, authority)
-        print(res.json()['info'])
         self.assertEqual(res.json()['code'], -2)
         self.assertEqual(res.json()['info'], '没有操作权限')
 
