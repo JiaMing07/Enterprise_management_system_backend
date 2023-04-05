@@ -248,6 +248,23 @@ def user_list(req: HttpRequest):
         return request_success(return_data)
     else:
         return BAD_METHOD
+    
+@CheckRequire
+def user_userName(req: HttpRequest, userName: any):
+    idx = require({"userName": userName}, "userName", "string", err_msg="Bad param [userName]", err_code=-1)
+    checklength(userName, 0, 50, "userName")
+
+    if req.method == 'DELETE':
+        user = User.objects.filter(username=userName).first()
+        if user is None:
+            return request_failed(1, "user not found", status_code=404)
+        if user.system_super:
+            return request_failed(2, "禁止删除超级管理员", status_code=403)
+        user.delete()
+        return request_success()
+    else:
+        return BAD_METHOD
+
 
 @CheckRequire
 def user_menu(req: HttpRequest):

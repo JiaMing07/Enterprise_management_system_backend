@@ -9,5 +9,6 @@ urlpatterns = [
     path('lock', views.user_lock),
     path('list', views.user_list),
     path('edit', views.user_edit),
+    path('<userName>', views.user_userName),,
     path('menu', views.user_menu)
 ]
