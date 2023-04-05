@@ -564,10 +564,19 @@ class UserTests(TestCase):
         self.assertEqual(res.json()['info'], 'Bad method')
 
     def test_delete_user_userName(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
         username = 'Bob'
         entity = 'ent'
         department = 'dep'
-        authority = 'entity_super'
+        authority = 'asset_super'
         password = '456'
 
         res = self.post_user_add(username, entity, department, authority, password)
@@ -589,11 +598,11 @@ class UserTests(TestCase):
         res = self.post_user_login_normal(username, password)
         self.assertEqual(res.json()['code'], 2)
 
-        authority = 'system_super'
-        res = self.post_user_add(username, entity, department, authority, password)
-        self.assertEqual(res.json()['code'], 0)
+        user = User.objects.filter(username="Alice").first()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("system_super")
+        user.save()
 
-        res = self.delete_user_userName(username)
+        res = self.delete_user_userName("Alice")
         self.assertEqual(res.json()['code'], 2)
         self.assertEqual(res.status_code, 403)
 

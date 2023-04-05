@@ -255,6 +255,7 @@ def user_userName(req: HttpRequest, userName: any):
     checklength(userName, 0, 50, "userName")
 
     if req.method == 'DELETE':
+        CheckAuthority(req, ["entity_super"])
         user = User.objects.filter(username=userName).first()
         if user is None:
             return request_failed(1, "user not found", status_code=404)
@@ -268,7 +269,10 @@ def user_userName(req: HttpRequest, userName: any):
 
 @CheckRequire
 def user_menu(req: HttpRequest):
+    print("menu")
+    print(req.method)
     if req.method == 'POST':
+        print("post")
         CheckAuthority(req, ["entity_super"])
         body = json.loads(req.body.decode("utf-8"))
         first, second, authority, url = get_args(body, ["first", "second", "authority", "url"], ["string", "string", "string", "string"])
@@ -292,6 +296,7 @@ def user_menu(req: HttpRequest):
         menu = Menu(first=first, second=second, url=url)
         menu.entity_show, menu.asset_show, menu.staff_show = menu.set_authority(authority)
         menu.save()
+        print(menu)
         return request_success()
     elif req.method == 'GET':
         CheckToken(req)
@@ -331,4 +336,5 @@ def user_menu(req: HttpRequest):
                 return request_failed(2, "二级菜单不存在", status_code=403)
             menu.delete()
         return request_success()
+    print("bad")
     return BAD_METHOD
