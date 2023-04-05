@@ -316,6 +316,14 @@ class UserTests(TestCase):
 
 
     def test_user_lock(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
         # user not found
         username = 'Bob'
         password = '123'
@@ -379,7 +387,7 @@ class UserTests(TestCase):
     def test_user_edit(self):
         user = User.objects.filter(username='test_user').first()
         user.token = user.generate_token()
-        user.system_super, user.entity_super, user.asset_super = user.set_authen("system_super")
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
         user.save()
         Token = user.token
         c = cookies.SimpleCookie()
@@ -393,6 +401,8 @@ class UserTests(TestCase):
         res = self.post_user_edit(username, password, department, authority)
         self.assertEqual(res.json()['code'], 1)
 
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("system_super")
+        user.save()
         username = 'Bob'
         entity = 'ent'
         department = 'dep'
@@ -402,7 +412,10 @@ class UserTests(TestCase):
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
 
+        
         # new password same, 3
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
         username = 'Bob'
         password = '456'
         department = 'dep'
@@ -439,7 +452,7 @@ class UserTests(TestCase):
         username = 'Bob'
         password = None
         department = None
-        authority = 'asset_super'
+        authority = 'staff'
         res = self.post_user_edit(username, password, department, authority)
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')

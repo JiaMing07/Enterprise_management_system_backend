@@ -128,6 +128,7 @@ def logout_normal(req: HttpRequest):
 @CheckRequire
 def user_lock(req: HttpRequest):
     if req.method == 'POST':
+        CheckAuthority(req, "entity_super")
         body = json.loads(req.body.decode("utf-8"))
         user_name = require(body, "username", "string", err_msg="Missing or error type of [username]")
         active = require(body, "active", "int", err_msg="Missing or error type of [active]")
@@ -154,6 +155,7 @@ def user_lock(req: HttpRequest):
 @CheckRequire
 def user_edit(req: HttpRequest):
     if req.method == 'POST':
+        # CheckAuthority(req, "entity_super")
         body = json.loads(req.body.decode("utf-8"))
         user_name = json.loads(req.body.decode("utf-8")).get('username')
         password = json.loads(req.body.decode("utf-8")).get('password')
@@ -274,7 +276,7 @@ def user_menu(req: HttpRequest):
             "menu": [menu.serialize() for menu in menu_list]
         }
         return request_success(return_data)
-    if req.method == 'DELETE':
+    elif req.method == 'DELETE':
         CheckAuthority(req, "entity_super")
         body = json.loads(req.body.decode("utf-8"))
         first, second= get_args(body, ["first", "second"], ["string", "string"])
