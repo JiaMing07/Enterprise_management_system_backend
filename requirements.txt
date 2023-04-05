@@ -13,7 +13,7 @@ uwsgi
 django-mptt
 pyjwt
 pyyaml
-cryptograph
+cryptography
 # psycopg2
 pymysql
 mysqlclient==2.1.0
