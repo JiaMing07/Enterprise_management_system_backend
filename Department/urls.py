@@ -8,7 +8,7 @@ urlpatterns = [
     path('entity/list', views.entity_list),
     path('entity/<entityName>/department/list', views.entity_entityName_department_list),
     path('entity/<entity_name>/list', views.entity_entity_name_list),
-    path('entity/<entityName>/entitySuper', views.entity_entityName_entitySuper),,
+    path('entity/<entityName>/entitySuper', views.entity_entityName_entitySuper),
     path('department/delete', views.department_delete),
     path('entity/<entity_name>/delete', views.entity_delete),
 ]

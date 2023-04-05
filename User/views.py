@@ -86,7 +86,6 @@ def user_add(req: HttpRequest):
         elif authority == "entity_super":
             CheckAuthority(req, ["system_super"])
             user = User.objects.filter(entity=entity).filter(entity_super=True).first()
-            print(user)
             if user is not None:
                 return request_failed(2, "不可设置此权限",status_code=403)
             department_name = entity_name

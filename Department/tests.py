@@ -8,7 +8,8 @@ from http import cookies
 class DepartmentTests(TestCase):
     def setUp(self):
         ent = Entity.objects.create(id=1, name='en')
-        dep = Department.objects.create(id=1, name='dep', entity=ent)
+        dep_ent = Department.objects.create(id=1, name='en', entity=ent)
+        dep = Department.objects.create(id=2,name='dep', entity=ent)
         password='123'
         md5 = hashlib.md5()
         md5.update(password.encode('utf-8'))
@@ -289,6 +290,15 @@ class DepartmentTests(TestCase):
         self.assertEqual(res.json()['info'], 'Bad method')
 
     def test_get_entity_entityName_entitySuper(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("system_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+    
         entity = 'en'
         res = self.get_entity_entityName_entitySuper(entity)
         self.assertEqual(res.json()['code'], 2)
@@ -299,7 +309,6 @@ class DepartmentTests(TestCase):
         department = 'dep'
         authority = 'entity_super'
         password = '456'
-
         res = self.post_user_add(username, entity, department, authority, password)
         self.assertEqual(res.json()['code'], 0)
 
