@@ -446,7 +446,16 @@ class UserTests(TestCase):
         res = self.post_user_edit(username, password, department, authority)
         self.assertEqual(res.json()['code'], 1)
 
+        username = 'Bob'
+        password = None
+        department = None
+        authority = 'system_super'
+        res = self.post_user_edit(username, password, department, authority)
+        self.assertEqual(res.json()['code'], 5)
+
         # edit authority same 3
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("system_super")
+        user.save()
         username = 'Bob'
         password = None
         department = None
@@ -455,6 +464,8 @@ class UserTests(TestCase):
         self.assertEqual(res.json()['code'], 3)
 
         # entity_super can only be 1
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
         username = 'Camellia'
         entity = 'ent'
         department = 'dep'
@@ -464,6 +475,8 @@ class UserTests(TestCase):
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
 
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("system_super")
+        user.save()
         username = 'Camellia'
         password = None
         department = None
@@ -472,6 +485,8 @@ class UserTests(TestCase):
         self.assertEqual(res.json()['code'], 4)
 
         # authority success
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
         username = 'Bob'
         password = None
         department = None
@@ -500,6 +515,17 @@ class UserTests(TestCase):
 
         # edit both pwd and auth
         # fail because already have entity_super
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("system_super")
+        user.save()
+        username = 'Carol'
+        entity = 'ent'
+        department = 'dep'
+        authority = 'entity_super'
+        password = '456'
+        res = self.post_user_add(username, entity, department, authority, password)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
         username = 'Bob'
         password = '456'
         department = None
@@ -508,6 +534,8 @@ class UserTests(TestCase):
         self.assertEqual(res.json()['code'], 4)
         self.assertEqual(res.json()['info'], '该企业已存在系统管理员')
 
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
         username = 'Bob'
         password = '456'
         department = None

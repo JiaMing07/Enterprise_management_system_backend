@@ -86,6 +86,7 @@ def user_add(req: HttpRequest):
         elif authority == "entity_super":
             CheckAuthority(req, ["system_super"])
             user = User.objects.filter(entity=entity).filter(entity_super=True).first()
+            print(user)
             if user is not None:
                 return request_failed(2, "不可设置此权限",status_code=403)
             department_name = entity_name
@@ -166,10 +167,6 @@ def user_edit(req: HttpRequest):
 
         if user is None:
             return request_failed(1, "用户不存在", status_code=404)
-        if user.entity_super:
-            CheckAuthority(req, ["system_super"])
-        else:
-            CheckAuthority(req, ["entity_super"])
         # 有修改password的需求
         if password is not None:
             # check format
@@ -190,9 +187,18 @@ def user_edit(req: HttpRequest):
         if authority is not None:
             ### 目前未考虑各种管理员最多有多少人
             # system_super = 1, entity_super = 1/entity, asset_super = n, staff = n
-            
+            if authority == "entity_super":
+                CheckAuthority(req, ["system_super"])
+                user.department = Department.objects.filter(name=user.entity.name).first()
+            else:
+                if user.entity_super:
+                    CheckAuthority(req, ["system_super", "entity_super"])
+                else:
+                    CheckAuthority(req, ["entity_super"])
+            if authority == "system_super":
+                return request_failed(5, "无法设置权限", status_code=403)
             # check format
-            auth = ["system_super", "entity_super", "asset_super", "staff"]
+            auth = ["entity_super", "asset_super", "staff"]
             if authority not in auth:
                 return request_failed(1, "身份不存在", status_code=403)
             
