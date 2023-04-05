@@ -225,7 +225,7 @@ class DepartmentTests(TestCase):
         entityName = 'en'
         res = self.get_entity_entityName_department_list(entityName)
         self.assertEqual(res.json()['code'] , 0)
-        self.assertEqual(res.json()['name'] , 'en')
+        self.assertEqual(res.json()['entityName'] , 'en')
         self.assertEqual(res.status_code, 200)
 
         # entity does not exist

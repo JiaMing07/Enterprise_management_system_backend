@@ -78,13 +78,23 @@ def entity_entityName_department_list(req: HttpRequest, entityName: any):
 
     if req.method == 'GET':
         entity = Entity.objects.filter(name=entityName).first()
-
-        if entity:
-            return request_success(
-                return_field(entity.serialize(), ["name", "departments"])
-            )
-        else:
+        if entity is None:
             return request_failed(1, "entity not found", status_code=404)
+        
+        department = Department.objects.filter(entity=entity).first()
+        while True:
+            parent = department.get_ancestors(ascending=True).first()
+            if (parent is None or parent.entity != entity):
+                break
+            else:
+                department = parent
+
+        return_data = {
+            "entityName": entityName,
+            "departments": department.sub_tree(),
+        }
+        return request_success(return_data)
+
     else:
         return BAD_METHOD
 
