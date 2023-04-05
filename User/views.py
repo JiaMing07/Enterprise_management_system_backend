@@ -293,10 +293,12 @@ def user_menu(req: HttpRequest):
         checklength(first, 0, 50, "first")
         checklength(second, -1, 50, "second")
         if second == "":
-            menus = Menu.objects.filter(first=first)
-            if menu is None:
+            menus = Menu.objects.filter(first=first).first()
+            if menus is None:
                 return request_failed(1, "一级菜单不存在", status_code=403)
+            menus = Menu.objects.filter(first=first)
             for menu in menus:
+                print(menu)
                 menu.delete()
         else:
             menu = Menu.objects.filter(first=first).filter(second=second).first()
