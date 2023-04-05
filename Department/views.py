@@ -14,7 +14,7 @@ from utils.utils_checkauthority import CheckAuthority, CheckToken
 @CheckRequire
 def add_entity(req: HttpRequest):
     if req.method == 'POST':
-        CheckAuthority(req, "system_super")
+        CheckAuthority(req, ["system_super"])
         body = json.loads(req.body.decode("utf-8"))
         entity_name = get_args(body, ["name"], ['string'])[0]
         checklength(entity_name, 0, 50, "entity_name")
@@ -31,7 +31,7 @@ def add_entity(req: HttpRequest):
 @CheckRequire
 def add_department(req: HttpRequest):
     if req.method == 'POST':
-        CheckAuthority(req, "entity_super")
+        CheckAuthority(req, ["entity_super"])
         body = json.loads(req.body.decode("utf-8"))
         entity_name, department_name, parent_name = get_args(body, ["entity", "department", "parent"], ["string", "string", "string"])
         checklength(entity_name, 0, 50, "entity_name")
@@ -120,7 +120,7 @@ def entity_entity_name_list(req: HttpRequest,entity_name: str):
 @CheckRequire
 def department_delete(req: HttpRequest):
     if req.method == 'DELETE':
-        CheckAuthority(req, "entity_super")
+        CheckAuthority(req, ["entity_super"])
         # check for correct format
         entity_name = json.loads(req.body.decode("utf-8")).get('entity')
         department_name = json.loads(req.body.decode("utf-8")).get('department')
@@ -150,7 +150,7 @@ def department_delete(req: HttpRequest):
 @CheckRequire
 def entity_delete(req: HttpRequest, entity_name: str):
     if req.method == 'DELETE':
-        CheckAuthority(req, "system_super")
+        CheckAuthority(req, ["system_super"])
         checklength(entity_name,0, 50, "entity_name")
         entity = Entity.objects.filter(name=entity_name).first()
         if entity is None:

@@ -24,16 +24,20 @@ def CheckToken(req: HttpRequest):
         raise jwt.InvalidTokenError("Token不合法")
     return token, decoded
 
-def CompareAuthority(req: HttpRequest, au):
+def CompareAuthority(req: HttpRequest, authority):
     token, decoded = CheckToken(req)
     user = User.objects.filter(username=decoded['username']).first()
     if user.token != token:
         return "用户不在线"
-    if user.check_authen() != au:
+    have_authority = False
+    for au in authority:
+        if user.check_authen() == au:
+            have_authority = True
+    if have_authority == False:        
         return "没有操作权限"
     return "ok"
    
-def CheckAuthority(req: HttpRequest, au: str):
-    msg = CompareAuthority(req, au)
+def CheckAuthority(req: HttpRequest, authority: list):
+    msg = CompareAuthority(req, authority)
     assert msg == "ok", f"{msg}"
 

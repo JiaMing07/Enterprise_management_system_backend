@@ -84,14 +84,15 @@ def user_add(req: HttpRequest):
                 return request_failed(2, "不可设置此权限",status_code=403)
             is_system_super = True
         elif authority == "entity_super":
-            CheckAuthority(req, "system_super")
+            CheckAuthority(req, ["system_super"])
             user = User.objects.filter(entity=entity).filter(entity_super=True).first()
+            print(user)
             if user is not None:
                 return request_failed(2, "不可设置此权限",status_code=403)
             department_name = entity_name
             is_entity_super = True
         elif authority == "asset_super":
-            CheckAuthority(req, "entity_super")
+            CheckAuthority(req, ["entity_super"])
             is_asset_super = True
         department = Department.objects.filter(entity=entity).filter(name=department_name).first()
         if not department:
@@ -129,7 +130,7 @@ def logout_normal(req: HttpRequest):
 @CheckRequire
 def user_lock(req: HttpRequest):
     if req.method == 'POST':
-        CheckAuthority(req, "entity_super")
+        CheckAuthority(req, ["entity_super"])
         body = json.loads(req.body.decode("utf-8"))
         user_name = require(body, "username", "string", err_msg="Missing or error type of [username]")
         active = require(body, "active", "int", err_msg="Missing or error type of [active]")
@@ -156,7 +157,6 @@ def user_lock(req: HttpRequest):
 @CheckRequire
 def user_edit(req: HttpRequest):
     if req.method == 'POST':
-        CheckAuthority(req, "entity_super")
         body = json.loads(req.body.decode("utf-8"))
         user_name = json.loads(req.body.decode("utf-8")).get('username')
         password = json.loads(req.body.decode("utf-8")).get('password')
@@ -167,7 +167,6 @@ def user_edit(req: HttpRequest):
 
         if user is None:
             return request_failed(1, "用户不存在", status_code=404)
-    
         # 有修改password的需求
         if password is not None:
             # check format
@@ -188,9 +187,18 @@ def user_edit(req: HttpRequest):
         if authority is not None:
             ### 目前未考虑各种管理员最多有多少人
             # system_super = 1, entity_super = 1/entity, asset_super = n, staff = n
-            
+            if authority == "entity_super":
+                CheckAuthority(req, ["system_super"])
+                user.department = Department.objects.filter(name=user.entity.name).first()
+            else:
+                if user.entity_super:
+                    CheckAuthority(req, ["system_super", "entity_super"])
+                else:
+                    CheckAuthority(req, ["entity_super"])
+            if authority == "system_super":
+                return request_failed(5, "无法设置权限", status_code=403)
             # check format
-            auth = ["system_super", "entity_super", "asset_super", "staff"]
+            auth = ["entity_super", "asset_super", "staff"]
             if authority not in auth:
                 return request_failed(1, "身份不存在", status_code=403)
             
@@ -240,11 +248,32 @@ def user_list(req: HttpRequest):
         return request_success(return_data)
     else:
         return BAD_METHOD
+    
+@CheckRequire
+def user_userName(req: HttpRequest, userName: any):
+    idx = require({"userName": userName}, "userName", "string", err_msg="Bad param [userName]", err_code=-1)
+    checklength(userName, 0, 50, "userName")
+
+    if req.method == 'DELETE':
+        CheckAuthority(req, ["entity_super"])
+        user = User.objects.filter(username=userName).first()
+        if user is None:
+            return request_failed(1, "user not found", status_code=404)
+        if user.system_super:
+            return request_failed(2, "禁止删除超级管理员", status_code=403)
+        user.delete()
+        return request_success()
+    else:
+        return BAD_METHOD
+
 
 @CheckRequire
 def user_menu(req: HttpRequest):
+    print("menu")
+    print(req.method)
     if req.method == 'POST':
-        CheckAuthority(req, "entity_super")
+        print("post")
+        CheckAuthority(req, ["entity_super"])
         body = json.loads(req.body.decode("utf-8"))
         first, second, authority, url = get_args(body, ["first", "second", "authority", "url"], ["string", "string", "string", "string"])
         checklength(first, 0, 50, "first")
@@ -267,6 +296,7 @@ def user_menu(req: HttpRequest):
         menu = Menu(first=first, second=second, url=url)
         menu.entity_show, menu.asset_show, menu.staff_show = menu.set_authority(authority)
         menu.save()
+        print(menu)
         return request_success()
     elif req.method == 'GET':
         CheckToken(req)
@@ -287,7 +317,7 @@ def user_menu(req: HttpRequest):
         }
         return request_success(return_data)
     elif req.method == 'DELETE':
-        CheckAuthority(req, "entity_super")
+        CheckAuthority(req, ["entity_super"])
         body = json.loads(req.body.decode("utf-8"))
         first, second= get_args(body, ["first", "second"], ["string", "string"])
         checklength(first, 0, 50, "first")
@@ -306,4 +336,5 @@ def user_menu(req: HttpRequest):
                 return request_failed(2, "二级菜单不存在", status_code=403)
             menu.delete()
         return request_success()
+    print("bad")
     return BAD_METHOD
