@@ -155,7 +155,7 @@ def user_lock(req: HttpRequest):
 @CheckRequire
 def user_edit(req: HttpRequest):
     if req.method == 'POST':
-        # CheckAuthority(req, "entity_super")
+        CheckAuthority(req, "entity_super")
         body = json.loads(req.body.decode("utf-8"))
         user_name = json.loads(req.body.decode("utf-8")).get('username')
         password = json.loads(req.body.decode("utf-8")).get('password')

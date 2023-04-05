@@ -493,10 +493,19 @@ class UserTests(TestCase):
         # now we only have one dep, so test afterwards
 
         # edit both pwd and auth
+        # fail because already have entity_super
         username = 'Bob'
         password = '456'
         department = None
         authority = 'entity_super'
+        res = self.post_user_edit(username, password, department, authority)
+        self.assertEqual(res.json()['code'], 4)
+        self.assertEqual(res.json()['info'], '该企业已存在系统管理员')
+
+        username = 'Bob'
+        password = '456'
+        department = None
+        authority = 'asset_super'
         res = self.post_user_edit(username, password, department, authority)
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
