@@ -92,7 +92,7 @@ if env["database"]["type"] == "mysql":
             "NAME": "PROJECT_DATABASE",
             "USER": "root",
             "PASSWORD": "bughunters",
-            "HOST": "mysql.BugHunters.secoder.local",
+            "HOST": "mysql-test.BugHunters.secoder.local",
             "PORT": 3306,
             "OPTIONS": {"charset": "utf8mb4"},
         },
