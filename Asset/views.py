@@ -9,6 +9,8 @@ from utils.utils_getbody import get_args
 from utils.utils_checklength import checklength
 from utils.utils_checkauthority import CheckAuthority, CheckToken
 
+from Asset.models import Attribute, Asset, AssetAttribute, AssetCategory
+
 # Create your views here.
 
 @CheckRequire    
@@ -19,10 +21,14 @@ def attribute_add(req: HttpRequest):
         # check format
         checklength(name, 0, 50, "atrribute_name")
 
-        # add in Attribute
+        # filter whether exist
+        attri = Attribute.objects.filter(name=name).first()
+        if attri is not None:
+            return request_failed(1, "自定义属性已存在", status_code=403)
 
-        ## filter whether exist
-
-        ## save
+        # save
+        else:
+            attri.name = name
+            attri.save()
     else:
         return BAD_METHOD
