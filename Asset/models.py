@@ -32,7 +32,7 @@ class Attribute(models.Model):
     '''自定义属性'''
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=50)
-    entity = models.ForeignKey(Entity, on_delete=models.CASCADE)
+    entity = models.ForeignKey(Entity, on_delete=models.CASCADE, null=True)
 
 
 class AssetAttribute(models.Model):

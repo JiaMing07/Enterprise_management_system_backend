@@ -28,7 +28,9 @@ def attribute_add(req: HttpRequest):
 
         # save
         else:
-            attri.name = name
-            attri.save()
+            new_attri = Attribute(name=name)
+            new_attri.save()
+            return request_success()
+   
     else:
         return BAD_METHOD
