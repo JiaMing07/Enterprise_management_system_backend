@@ -9,7 +9,12 @@ from utils.utils_getbody import get_args
 from utils.utils_checklength import checklength
 from utils.utils_checkauthority import CheckAuthority, CheckToken
 
+from User.models import User, Menu
+from Department.models import Department, Entity
 from Asset.models import Attribute, Asset, AssetAttribute, AssetCategory
+
+from eam_backend.settings import SECRET_KEY
+import jwt
 
 # Create your views here.
 
@@ -17,6 +22,13 @@ from Asset.models import Attribute, Asset, AssetAttribute, AssetCategory
 def attribute_add(req: HttpRequest):
     if req.method == 'POST':
         name = json.loads(req.body.decode("utf-8")).get('name')
+
+        CheckToken(req)
+        token = req.COOKIES['token'] 
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        user: User = User.objects.get(username=decoded['username'])
+        if user.token != token:
+            return request_failed(-6, "用户不在线", status_code=403)
 
         # check format
         checklength(name, 0, 50, "atrribute_name")
@@ -28,7 +40,7 @@ def attribute_add(req: HttpRequest):
 
         # save
         else:
-            new_attri = Attribute(name=name)
+            new_attri = Attribute(name=name, entity=user.entity)
             new_attri.save()
             return request_success()
    
