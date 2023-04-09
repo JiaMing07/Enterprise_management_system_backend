@@ -11,6 +11,5 @@ RUN pip install -i https://pypi.tuna.tsinghua.edu.cn/simple --no-cache-dir -r re
 
 EXPOSE 80
 
-# CMD ["sh", "start.sh"]
-CMD ["sh", "mysql_test.sh"]
+CMD ["sh", "start.sh"]
 # TODO End: [Student] Complete Dockerfile
