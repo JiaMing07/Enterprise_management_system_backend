@@ -43,6 +43,7 @@ unit-test:
     # TODO End: [Student] Install dependencies
   script:
     # TODO Start: [Student] Migrate and run tests
+    - rm -rf 
     - python3 manage.py makemigrations
     # - python3 manage.py makemigrations Department
     - python3 manage.py migrate

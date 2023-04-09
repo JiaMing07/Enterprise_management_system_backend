@@ -68,29 +68,33 @@ def add_menu():
     from Department.models import Department, Entity
     from .models import User, Menu
     if not Menu.objects.filter(first='首页').filter(second='').exists():
-        menu_1 = Menu(first="首页",second="",url="https://eam-frontend-bughunters.app.secoder.net/super_manager")
+        menu_1 = Menu(first="首页",second="",url="https://eam-frontend-bughunters.app.secoder.net/super_manager", entity_show = True, asset_show=True, staff_show=True)
+        menu_1.entity = Entity.objects.filter(name="admin_entity").first()
         menu_1.save()
     if not Menu.objects.filter(first='用户管理').filter(second='').exists():
         menu_2 = Menu(first="用户管理",second="",url="https://eam-frontend-bughunters.app.secoder.net/user_manage", entity_show=True)
+        menu_2.entity = Entity.objects.filter(name="admin_entity").first()
         menu_2.save()
     if not Menu.objects.filter(first='资产管理').filter(second='').exists():
         menu_3 = Menu(first="资产管理", second="", url="https://eam-frontend-bughunters.app.secoder.net",asset_show=True)
+        menu_3.entity = Entity.objects.filter(name="admin_entity").first()
         menu_3.save()
     if not Menu.objects.filter(first='查看事项').filter(second='审批情况').exists():
         menu_4 = Menu(first="查看事项", second="审批情况", url="https://eam-frontend-bughunters.app.secoder.net/asset",staff_show=True)
+        menu_4.entity = Entity.objects.filter(name="admin_entity").first()
         menu_4.save()
 
 
 class UserConfig(AppConfig):
     name = 'User'
 
-    def ready(self):
-        super().ready()
-        try:  # 在数据表创建前调用会引发错误
-            init_entity()
-            init_department()
-            admin_user()
-            add_users()
-            add_menu()
-        except (OperationalError, IntegrityError):
-            pass
+    # def ready(self):
+    #     # super().ready()
+    #     try:  # 在数据表创建前调用会引发错误
+    #         init_entity()
+    #         init_department()
+    #         admin_user()
+    #         add_users()
+    #         add_menu()
+    #     except (OperationalError, IntegrityError):
+    #         pass

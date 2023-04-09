@@ -40,14 +40,14 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'Department',
+    'User',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'Department',
-    'User',
     'mptt'
 ]
 
@@ -84,7 +84,6 @@ WSGI_APPLICATION = 'eam_backend.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
-
 if env["database"]["type"] == "mysql":
     DATABASES = {
         "default": {
@@ -93,6 +92,7 @@ if env["database"]["type"] == "mysql":
             "USER": "root",
             "PASSWORD": "bughunters",
             "HOST": "mysql-test.BugHunters.secoder.local",
+            # "HOST": "172.17.0.2",
             "PORT": 3306,
             "OPTIONS": {"charset": "utf8mb4"},
         },
@@ -104,11 +104,9 @@ elif env["database"]["type"] == "postgreSQL":
             "NAME": "PROJECT_DATABASE",
             "USER": "PROJECT_DATABASE",
             "PASSWORD": "bughunters",
-            "HOST": "postgreSQL.BugHunters.secoder.local",
+            # "HOST": "postgreSQL.BugHunters.secoder.local",
+            "HOST": "172.17.0.2",
             "PORT": 5432,
-            "TEST":{
-                'NAME': 'mytestdatabase',
-            },
         },
     }
 else:

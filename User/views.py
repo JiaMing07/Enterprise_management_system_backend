@@ -11,7 +11,9 @@ from utils.utils_getbody import get_args
 from utils.utils_checklength import checklength
 from utils.utils_checkauthority import CheckAuthority, CheckToken
 from eam_backend.settings import SECRET_KEY
+from  User.apps import init_department, init_entity, add_menu, add_users,admin_user
 import jwt
+from django.db.utils import IntegrityError, OperationalError
 
 def check_for_user_data(body):
     password = ""
@@ -27,6 +29,14 @@ def check_for_user_data(body):
 # Create your views here.
 @CheckRequire
 def startup(req: HttpRequest):
+    try:  # 在数据表创建前调用会引发错误
+        init_entity()
+        init_department()
+        admin_user()
+        add_users()
+        # add_menu()
+    except (OperationalError, IntegrityError):
+        pass
     return HttpResponse("Congratulations! You have successfully installed the requirements. Go ahead!")
 
 @CheckRequire
@@ -268,11 +278,11 @@ def user_userName(req: HttpRequest, userName: any):
 
 @CheckRequire
 def user_menu(req: HttpRequest):
-    print("menu")
-    print(req.method)
     if req.method == 'POST':
-        print("post")
         CheckAuthority(req, ["entity_super"])
+        token = req.COOKIES['token'] 
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        user: User = User.objects.get(username=decoded['username'])
         body = json.loads(req.body.decode("utf-8"))
         first, second, authority, url = get_args(body, ["first", "second", "authority", "url"], ["string", "string", "string", "string"])
         checklength(first, 0, 50, "first")
@@ -280,60 +290,86 @@ def user_menu(req: HttpRequest):
         checklength(url, -1, 500, "url")
         authorities = ['entity_super', 'asset_super', 'staff']
         authority = authority.split('/')
+        menu_entity = Menu.objects.filter(entity=user.entity)
+        menu_base = Menu.objects.filter(entity=Entity.objects.filter(name='admin_entity').first())
+        menus = menu_entity | menu_base
         if second == "":
-            menu = Menu.objects.filter(first=first).filter(second=second).first()
+            menu = menus.filter(first=first).filter(second=second).first()
             if menu is not None:
                 return request_failed(1, "一级菜单已存在", status_code=403)
         else:
-            menu = Menu.objects.filter(first=first).filter(second=second).first()
+            menu = menus.filter(first=first).filter(second=second).first()
             if menu is not None:
                 return request_failed(2, "二级菜单已存在", status_code=403)
                 
         for au in authority:
             if au not in authorities:
                 return request_failed(3, "权限不存在",status_code=403)
-        menu = Menu(first=first, second=second, url=url)
+        menu = Menu(first=first, second=second, url=url, entity=user.entity)
         menu.entity_show, menu.asset_show, menu.staff_show = menu.set_authority(authority)
         menu.save()
-        print(menu)
         return request_success()
     elif req.method == 'GET':
         CheckToken(req)
-        token = req.COOKIES['token'] 
-        decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        token, decoded = CheckToken(req)
         user: User = User.objects.get(username=decoded['username'])
         if user.token != token:
             return request_failed(-6, "用户不在线", status_code=403)
         authority = user.check_authen()
+        menus_entity = Menu.objects.filter(entity = user.entity).filter(second="")
+        menus_base = Menu.objects.filter(entity = Entity.objects.filter(name='admin_entity').first()).filter(second="")
+        menu_list = menus_entity | menus_base
         if authority == 'entity_super':
-            menu_list = Menu.objects.filter(entity_show=True)
+            menu_list = menu_list.filter(entity_show=True)
         elif authority == 'asset_super':
-            menu_list = Menu.objects.filter(asset_show=True)
+            menu_list = menu_list.filter(asset_show=True)
         elif authority == 'staff':
-            menu_list = Menu.objects.filter(staff_show=True)
+            menu_list = menu_list.filter(staff_show=True)
+        return_list = []
+        for menu in menu_list:
+            dic={}
+            dic['first'] = menu.first
+            dic['url'] = menu.url
+            second_entity = Menu.objects.filter(entity = user.entity).filter(first=menu.first)
+            second_base = Menu.objects.filter(entity = Entity.objects.filter(name='admin_entity').first()).filter(first=menu.first)
+            second_list = second_entity | second_base
+            second_list = second_list.exclude(second="")
+            dic['second'] = [return_field(m.serialize(), ['second', 'url']) for m in second_list]
+            return_list.append(dic)
         return_data = {
-            "menu": [menu.serialize() for menu in menu_list]
+            "menu": return_list
         }
         return request_success(return_data)
     elif req.method == 'DELETE':
         CheckAuthority(req, ["entity_super"])
+        token, decoded = CheckToken(req)
+        user = User.objects.get(username=decoded['username'])
+        entity = user.entity
+        entity_base = Entity.objects.filter(name='admin_entity').first()
         body = json.loads(req.body.decode("utf-8"))
         first, second= get_args(body, ["first", "second"], ["string", "string"])
         checklength(first, 0, 50, "first")
         checklength(second, -1, 50, "second")
         if second == "":
-            menus = Menu.objects.filter(first=first).first()
+            menus_entity = Menu.objects.filter(entity=entity).filter(first=first)
+            menus_base = Menu.objects.filter(entity=entity_base).filter(first=first)
+            if menus_base:
+                return request_failed(3, "不可删除初始一级菜单", status_code=403)
+            menus = menus_entity
             if menus is None:
                 return request_failed(1, "一级菜单不存在", status_code=403)
             menus = Menu.objects.filter(first=first)
             for menu in menus:
-                print(menu)
                 menu.delete()
         else:
-            menu = Menu.objects.filter(first=first).filter(second=second).first()
+            menus_entity = Menu.objects.filter(entity=entity).filter(first=first).filter(second=second)
+            menus_base = Menu.objects.filter(entity=entity_base).filter(first=first).filter(second=second)
+            if menus_base:
+                return request_failed(4, "不可删除初始二级菜单", status_code=403)
+            menu = menus_entity
+            menu = menu[0]
             if menu is None:
                 return request_failed(2, "二级菜单不存在", status_code=403)
             menu.delete()
         return request_success()
-    print("bad")
     return BAD_METHOD

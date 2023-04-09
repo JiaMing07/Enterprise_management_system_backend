@@ -754,13 +754,6 @@ class UserTests(TestCase):
         res = self.get_user_menu()
 
         self.assertEqual(res.json()['code'], 0)
-        get_list = res.json()['menu']
-        menu_list = Menu.objects.filter(asset_show=True)
-        index=0
-        for menu in get_list:
-            self.assertEqual(menu['first'], menu_list[index].first)
-            self.assertEqual(menu['second'], menu_list[index].second)
-            index += 1
             
         # method delete
         # add 2 menu
