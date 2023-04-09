@@ -9,4 +9,51 @@ from utils.utils_getbody import get_args
 from utils.utils_checklength import checklength
 from utils.utils_checkauthority import CheckAuthority, CheckToken
 
+from User.models import User
+from Asset.models import AssetCategory, Asset, Attribute, AssetAttribute
+
 # Create your views here.
+@CheckRequire
+def asset_category_list(req: HttpRequest):
+    if req.method == 'GET':
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        categories = AssetCategory.objects.filter(entity=entity)
+        return_data = {
+            "categories": [
+                return_field(category.serialize(), ["id", "categoryName"])
+            for category in categories],
+        }
+        return request_success(return_data)
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
+def asset_category_add(req: HttpRequest):
+    if req.method == 'POST':
+        CheckAuthority(req, ["entity_super"])
+        body = json.loads(req.body.decode("utf-8"))
+        name, parentName = get_args(body, ["name", "parent"], ["string", "string"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        checklength(name, 0, 50, "categoryName")
+        checklength(parentName, -1, 50, "parentName")
+        if parentName == "":
+            parentName = entity.name
+            parent = AssetCategory.objects.filter(name=entity.name).first()
+            if parent is None:
+                parent = AssetCategory(name=entity.name, entity=entity, parent=AssetCategory.root())
+                parent.save()
+        parent = AssetCategory.objects.filter(entity=entity, name=parentName).first()
+        if parent is None:
+            return request_failed(1, "父资产类型不存在", status_code=404)
+        category = AssetCategory.objects.filter(entity=entity, name=name).first()
+        if category:
+            return request_failed(2, "该资产类型已存在", status_code=403)
+        category = AssetCategory(name=name, entity=entity, parent=parent)
+        category.save()
+        return request_success()
+    else:
+        return BAD_METHOD

@@ -11,6 +11,23 @@ class AssetCategory(MPTTModel):
     name = models.CharField(max_length=50)
     parent = TreeForeignKey('self', blank=True, null=True, on_delete=models.CASCADE)
     entity = models.ForeignKey(Entity, on_delete=models.CASCADE)
+    @classmethod
+    def root(cls):
+        ''' return the root of the tree'''
+        return cls.objects.first().get_root()
+
+    def serialize(self):
+        entity_name = self.entity.name
+        if self.parent is None:
+            parent_name = ''
+        else:
+            parent_name = self.parent.name
+        return {
+            "id": self.id,
+            "categoryName": self.name,
+            "entityName": entity_name,
+            "parentName": parent_name
+        }
 
 
 class Asset(MPTTModel):
