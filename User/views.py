@@ -11,7 +11,7 @@ from utils.utils_getbody import get_args
 from utils.utils_checklength import checklength
 from utils.utils_checkauthority import CheckAuthority, CheckToken
 from eam_backend.settings import SECRET_KEY
-from  User.apps import init_department, init_entity, add_menu, add_users,admin_user
+from  utils.utils_startup import init_department, init_entity, add_menu, add_users,admin_user
 import jwt
 from django.db.utils import IntegrityError, OperationalError
 
@@ -351,12 +351,12 @@ def user_menu(req: HttpRequest):
         checklength(first, 0, 50, "first")
         checklength(second, -1, 50, "second")
         if second == "":
-            menus_entity = Menu.objects.filter(entity=entity).filter(first=first)
-            menus_base = Menu.objects.filter(entity=entity_base).filter(first=first)
+            menus_entity = Menu.objects.filter(entity=entity).filter(first=first).filter(second="")
+            menus_base = Menu.objects.filter(entity=entity_base).filter(first=first).filter(second="")
             if menus_base:
                 return request_failed(3, "不可删除初始一级菜单", status_code=403)
             menus = menus_entity
-            if menus is None:
+            if len(menus) == 0:
                 return request_failed(1, "一级菜单不存在", status_code=403)
             menus = Menu.objects.filter(first=first)
             for menu in menus:
@@ -367,9 +367,9 @@ def user_menu(req: HttpRequest):
             if menus_base:
                 return request_failed(4, "不可删除初始二级菜单", status_code=403)
             menu = menus_entity
-            menu = menu[0]
-            if menu is None:
+            if len(menu) == 0:
                 return request_failed(2, "二级菜单不存在", status_code=403)
+            menu = menu[0]
             menu.delete()
         return request_success()
     return BAD_METHOD

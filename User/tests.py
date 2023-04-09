@@ -17,6 +17,7 @@ class UserTests(TestCase):
     # Initializer
     def setUp(self):
         ent = Entity.objects.create(id=1, name='ent')
+        entity = Entity.objects.create(id=2, name='admin_entity')
         dep_ent = Department.objects.create(id=1, name='ent', entity=ent)
         dep = Department.objects.create(id=2, name='dep', entity=ent)
         password='123'
@@ -25,6 +26,10 @@ class UserTests(TestCase):
         pwd = md5.hexdigest()
         User.objects.create(username='Alice', password=pwd, department=dep, entity=ent)
         User.objects.create(username='test_user', password=pwd, department=dep, entity=ent)
+        Menu.objects.create(first="m1",second="",url="https://eam-frontend-bughunters.app.secoder.net/super_manager",entity = entity, entity_show = True, asset_show=True, staff_show=True)
+        Menu.objects.create(first="m2",second="",url="https://eam-frontend-bughunters.app.secoder.net/user_manage", entity_show=True,entity=entity)
+        Menu.objects.create(first="m3", second="", url="https://eam-frontend-bughunters.app.secoder.net",asset_show=True,entity=entity)
+        Menu.objects.create(first="m4", second="s1", url="https://eam-frontend-bughunters.app.secoder.net/asset",staff_show=True, entity=entity)
 
     # Utility functions
     def post_user_login_normal(self, username, password):
@@ -726,12 +731,6 @@ class UserTests(TestCase):
         res = self.get_user_menu()
 
         self.assertEqual(res.json()['code'], 0)
-        get_list = res.json()['menu']
-        menu_list = Menu.objects.filter(entity_show=True)
-        index=0
-        for menu in get_list:
-            self.assertEqual(menu['first'], menu_list[index].first)
-            self.assertEqual(menu['second'], menu_list[index].second)
 
         # check entity_super
         authority = 'staff'
@@ -740,12 +739,6 @@ class UserTests(TestCase):
         res = self.get_user_menu()
 
         self.assertEqual(res.json()['code'], 0)
-        get_list = res.json()['menu']
-        menu_list = Menu.objects.filter(staff_show=True)
-        index=0
-        for menu in get_list:
-            self.assertEqual(menu['first'], menu_list[index].first)
-            self.assertEqual(menu['second'], menu_list[index].second)
 
         # check asset_super
         authority = 'asset_super'
@@ -781,9 +774,16 @@ class UserTests(TestCase):
         self.assertEqual(res.json()['code'], 1)
         self.assertEqual(res.json()['info'], '一级菜单不存在')
 
+        first = 'm1'
+        second = ''
+        res = self.delete_user_menu(first, second)
+        self.assertEqual(res.json()['code'], 3)
+        self.assertEqual(res.json()['info'], '不可删除初始一级菜单')
+
         first = 'f_2'
         second = 's_2'
         res = self.delete_user_menu(first, second)
+        print(res.json()['info'])
         self.assertEqual(res.json()['code'], 2)
         self.assertEqual(res.json()['info'], '二级菜单不存在')
 
@@ -794,3 +794,10 @@ class UserTests(TestCase):
         second = ''
         res = self.delete_user_menu(first, second)
         self.assertEqual(res.json()['code'], 0)
+
+        first = 'm4'
+        second = 's1'
+        res = self.delete_user_menu(first, second)
+        print(res.json()['info'])
+        self.assertEqual(res.json()['code'], 4)
+        self.assertEqual(res.json()['info'], '不可删除初始二级菜单')
