@@ -62,10 +62,18 @@ def add_department(req: HttpRequest):
 def entity_list(req: HttpRequest):
     if req.method == 'GET':
         entities = Entity.objects.all()
+        entity_list = []
+        for entity in entities:
+            entity_info = return_field(entity.serialize(), ["id", "name"])
+            entitySuper = ''
+            user = User.objects.filter(entity=entity, entity_super=True).first()
+            if user:
+                entitySuper = user.username
+            entity_info["entitySuper"] = entitySuper
+            entity_list.append(entity_info)
+            
         return_data = {
-            "entities": [
-                return_field(entity.serialize(), ["id", "name"])
-            for entity in entities],
+            "entities": entity_list,
         }
         return request_success(return_data)
     else:
