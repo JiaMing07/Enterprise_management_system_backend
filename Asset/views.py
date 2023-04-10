@@ -30,6 +30,8 @@ def attribute_add(req: HttpRequest):
         if user.token != token:
             return request_failed(-6, "用户不在线", status_code=403)
 
+        ### whether check asset_super
+
         # check format
         checklength(name, 0, 50, "atrribute_name")
 
