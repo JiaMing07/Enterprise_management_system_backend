@@ -280,6 +280,7 @@ def user_userName(req: HttpRequest, userName: any):
 def user_menu(req: HttpRequest):
     if req.method == 'POST':
         CheckAuthority(req, ["entity_super"])
+        print(f"token:{req.COOKIES['token']}")
         token = req.COOKIES['token'] 
         decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         user: User = User.objects.get(username=decoded['username'])
@@ -311,8 +312,11 @@ def user_menu(req: HttpRequest):
         return request_success()
     elif req.method == 'GET':
         CheckToken(req)
-        token, decoded = CheckToken(req)
-        user: User = User.objects.get(username=decoded['username'])
+        token = req.COOKIES['token'] 
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        user = User.objects.filter(username=decoded['username']).first()
+        if user is None:
+            return request_failed(-6, "不存在对应的用户", status_code=403)
         if user.token != token:
             return request_failed(-6, "用户不在线", status_code=403)
         authority = user.check_authen()

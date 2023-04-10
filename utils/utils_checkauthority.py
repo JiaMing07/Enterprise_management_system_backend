@@ -27,6 +27,8 @@ def CheckToken(req: HttpRequest):
 def CompareAuthority(req: HttpRequest, authority):
     token, decoded = CheckToken(req)
     user = User.objects.filter(username=decoded['username']).first()
+    if user is None:
+        return "不存在对应的用户"
     if user.token != token:
         return "用户不在线"
     have_authority = False
