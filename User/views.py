@@ -280,7 +280,6 @@ def user_userName(req: HttpRequest, userName: any):
 def user_menu(req: HttpRequest):
     if req.method == 'POST':
         CheckAuthority(req, ["entity_super"])
-        print(f"token:{req.COOKIES['token']}")
         token = req.COOKIES['token'] 
         decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         user: User = User.objects.get(username=decoded['username'])
@@ -338,6 +337,12 @@ def user_menu(req: HttpRequest):
             second_base = Menu.objects.filter(entity = Entity.objects.filter(name='admin_entity').first()).filter(first=menu.first)
             second_list = second_entity | second_base
             second_list = second_list.exclude(second="")
+            if authority == 'entity_super':
+                second_list = second_list.filter(entity_show=True)
+            elif authority == 'asset_super':
+                second_list = second_list.filter(asset_show=True)
+            elif authority == 'staff':
+                second_list = second_list.filter(staff_show=True)
             dic['second'] = [return_field(m.serialize(), ['second', 'url']) for m in second_list]
             return_list.append(dic)
         return_data = {
