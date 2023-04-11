@@ -97,12 +97,23 @@ class Menu(models.Model):
     first = models.CharField(max_length=50)
     second = models.CharField(max_length=50)
     url = models.CharField(max_length=500,default='')
+    entity = models.ForeignKey(Entity, on_delete=models.CASCADE)
     entity_show = models.BooleanField(default=False)
     asset_show = models.BooleanField(default=False)
     staff_show = models.BooleanField(default=False)
 
+    def check_authen(self):
+        au = ""
+        if self.staff_show == True:
+            au += "staff "
+        if self.entity_show == True:
+            au += "entity_super"
+        if self.asset_show == True:
+            au+= "asset_super"
+        return au
+    
     def __str__(self) -> str:
-        return f'{self.first}_{self.second}'
+        return f'{self.first}_{self.second}_{self.check_authen()}'
     
     def set_authority(self, au: list):
         entity_show=False
@@ -125,6 +136,6 @@ class Menu(models.Model):
         }
     
     class Meta:
-        unique_together = ['first', 'second']
+        unique_together = ['first', 'second', 'entity']
 # Create your models here.
 
