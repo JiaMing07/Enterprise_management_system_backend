@@ -67,10 +67,20 @@ def attribute_add(req: HttpRequest):
 @CheckRequire    
 def attribute_list(req: HttpRequest):
     if req.method == 'GET':
-        token, decoded = CheckToken(req)
-        user = User.objects.filter(username=decoded['username']).first()
-        entity = user.entity
-        attributes = Attribute.objects.filter(entity=entity)
+        department_name = json.loads(req.body.decode("utf-8")).get('department')
+
+        CheckToken(req)
+        token = req.COOKIES['token'] 
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        user = User.objects.get(username=decoded['username'])
+
+        get_department = Department.objects.get(entity=user.entity, name=department_name)
+
+        # asset_super can see son depart
+
+        # others can see own depart
+        
+        attributes = Attribute.objects.filter(entity=user.entity).filter(department=get_department)
         return_data = {
             "attributes": [
                 return_field(attribute.serialize(), ["id", "name"])
