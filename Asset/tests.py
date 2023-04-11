@@ -20,6 +20,7 @@ class AttributeTests(TestCase):
         attri_0 = Attribute.objects.create(id=1, name="attri_0", entity=ent)
         dep_ent = Department.objects.create(id=1, name='ent', entity=ent)
         dep = Department.objects.create(id=2, name='dep', entity=ent)
+        dep_child = Department.objects.create(id=3, name='dep_child', entity=ent, parent=dep)
         password='123'
         md5 = hashlib.md5()
         md5.update(password.encode('utf-8'))
@@ -27,9 +28,10 @@ class AttributeTests(TestCase):
         User.objects.create(username='Alice', password=pwd, department=dep, entity=ent)
         User.objects.create(username='test_attribute', password=pwd, department=dep, entity=ent)
 
-    def post_attribute_add(self, name):
+    def post_attribute_add(self, name, department):
         payload = {
-            'name': name
+            'name': name,
+            'department': department
         }
 
         payload = {k: v for k, v in payload.items() if v is not None}
@@ -49,9 +51,33 @@ class AttributeTests(TestCase):
 
         # success
         name = "attri_1"
-        res = self.post_attribute_add(name)
+        department = "dep"
+        res = self.post_attribute_add(name, department)
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
+
+        # not asset super, 2
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+        name = "attri_2"
+        department = "dep"
+        res = self.post_attribute_add(name, department)
+        self.assertEqual(res.json()['code'], 2)
+
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("asset_super")
+        user.save()
+
+        # not department or son department, 2
+        name = "attri_2"
+        department = "dep_ent"
+        res = self.post_attribute_add(name, department)
+        self.assertEqual(res.json()['code'], 2)
+
+        # son department, 0
+        name = "attri_2"
+        department = "dep_child"
+        res = self.post_attribute_add(name, department)
+        self.assertEqual(res.json()['code'], 2)
 
         # same, 1
         name = "attri_0"
