@@ -77,9 +77,21 @@ def attribute_list(req: HttpRequest):
         get_department = Department.objects.get(entity=user.entity, name=department_name)
 
         # asset_super can see son depart
+        if user.is_asset_super:
+            children_list = []
+            children = user.department.get_children()
+            for child in children:
+                children_list.append(child.sub_tree())
+
+            if get_department != user.department and get_department not in children_list:
+                return request_failed(1, "没有查看该部门自定义属性的权限", status_code=403)
 
         # others can see own depart
+        else:
+            if get_department != user.department:
+                return request_failed(1, "没有查看该部门自定义属性的权限", status_code=403)
         
+        # get list
         attributes = Attribute.objects.filter(entity=user.entity).filter(department=get_department)
         return_data = {
             "attributes": [
