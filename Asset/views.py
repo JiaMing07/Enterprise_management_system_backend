@@ -57,3 +57,60 @@ def asset_category_add(req: HttpRequest):
         return request_success()
     else:
         return BAD_METHOD
+    
+@CheckRequire
+def asset_list(req: HttpRequest):
+    if req.method == 'GET':
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        assets = Asset.objects.filter(entity=entity)
+        return_data = {
+            "assets": [
+                return_field(asset.serialize(), ["id", "assetName"])
+            for asset in assets],
+        }
+        return request_success(return_data)
+    else:
+        return BAD_METHOD
+
+@CheckRequire
+def asset_add(req: HttpRequest):
+    if req.method == 'POST':
+        CheckAuthority(req, ["entity_super"])
+        body = json.loads(req.body.decode("utf-8"))
+        name, parentName, description, position, value, owner, is_number, number, categoryName = get_args(
+            body, ["name", "parent", "description", "position", "value", "owner", "is_number", "number", "category"], 
+            ["string", "string", "string", "string", "int", "string", "bool", "int", "string"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        checklength(name, 0, 50, "assetName")
+        checklength(parentName, -1, 50, "parentName")
+        checklength(owner, 0, 50, "owner")
+        checklength(categoryName, 0, 50, "categoryName")
+        if parentName == "":
+            parentName = entity.name
+            parent = Asset.objects.filter(name=entity.name).first()
+            if parent is None:
+                parent = Asset(name=entity.name, owner=user.username, 
+                               category=AssetCategory.root(), entity=entity, parent=Asset.root())
+                parent.save()
+        parent = Asset.objects.filter(entity=entity, name=parentName).first()
+        if parent is None:
+            return request_failed(1, "父资产不存在", status_code=404)
+        category = AssetCategory.objects.filter(name=categoryName, entity=entity).first()
+        if category is None:
+            return request_failed(2, "资产类型不存在", status_code=404)
+        owner_user = User.objects.filter(username=owner).first()
+        if owner_user is None:
+            return request_failed(3, "owner用户不存在", status_code=404)
+        asset = Asset.objects.filter(entity=entity, name=name).first()
+        if asset:
+            return request_failed(4, "该资产已存在", status_code=403)
+        asset = Asset(name=name, description=description, position=position, value=value, owner=owner, 
+                      is_number=is_number, number=number, category=category, entity=entity, parent=parent)
+        asset.save()
+        return request_success()
+    else:
+        return BAD_METHOD
