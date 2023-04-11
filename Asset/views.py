@@ -89,6 +89,8 @@ def asset_add(req: HttpRequest):
         checklength(parentName, -1, 50, "parentName")
         checklength(owner, 0, 50, "owner")
         checklength(categoryName, 0, 50, "categoryName")
+        checklength(description, 0, 300, "description")
+        checklength(position, 0, 300, "position")
         if parentName == "":
             parentName = entity.name
             parent = Asset.objects.filter(name=entity.name).first()
@@ -104,7 +106,7 @@ def asset_add(req: HttpRequest):
             return request_failed(2, "资产类型不存在", status_code=404)
         owner_user = User.objects.filter(username=owner).first()
         if owner_user is None:
-            return request_failed(3, "owner用户不存在", status_code=404)
+            return request_failed(3, "挂账人不存在", status_code=404)
         asset = Asset.objects.filter(entity=entity, name=name).first()
         if asset:
             return request_failed(4, "该资产已存在", status_code=403)
