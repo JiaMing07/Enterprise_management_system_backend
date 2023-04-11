@@ -22,18 +22,30 @@ import jwt
 def attribute_add(req: HttpRequest):
     if req.method == 'POST':
         name = json.loads(req.body.decode("utf-8")).get('name')
+        department_name = json.loads(req.body.decode("utf-8")).get('department')
 
         CheckToken(req)
         token = req.COOKIES['token'] 
         decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         user = User.objects.get(username=decoded['username'])
+        department = Department.objects.get(entity=user.entity, name=department_name)
+        depart = user.department
         if user.token != token:
             return request_failed(-6, "用户不在线", status_code=403)
 
-        ### whether check asset_super
+        # whether check asset_super
+        if not user.is_asset_super:
+            return request_failed(2, "只有资产管理员可添加属性", status_code=403)
+        
+        else:
+            # get son department
+            children_list = []
+            children = depart.get_children()
+            for child in children:
+                children_list.append(child.sub_tree())
 
-        ### whether add department
-        ### check son department
+            if department != depart and department not in children_list:
+                return request_failed(2, "没有添加该部门自定义属性的权限", status_code=403)
 
         # check format
         checklength(name, 0, 50, "atrribute_name")
@@ -45,7 +57,7 @@ def attribute_add(req: HttpRequest):
 
         # save
         else:
-            new_attri = Attribute(name=name, entity=user.entity)
+            new_attri = Attribute(name=name, entity=user.entity, department=department)
             new_attri.save()
             return request_success()
    

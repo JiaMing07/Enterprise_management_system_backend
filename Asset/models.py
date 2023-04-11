@@ -3,7 +3,7 @@ from utils.utils_request import return_field
 
 # Create your models here.
 from mptt.models import MPTTModel, TreeForeignKey
-from Department.models import Entity
+from Department.models import Department, Entity
 
 class AssetCategory(MPTTModel):
     '''资产类型'''
@@ -33,6 +33,7 @@ class Attribute(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=50)
     entity = models.ForeignKey(Entity, on_delete=models.CASCADE)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE)
 
 
 class AssetAttribute(models.Model):
