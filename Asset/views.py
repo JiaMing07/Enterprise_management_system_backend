@@ -26,11 +26,14 @@ def attribute_add(req: HttpRequest):
         CheckToken(req)
         token = req.COOKIES['token'] 
         decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
-        user: User = User.objects.get(username=decoded['username'])
+        user = User.objects.get(username=decoded['username'])
         if user.token != token:
             return request_failed(-6, "用户不在线", status_code=403)
 
         ### whether check asset_super
+
+        ### whether add department
+        ### check son department
 
         # check format
         checklength(name, 0, 50, "atrribute_name")
@@ -46,5 +49,22 @@ def attribute_add(req: HttpRequest):
             new_attri.save()
             return request_success()
    
+    else:
+        return BAD_METHOD
+    
+@CheckRequire    
+def attribute_list(req: HttpRequest):
+    if req.method == 'GET':
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        attributes = Attribute.objects.filter(entity=entity)
+        return_data = {
+            "attributes": [
+                return_field(attribute.serialize(), ["id", "name"])
+            for attribute in attributes],
+        }
+        return request_success(return_data)
+
     else:
         return BAD_METHOD
