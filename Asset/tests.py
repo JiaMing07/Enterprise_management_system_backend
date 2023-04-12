@@ -52,10 +52,11 @@ class AttributeTests(TestCase):
     def get_asset_category_list(self):
         return self.client.get(f"/asset/category/list")
     
-    def post_asset_category_add(self, name, parent):
+    def post_asset_category_add(self, name, parent, is_number):
         payload = {
             'name': name,
-            'parent': parent
+            'parent': parent,
+            'is_number': is_number,
         }
 
         payload = {k: v for k, v in payload.items() if v is not None}
@@ -64,15 +65,14 @@ class AttributeTests(TestCase):
     def get_asset_list(self):
         return self.client.get(f"/asset/list")
     
-    def post_asset_add(self, name, parent, description, position, value, owner, is_number, number, category, image):
+    def post_asset_add(self, name, parent, description, position, value, owner, number, category, image):
         payload = {
             "name": name, 
             "parent": parent, 
             "description": description, 
             "position": position, 
             "value": value, 
-            "owner": owner, 
-            "is_number": is_number, 
+            "owner": owner,
             "number": number, 
             "category": category,
             "image": image,
@@ -96,8 +96,9 @@ class AttributeTests(TestCase):
 
         categoryName = 'category_1'
         parent = "cate"
+        is_number = False
         
-        res = self.post_asset_category_add(categoryName, parent)
+        res = self.post_asset_category_add(categoryName, parent, is_number)
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(len(AssetCategory.objects.all()), 2)
@@ -125,13 +126,12 @@ class AttributeTests(TestCase):
         position = 'pos'
         value = '1000'
         owner = 'Alice'
-        is_number = False
         number = 1
         categoryName = 'cate'
         image = '127.0.0.1'
         
         res = self.post_asset_add(assetName, parentName, description, position, 
-                                           value, owner, is_number, number, categoryName, image)
+                                           value, owner, number, categoryName, image)
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(len(Asset.objects.all()), 2)

@@ -11,6 +11,7 @@ class AssetCategory(MPTTModel):
     name = models.CharField(max_length=50)
     parent = TreeForeignKey('self', blank=True, null=True, on_delete=models.CASCADE)
     entity = models.ForeignKey(Entity, on_delete=models.CASCADE)
+    is_number = models.BooleanField(default=True)
     @classmethod
     def root(cls):
         ''' return the root of the tree'''
@@ -26,7 +27,8 @@ class AssetCategory(MPTTModel):
             "id": self.id,
             "categoryName": self.name,
             "entityName": entity_name,
-            "parentName": parent_name
+            "parentName": parent_name,
+            "is_number": self.is_number,
         }
     
     def sub_tree(self):
@@ -37,6 +39,7 @@ class AssetCategory(MPTTModel):
         
         return {
             "categoryName": self.name,
+            "is_number": self.is_number,
             "sub-categories": children_list,
         }
 
@@ -50,7 +53,6 @@ class Asset(MPTTModel):
     value = models.BigIntegerField(default=0)
     owner = models.CharField(max_length=50)
     number = models.BigIntegerField(default=1)
-    is_number = models.BooleanField(default=False)
     state = models.CharField(max_length=50, default='IDLE')
     category = models.ForeignKey(AssetCategory, on_delete=models.CASCADE)
     parent = TreeForeignKey('self', blank=True, null=True, on_delete=models.CASCADE)
@@ -75,7 +77,6 @@ class Asset(MPTTModel):
             "position": self.position,
             "value": self.value,
             "user": self.owner,
-            "is_number": self.is_number,
             "number": self.number,
             "state": self.state,
             "entity": self.entity.name,
