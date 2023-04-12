@@ -6,4 +6,6 @@ urlpatterns = [
     path('category/add', views.asset_category_add),
     path('list', views.asset_list),
     path('add', views.asset_add),
+    path('attribute/add', views.attribute_add),
+    path('attribute/<department>/list', views.attribute_list),
 ]
