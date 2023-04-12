@@ -210,3 +210,46 @@ def attribute_list(req: HttpRequest, department: any):
 
     else:
         return BAD_METHOD
+    
+@CheckRequire    
+def asset_attribute(req: HttpRequest):
+
+    if req.method == 'POST':
+        # check format
+        body = json.loads(req.body.decode("utf-8"))
+        asset_name, attribute_name, description = get_args(body, ['asset', 'attribute', 'description'], ['string','string','string'])
+        checklength(asset_name, 0, 50, "asset")
+        checklength(attribute_name, 0, 50, "attribute")
+        checklength(description, 0, 300, "description")
+
+        # check token and get entity
+        CheckToken(req)
+        token = req.COOKIES['token'] 
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        user = User.objects.get(username=decoded['username'])
+    
+        if user.token != token:
+            return request_failed(-6, "用户不在线", status_code=403)
+
+        # whether check asset_super
+        if not user.asset_super:
+            return request_failed(2, "只有资产管理员可为资产添加属性", status_code=403)
+        
+        # get asset and attribute
+        asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
+        attribute = Attribute.objects.filter(name=attribute_name, entity=user.entity, department=user.department).first()
+
+        # filter whether exist
+        if asset is None:
+            return request_failed(1, "资产不存在", status_code=403)
+        if attribute is None:
+            return request_failed(1, "自定义属性不存在", status_code=403)
+
+        # save
+        else:
+            new_pair = AssetAttribute(asset=asset, attribute=attribute, description=description)
+            new_pair.save()
+            return request_success()
+
+    else:
+        return BAD_METHOD

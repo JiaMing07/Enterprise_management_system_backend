@@ -104,3 +104,11 @@ class AssetAttribute(models.Model):
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     attribute = models.ForeignKey(Attribute, on_delete=models.CASCADE)
     description = models.CharField(max_length=300)
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "asset": self.asset.name,
+            "attribute": self.attribute.name,
+            "description": self.description,
+        }
