@@ -212,16 +212,14 @@ def attribute_list(req: HttpRequest, department: any):
         return BAD_METHOD
     
 @CheckRequire    
-def asset_attribute(req: HttpRequest, asset: any):
-
-    idx = require({"asset": asset}, "asset", "string", err_msg="Bad param [asset]", err_code=-1)
-    checklength(department, 0, 50, "asset")
+def asset_attribute(req: HttpRequest):
 
     if req.method == 'POST':
         # check format
         body = json.loads(req.body.decode("utf-8"))
-        attribute_name, description = get_args(body, ['attribute', 'description'], ['string','string'])
-        checklength(attribute_name, 0, 50, "attribute_name")
+        asset_name, attribute_name, description = get_args(body, ['asset', 'attribute', 'description'], ['string','string','string'])
+        checklength(asset_name, 0, 50, "asset")
+        checklength(attribute_name, 0, 50, "attribute")
         checklength(description, 0, 300, "description")
 
         # check token and get entity
@@ -229,7 +227,6 @@ def asset_attribute(req: HttpRequest, asset: any):
         token = req.COOKIES['token'] 
         decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         user = User.objects.get(username=decoded['username'])
-        department = Department.objects.get(entity=user.entity, name=user.department)
     
         if user.token != token:
             return request_failed(-6, "用户不在线", status_code=403)
@@ -239,18 +236,18 @@ def asset_attribute(req: HttpRequest, asset: any):
             return request_failed(2, "只有资产管理员可为资产添加属性", status_code=403)
         
         # get asset and attribute
-        asset_cur = Asset.objects.get(name=asset)
-        attribute = Attribute.objects.get(name=attribute_name, entity=user.entity, department=user.department)
+        asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
+        attribute = Attribute.objects.filter(name=attribute_name, entity=user.entity, department=user.department).first()
 
         # filter whether exist
-        if asset_cur is None:
+        if asset is None:
             return request_failed(1, "资产不存在", status_code=403)
         if attribute is None:
             return request_failed(1, "自定义属性不存在", status_code=403)
 
         # save
         else:
-            new_pair = AssetAttribute(asset=asset_cur, attribute=attribute, department=department, description=description)
+            new_pair = AssetAttribute(asset=asset, attribute=attribute, description=description)
             new_pair.save()
             return request_success()
 

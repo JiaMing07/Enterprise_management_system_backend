@@ -8,5 +8,5 @@ urlpatterns = [
     path('add', views.asset_add),
     path('attribute/add', views.attribute_add),
     path('attribute/<department>/list', views.attribute_list),
-    path('asset/<asset>/attribute', views.asset_attribute),
+    path('attribute', views.asset_attribute),
 ]
