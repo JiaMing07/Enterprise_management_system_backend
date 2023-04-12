@@ -323,30 +323,13 @@ def user_menu(req: HttpRequest):
         menus_base = Menu.objects.filter(entity = Entity.objects.filter(name='admin_entity').first()).filter(second="")
         menu_list = menus_entity | menus_base
         if authority == 'entity_super':
-            menu_list = menu_list.filter(entity_show=True)
+            menu_list = Menu.objects.filter(entity_show=True)
         elif authority == 'asset_super':
-            menu_list = menu_list.filter(asset_show=True)
+            menu_list = Menu.objects.filter(asset_show=True)
         elif authority == 'staff':
-            menu_list = menu_list.filter(staff_show=True)
-        return_list = []
-        for menu in menu_list:
-            dic={}
-            dic['first'] = menu.first
-            dic['url'] = menu.url
-            second_entity = Menu.objects.filter(entity = user.entity).filter(first=menu.first)
-            second_base = Menu.objects.filter(entity = Entity.objects.filter(name='admin_entity').first()).filter(first=menu.first)
-            second_list = second_entity | second_base
-            second_list = second_list.exclude(second="")
-            if authority == 'entity_super':
-                second_list = second_list.filter(entity_show=True)
-            elif authority == 'asset_super':
-                second_list = second_list.filter(asset_show=True)
-            elif authority == 'staff':
-                second_list = second_list.filter(staff_show=True)
-            dic['second'] = [return_field(m.serialize(), ['second', 'url']) for m in second_list]
-            return_list.append(dic)
+            menu_list = Menu.objects.filter(staff_show=True)
         return_data = {
-            "menu": return_list
+            "menu": [menu.serialize() for menu in menu_list]
         }
         return request_success(return_data)
     elif req.method == 'DELETE':

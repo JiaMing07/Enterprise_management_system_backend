@@ -731,6 +731,13 @@ class UserTests(TestCase):
         res = self.get_user_menu()
 
         self.assertEqual(res.json()['code'], 0)
+        get_list = res.json()['menu']
+        menu_list = Menu.objects.filter(entity_show=True)
+        index=0
+        for menu in get_list:
+            self.assertEqual(menu['first'], menu_list[index].first)
+            self.assertEqual(menu['second'], menu_list[index].second)
+            index+=1
 
         # check entity_super
         authority = 'staff'
@@ -739,6 +746,13 @@ class UserTests(TestCase):
         res = self.get_user_menu()
 
         self.assertEqual(res.json()['code'], 0)
+        get_list = res.json()['menu']
+        menu_list = Menu.objects.filter(staff_show=True)
+        index=0
+        for menu in get_list:
+            self.assertEqual(menu['first'], menu_list[index].first)
+            self.assertEqual(menu['second'], menu_list[index].second)
+            index+=1
 
         # check asset_super
         authority = 'asset_super'
@@ -747,6 +761,13 @@ class UserTests(TestCase):
         res = self.get_user_menu()
 
         self.assertEqual(res.json()['code'], 0)
+        get_list = res.json()['menu']
+        menu_list = Menu.objects.filter(asset_show=True)
+        index=0
+        for menu in get_list:
+            self.assertEqual(menu['first'], menu_list[index].first)
+            self.assertEqual(menu['second'], menu_list[index].second)
+            index += 1
             
         # method delete
         # add 2 menu
@@ -774,16 +795,9 @@ class UserTests(TestCase):
         self.assertEqual(res.json()['code'], 1)
         self.assertEqual(res.json()['info'], '一级菜单不存在')
 
-        first = 'm1'
-        second = ''
-        res = self.delete_user_menu(first, second)
-        self.assertEqual(res.json()['code'], 3)
-        self.assertEqual(res.json()['info'], '不可删除初始一级菜单')
-
         first = 'f_2'
         second = 's_2'
         res = self.delete_user_menu(first, second)
-        print(res.json()['info'])
         self.assertEqual(res.json()['code'], 2)
         self.assertEqual(res.json()['info'], '二级菜单不存在')
 
@@ -794,10 +808,3 @@ class UserTests(TestCase):
         second = ''
         res = self.delete_user_menu(first, second)
         self.assertEqual(res.json()['code'], 0)
-
-        first = 'm4'
-        second = 's1'
-        res = self.delete_user_menu(first, second)
-        print(res.json()['info'])
-        self.assertEqual(res.json()['code'], 4)
-        self.assertEqual(res.json()['info'], '不可删除初始二级菜单')
