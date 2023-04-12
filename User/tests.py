@@ -632,7 +632,6 @@ class UserTests(TestCase):
         authority = 'entity_super/asset_super'
 
         res = self.post_user_menu(first, second, url, authority)
-        print(res.json()['info'])
         self.assertEqual(res.json()['code'], 0)
         # test repeat first
         first = 'f_1'
