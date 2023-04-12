@@ -142,4 +142,27 @@ class AttributeTests(TestCase):
         # staff, son dep, 1
         department = "dep_child"
         res = self.get_attribute_list(department)
+        self.assertEqual(res.json()['info'], '没有查看该部门自定义属性的权限')
         self.assertEqual(res.json()['code'], 1)
+
+        # staff, same dep, 0
+        department = "dep"
+        res = self.get_attribute_list(department)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        # asset_super
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("asset_super")
+        user.save()
+
+        # own department, 0
+        department = "dep"
+        res = self.get_attribute_list(department)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        # asset_super, son department, 0
+        department = "dep_child"
+        res = self.get_attribute_list(department)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)

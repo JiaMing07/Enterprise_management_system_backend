@@ -66,7 +66,6 @@ def attribute_list(req: HttpRequest, department: any):
     if req.method == 'GET':
         idx = require({"department": department}, "department", "string", err_msg="Bad param [department]", err_code=-1)
         checklength(department, 0, 50, "department_name")
-        print("10000000000000000000000000000")
 
         CheckToken(req)
         token = req.COOKIES['token'] 
@@ -74,22 +73,17 @@ def attribute_list(req: HttpRequest, department: any):
         user = User.objects.get(username=decoded['username'])
 
         get_department = Department.objects.get(entity=user.entity, name=department)
-        print("1")
 
         # asset_super can see son depart
         if user.asset_super:
-            print("asset super")
             children_list = user.department.get_children()
 
             if get_department != user.department and get_department not in children_list:
-                print("no authen")
                 return request_failed(1, "没有查看该部门自定义属性的权限", status_code=403)
 
         # others can see own depart
         else:
-            print("Staff")
             if get_department != user.department:
-                print("no authen either")
                 return request_failed(1, "没有查看该部门自定义属性的权限", status_code=403)
         
         # get list

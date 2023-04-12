@@ -35,6 +35,13 @@ class Attribute(models.Model):
     entity = models.ForeignKey(Entity, on_delete=models.CASCADE)
     department = models.ForeignKey(Department, on_delete=models.CASCADE)
 
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "entity": self.entity.name,
+            "department": self.department.name,
+        }
 
 class AssetAttribute(models.Model):
     id = models.BigAutoField(primary_key=True)
