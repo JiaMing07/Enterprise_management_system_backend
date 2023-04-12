@@ -34,18 +34,15 @@ def attribute_add(req: HttpRequest):
             return request_failed(-6, "用户不在线", status_code=403)
 
         # whether check asset_super
-        if not user.is_asset_super:
+        if not user.asset_super:
             return request_failed(2, "只有资产管理员可添加属性", status_code=403)
         
         else:
             # get son department
-            children_list = []
-            children = depart.get_children()
-            for child in children:
-                children_list.append(child.sub_tree())
+            children_list = depart.get_children()
 
             if department != depart and department not in children_list:
-                return request_failed(2, "没有添加该部门自定义属性的权限", status_code=403)
+                    return request_failed(2, "没有添加该部门自定义属性的权限", status_code=403)
 
         # check format
         checklength(name, 0, 50, "atrribute_name")
@@ -65,30 +62,34 @@ def attribute_add(req: HttpRequest):
         return BAD_METHOD
     
 @CheckRequire    
-def attribute_list(req: HttpRequest):
+def attribute_list(req: HttpRequest, department: any):
     if req.method == 'GET':
-        department_name = json.loads(req.body.decode("utf-8")).get('department')
+        idx = require({"department": department}, "department", "string", err_msg="Bad param [department]", err_code=-1)
+        checklength(department, 0, 50, "department_name")
+        print("10000000000000000000000000000")
 
         CheckToken(req)
         token = req.COOKIES['token'] 
         decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         user = User.objects.get(username=decoded['username'])
 
-        get_department = Department.objects.get(entity=user.entity, name=department_name)
+        get_department = Department.objects.get(entity=user.entity, name=department)
+        print("1")
 
         # asset_super can see son depart
-        if user.is_asset_super:
-            children_list = []
-            children = user.department.get_children()
-            for child in children:
-                children_list.append(child.sub_tree())
+        if user.asset_super:
+            print("asset super")
+            children_list = user.department.get_children()
 
             if get_department != user.department and get_department not in children_list:
+                print("no authen")
                 return request_failed(1, "没有查看该部门自定义属性的权限", status_code=403)
 
         # others can see own depart
         else:
+            print("Staff")
             if get_department != user.department:
+                print("no authen either")
                 return request_failed(1, "没有查看该部门自定义属性的权限", status_code=403)
         
         # get list
