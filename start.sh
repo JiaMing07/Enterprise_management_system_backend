@@ -1,6 +1,7 @@
 #!/bin/sh
 python3 manage.py makemigrations Department
 python3 manage.py makemigrations User
+python3 manage.py makemigrations Asset
 python3 manage.py migrate
 # python3 manage.py loaddata db.json
 

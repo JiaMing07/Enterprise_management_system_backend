@@ -17,6 +17,7 @@ class UserTests(TestCase):
     # Initializer
     def setUp(self):
         ent = Entity.objects.create(id=1, name='ent')
+        entity = Entity.objects.create(id=2, name='admin_entity')
         dep_ent = Department.objects.create(id=1, name='ent', entity=ent)
         dep = Department.objects.create(id=2, name='dep', entity=ent)
         password='123'
@@ -25,6 +26,10 @@ class UserTests(TestCase):
         pwd = md5.hexdigest()
         User.objects.create(username='Alice', password=pwd, department=dep, entity=ent)
         User.objects.create(username='test_user', password=pwd, department=dep, entity=ent)
+        Menu.objects.create(first="m1",second="",url="https://eam-frontend-bughunters.app.secoder.net/super_manager",entity = entity, entity_show = True, asset_show=True, staff_show=True)
+        Menu.objects.create(first="m2",second="",url="https://eam-frontend-bughunters.app.secoder.net/user_manage", entity_show=True,entity=entity)
+        Menu.objects.create(first="m3", second="", url="https://eam-frontend-bughunters.app.secoder.net",asset_show=True,entity=entity)
+        Menu.objects.create(first="m4", second="s1", url="https://eam-frontend-bughunters.app.secoder.net/asset",staff_show=True, entity=entity)
 
     # Utility functions
     def post_user_login_normal(self, username, password):
@@ -627,6 +632,7 @@ class UserTests(TestCase):
         authority = 'entity_super/asset_super'
 
         res = self.post_user_menu(first, second, url, authority)
+        print(res.json()['info'])
         self.assertEqual(res.json()['code'], 0)
         # test repeat first
         first = 'f_1'
@@ -732,6 +738,7 @@ class UserTests(TestCase):
         for menu in get_list:
             self.assertEqual(menu['first'], menu_list[index].first)
             self.assertEqual(menu['second'], menu_list[index].second)
+            index+=1
 
         # check entity_super
         authority = 'staff'
@@ -746,6 +753,7 @@ class UserTests(TestCase):
         for menu in get_list:
             self.assertEqual(menu['first'], menu_list[index].first)
             self.assertEqual(menu['second'], menu_list[index].second)
+            index+=1
 
         # check asset_super
         authority = 'asset_super'

@@ -85,7 +85,6 @@ WSGI_APPLICATION = 'eam_backend.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
-
 if env["database"]["type"] == "mysql":
     DATABASES = {
         "default": {
@@ -94,6 +93,7 @@ if env["database"]["type"] == "mysql":
             "USER": "root",
             "PASSWORD": "bughunters",
             "HOST": "mysql.BugHunters.secoder.local",
+            # "HOST": "172.17.0.2",
             "PORT": 3306,
             "OPTIONS": {"charset": "utf8mb4"},
         },
@@ -106,10 +106,8 @@ elif env["database"]["type"] == "postgreSQL":
             "USER": "PROJECT_DATABASE",
             "PASSWORD": "bughunters",
             "HOST": "postgreSQL.BugHunters.secoder.local",
+            # "HOST": "172.17.0.2",
             "PORT": 5432,
-            "TEST":{
-                'NAME': 'mytestdatabase',
-            },
         },
     }
 else:
