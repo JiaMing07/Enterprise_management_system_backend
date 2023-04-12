@@ -23,11 +23,15 @@ def asset_category_list(req: HttpRequest):
         token, decoded = CheckToken(req)
         user = User.objects.filter(username=decoded['username']).first()
         entity = user.entity
-        categories = AssetCategory.objects.filter(entity=entity)
+        category = AssetCategory.objects.filter(entity=entity).first()
+        while True:
+            parent = category.get_ancestors(ascending=True).first()
+            if (parent is None or parent.entity != entity):
+                break
+            else:
+                category = parent
         return_data = {
-            "categories": [
-                return_field(category.serialize(), ["id", "categoryName"])
-            for category in categories],
+            "categories": category.sub_tree(),
         }
         return request_success(return_data)
     else:
@@ -71,7 +75,7 @@ def asset_list(req: HttpRequest):
         assets = Asset.objects.filter(entity=entity)
         return_data = {
             "assets": [
-                return_field(asset.serialize(), ["id", "assetName"])
+                return_field(asset.serialize(), ["id", "assetName", "category", "user", "state"])
             for asset in assets],
         }
         return request_success(return_data)
@@ -83,9 +87,9 @@ def asset_add(req: HttpRequest):
     if req.method == 'POST':
         CheckAuthority(req, ["entity_super"])
         body = json.loads(req.body.decode("utf-8"))
-        name, parentName, description, position, value, owner, is_number, number, categoryName = get_args(
-            body, ["name", "parent", "description", "position", "value", "owner", "is_number", "number", "category"], 
-            ["string", "string", "string", "string", "int", "string", "bool", "int", "string"])
+        name, parentName, description, position, value, owner, is_number, number, categoryName, image_url = get_args(
+            body, ["name", "parent", "description", "position", "value", "owner", "is_number", "number", "category", "image"], 
+            ["string", "string", "string", "string", "int", "string", "bool", "int", "string", "string"])
         token, decoded = CheckToken(req)
         user = User.objects.filter(username=decoded['username']).first()
         entity = user.entity
@@ -95,6 +99,7 @@ def asset_add(req: HttpRequest):
         checklength(categoryName, 0, 50, "categoryName")
         checklength(description, 0, 300, "description")
         checklength(position, 0, 300, "position")
+        checklength(image_url, 0, 300, "imageURL")
         if parentName == "":
             parentName = entity.name
             parent = Asset.objects.filter(name=entity.name).first()
@@ -114,8 +119,8 @@ def asset_add(req: HttpRequest):
         asset = Asset.objects.filter(entity=entity, name=name).first()
         if asset:
             return request_failed(4, "该资产已存在", status_code=403)
-        asset = Asset(name=name, description=description, position=position, value=value, owner=owner, 
-                      is_number=is_number, number=number, category=category, entity=entity, parent=parent)
+        asset = Asset(name=name, description=description, position=position, value=value, owner=owner, is_number=is_number, 
+                      number=number, category=category, entity=entity, parent=parent, image_url=image_url)
         asset.save()
         return request_success()
     else:

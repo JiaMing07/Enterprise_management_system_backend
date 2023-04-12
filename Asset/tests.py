@@ -64,7 +64,7 @@ class AttributeTests(TestCase):
     def get_asset_list(self):
         return self.client.get(f"/asset/list")
     
-    def post_asset_add(self, name, parent, description, position, value, owner, is_number, number, category):
+    def post_asset_add(self, name, parent, description, position, value, owner, is_number, number, category, image):
         payload = {
             "name": name, 
             "parent": parent, 
@@ -75,6 +75,7 @@ class AttributeTests(TestCase):
             "is_number": is_number, 
             "number": number, 
             "category": category,
+            "image": image,
         }
 
         payload = {k: v for k, v in payload.items() if v is not None}
@@ -127,9 +128,10 @@ class AttributeTests(TestCase):
         is_number = False
         number = 1
         categoryName = 'cate'
+        image = '127.0.0.1'
         
         res = self.post_asset_add(assetName, parentName, description, position, 
-                                           value, owner, is_number, number, categoryName)
+                                           value, owner, is_number, number, categoryName, image)
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(len(Asset.objects.all()), 2)

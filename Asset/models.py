@@ -28,6 +28,17 @@ class AssetCategory(MPTTModel):
             "entityName": entity_name,
             "parentName": parent_name
         }
+    
+    def sub_tree(self):
+        children_list = []
+        children = self.get_children()
+        for child in children:
+            children_list.append(child.sub_tree())
+        
+        return {
+            "categoryName": self.name,
+            "sub-categories": children_list,
+        }
 
 
 class Asset(MPTTModel):
@@ -44,6 +55,7 @@ class Asset(MPTTModel):
     category = models.ForeignKey(AssetCategory, on_delete=models.CASCADE)
     parent = TreeForeignKey('self', blank=True, null=True, on_delete=models.CASCADE)
     entity = models.ForeignKey(Entity, on_delete=models.CASCADE)
+    image_url = models.CharField(max_length=300)
     @classmethod
     def root(cls):
         ''' return the root of the tree'''
@@ -58,15 +70,16 @@ class Asset(MPTTModel):
             "id": self.id,
             "assetName": self.name,
             "parentName": parent_name,
-            "categoryName": self.category.name,
+            "category": self.category.name,
             "description": self.description,
             "position": self.position,
             "value": self.value,
-            "owner": self.owner,
+            "user": self.owner,
             "is_number": self.is_number,
             "number": self.number,
             "state": self.state,
             "entity": self.entity.name,
+            "image": self.image_url,
         }
 
 
