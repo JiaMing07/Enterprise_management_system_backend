@@ -94,16 +94,36 @@ class AttributeTests(TestCase):
 
         self.assertEqual(len(AssetCategory.objects.all()), 1)
 
+        # test parent=''
         categoryName = 'category_1'
-        parent = "cate"
+        parent = ""
         is_number = False
         
         res = self.post_asset_category_add(categoryName, parent, is_number)
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
-        self.assertEqual(len(AssetCategory.objects.all()), 2)
+        self.assertEqual(len(AssetCategory.objects.all()), 3)
         self.assertTrue(AssetCategory.objects.filter(name=categoryName).exists())
 
+        # test parent not found
+        categoryName = 'category_2'
+        parent = "cat"
+        is_number = False
+        
+        res = self.post_asset_category_add(categoryName, parent, is_number)
+        self.assertEqual(res.json()['code'], 1)
+        self.assertEqual(len(AssetCategory.objects.all()), 3)
+
+        # test category existed
+        categoryName = 'category_1'
+        parent = "cate"
+        is_number = False
+        
+        res = self.post_asset_category_add(categoryName, parent, is_number)
+        self.assertEqual(res.json()['code'], 2)
+        self.assertEqual(len(AssetCategory.objects.all()), 3)
+
+        # test asset/category/list
         res = self.get_asset_category_list()
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
@@ -120,8 +140,9 @@ class AttributeTests(TestCase):
 
         self.assertEqual(len(Asset.objects.all()), 1)
 
+        # test parent=''
         assetName = 'computer'
-        parentName = 'ass'
+        parentName = ''
         description = 'des'
         position = 'pos'
         value = '1000'
@@ -134,9 +155,74 @@ class AttributeTests(TestCase):
                                            value, owner, number, categoryName, image)
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
-        self.assertEqual(len(Asset.objects.all()), 2)
+        self.assertEqual(len(Asset.objects.all()), 3)
         self.assertTrue(Asset.objects.filter(name=assetName).exists())
 
+        # test parent not found
+        assetName = 'computer'
+        parentName = 'as'
+        description = 'des'
+        position = 'pos'
+        value = '1000'
+        owner = 'Alice'
+        number = 1
+        categoryName = 'cate'
+        image = '127.0.0.1'
+        
+        res = self.post_asset_add(assetName, parentName, description, position, 
+                                           value, owner, number, categoryName, image)
+        self.assertEqual(res.json()['code'], 1)
+        self.assertEqual(len(Asset.objects.all()), 3)
+
+        # test category not found
+        assetName = 'computer'
+        parentName = ''
+        description = 'des'
+        position = 'pos'
+        value = '1000'
+        owner = 'Alice'
+        number = 1
+        categoryName = 'cat'
+        image = '127.0.0.1'
+        
+        res = self.post_asset_add(assetName, parentName, description, position, 
+                                           value, owner, number, categoryName, image)
+        self.assertEqual(res.json()['code'], 2)
+        self.assertEqual(len(Asset.objects.all()), 3)
+
+        # test owner not found
+        assetName = 'computer'
+        parentName = ''
+        description = 'des'
+        position = 'pos'
+        value = '1000'
+        owner = 'Bob'
+        number = 1
+        categoryName = 'cate'
+        image = '127.0.0.1'
+        
+        res = self.post_asset_add(assetName, parentName, description, position, 
+                                           value, owner, number, categoryName, image)
+        self.assertEqual(res.json()['code'], 3)
+        self.assertEqual(len(Asset.objects.all()), 3)
+
+        # test asset existed
+        assetName = 'computer'
+        parentName = ''
+        description = 'des'
+        position = 'pos'
+        value = '1000'
+        owner = 'Alice'
+        number = 1
+        categoryName = 'cate'
+        image = '127.0.0.1'
+        
+        res = self.post_asset_add(assetName, parentName, description, position, 
+                                           value, owner, number, categoryName, image)
+        self.assertEqual(res.json()['code'], 4)
+        self.assertEqual(len(Asset.objects.all()), 3)
+
+        # test asset/list
         res = self.get_asset_list()
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
