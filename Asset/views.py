@@ -149,17 +149,17 @@ def attribute_add(req: HttpRequest):
         if user.token != token:
             return request_failed(-6, "用户不在线", status_code=403)
 
-        # whether check asset_super
-        if not user.asset_super:
-            return request_failed(2, "只有资产管理员可添加属性", status_code=403)
-        
-        else:
+        # whether check asset_super and entity_super
+        if user.asset_super:
             # get son department
             children_list = depart.get_children()
 
             if department != depart and department not in children_list:
-                    return request_failed(2, "没有添加该部门自定义属性的权限", status_code=403)
-
+                return request_failed(2, "没有添加该部门自定义属性的权限", status_code=403)
+        
+        if not user.entity_super and not user.asset_super:
+            return request_failed(2, "只有资产管理员可添加属性", status_code=403)
+            
         # check format
         checklength(name, 0, 50, "atrribute_name")
 
@@ -167,12 +167,11 @@ def attribute_add(req: HttpRequest):
         attri = Attribute.objects.filter(name=name).first()
         if attri is not None:
             return request_failed(1, "自定义属性已存在", status_code=403)
-
+        
         # save
-        else:
-            new_attri = Attribute(name=name, entity=user.entity, department=department)
-            new_attri.save()
-            return request_success()
+        new_attri = Attribute(name=name, entity=user.entity, department=department)
+        new_attri.save()
+        return request_success()
    
     else:
         return BAD_METHOD
@@ -198,7 +197,7 @@ def attribute_list(req: HttpRequest, department: any):
                 return request_failed(1, "没有查看该部门自定义属性的权限", status_code=403)
 
         # others can see own depart
-        else:
+        if not user.asset_super and not user.entity_super:
             if get_department != user.department:
                 return request_failed(1, "没有查看该部门自定义属性的权限", status_code=403)
         
@@ -235,19 +234,24 @@ def attribute_delete(req: HttpRequest):
         if department is None:
             return request_failed(1, "该企业不存在该部门", status_code=403)
         
+        # entity_super can edit all deps in entity
+        if user.entity_super:
+            attribute.delete()
+            return request_success()
+            
         # asset_super can see son depart
-        if user.asset_super:
+        elif user.asset_super:
             children_list = user.department.get_children()
 
             if department != user.department and department not in children_list:
                 return request_failed(2, "没有删除该部门自定义属性的权限", status_code=403)
+            
+            attribute.delete()
+            return request_success()
 
         # others can see own depart
         else:
             return request_failed(2, "没有删除该部门自定义属性的权限", status_code=403)
-    
-        attribute.delete()
-        return request_success()
 
     else:
         return BAD_METHOD

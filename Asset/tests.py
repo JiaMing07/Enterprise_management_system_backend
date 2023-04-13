@@ -265,13 +265,21 @@ class AttributeTests(TestCase):
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
 
-        # not asset super, 2
-        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        # not asset super or entity super, 2
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("staff")
         user.save()
         name = "attri_2"
         department = "dep"
         res = self.post_attribute_add(name, department)
         self.assertEqual(res.json()['code'], 2)
+
+        # entity super, 2
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+        name = "attri_2"
+        department = "dep"
+        res = self.post_attribute_add(name, department)
+        self.assertEqual(res.json()['code'], 0)
 
         user.system_super, user.entity_super, user.asset_super = user.set_authen("asset_super")
         user.save()
@@ -368,6 +376,28 @@ class AttributeTests(TestCase):
 
         # asset_super, son department, 0
         department = "dep_child"
+        res = self.get_attribute_list(department)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        # entity_super
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+
+        # entity_super, dep, 0
+        department = "dep"
+        res = self.get_attribute_list(department)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        # entity_super, dep_child, 0
+        department = "dep_child"
+        res = self.get_attribute_list(department)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        # entity_super, ent, 0
+        department = "ent"
         res = self.get_attribute_list(department)
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
