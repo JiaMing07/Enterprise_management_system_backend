@@ -45,7 +45,7 @@ def asset_category_list(req: HttpRequest):
 @CheckRequire
 def asset_category_add(req: HttpRequest):
     if req.method == 'POST':
-        CheckAuthority(req, ["entity_super"])
+        CheckAuthority(req, ["entity_super", "asset_super"])
         body = json.loads(req.body.decode("utf-8"))
         name, parentName, is_number = get_args(body, ["name", "parent", "is_number"], ["string", "string", "bool"])
         token, decoded = CheckToken(req)
