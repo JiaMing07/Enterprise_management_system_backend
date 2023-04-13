@@ -355,11 +355,16 @@ def user_menu(req: HttpRequest):
             for menu in menus:
                 menu.delete()
         else:
+            print(first)
+            print(second)
+            print(Menu.objects.all())
+            print( Menu.objects.filter(first=first))
             menus_entity = Menu.objects.filter(entity=entity).filter(first=first).filter(second=second)
             menus_base = Menu.objects.filter(entity=entity_base).filter(first=first).filter(second=second)
             if menus_base:
                 return request_failed(4, "不可删除初始二级菜单", status_code=403)
             menu = menus_entity
+            print(menu)
             if len(menu) == 0:
                 return request_failed(2, "二级菜单不存在", status_code=403)
             menu = menu[0]
