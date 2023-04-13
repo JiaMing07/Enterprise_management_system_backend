@@ -36,7 +36,6 @@ def asset_category_list(req: HttpRequest):
             else:
                 category = parent
         category_list = category.sub_tree()["sub-categories"][0]
-        print(category_list["sub-categories"])
         return_data = {
             "categories": category_list["sub-categories"],
         }
