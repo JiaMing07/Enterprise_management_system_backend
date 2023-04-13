@@ -280,6 +280,7 @@ class AttributeTests(TestCase):
         department = "dep"
         res = self.post_attribute_add(name, department)
         self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
 
         user.system_super, user.entity_super, user.asset_super = user.set_authen("asset_super")
         user.save()
@@ -288,13 +289,14 @@ class AttributeTests(TestCase):
         name = "attri_3"
         department = "ent"
         res = self.post_attribute_add(name, department)
-        # self.assertEqual(res.json()['code'], 2)
+        self.assertEqual(res.json()['code'], 2)
         self.assertEqual(res.json()['info'], "没有添加该部门自定义属性的权限")
 
         # son department, 0
-        name = "attri_2"
+        name = "attri_4"
         department = "dep_child"
         res = self.post_attribute_add(name, department)
+        self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
 
         # same, 1
