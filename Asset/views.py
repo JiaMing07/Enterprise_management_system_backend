@@ -80,7 +80,8 @@ def asset_list(req: HttpRequest):
         assets = Asset.objects.filter(entity=entity)
         return_data = {
             "assets": [
-                return_field(asset.serialize(), ["id", "assetName", "category", "user", "state"])
+                return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
+                                                 "position", "value", "user", "number", "state"])
             for asset in assets],
         }
         return request_success(return_data)
@@ -90,7 +91,7 @@ def asset_list(req: HttpRequest):
 @CheckRequire
 def asset_add(req: HttpRequest):
     if req.method == 'POST':
-        CheckAuthority(req, ["entity_super"])
+        CheckAuthority(req, ["entity_super", "asset_super"])
         body = json.loads(req.body.decode("utf-8"))
         name, parentName, description, position, value, owner, number, categoryName, image_url = get_args(
             body, ["name", "parent", "description", "position", "value", "owner", "number", "category", "image"], 
