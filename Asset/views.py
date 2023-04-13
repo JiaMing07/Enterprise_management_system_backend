@@ -219,13 +219,22 @@ def attribute_delete(req: HttpRequest):
     
     if req.method == 'DELETE':
         attribute_name = json.loads(req.body.decode("utf-8")).get('name')
-        department = json.loads(req.body.decode("utf-8")).get('department')
+        department_name = json.loads(req.body.decode("utf-8")).get('department')
 
         CheckToken(req)
         token = req.COOKIES['token'] 
         decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         user = User.objects.get(username=decoded['username'])
 
+        department = Department.objects.filter(entity=user.entity, name=department_name).first()
+        attribute = Attribute.objects.filter(entity=user.entity, department=department, name=attribute_name).first()
+
+        # get list
+        if attribute is None:
+            return request_failed(1, "该部门不存在该自定义属性", status_code=403)
+        if department is None:
+            return request_failed(1, "该企业不存在该部门", status_code=403)
+        
         # asset_super can see son depart
         if user.asset_super:
             children_list = user.department.get_children()
@@ -236,11 +245,6 @@ def attribute_delete(req: HttpRequest):
         # others can see own depart
         else:
             return request_failed(2, "没有删除该部门自定义属性的权限", status_code=403)
-        
-        # get list
-        attribute = Attribute.objects.filter(entity=user.entity, department=department, name=attribute_name).first()
-        if attribute is None:
-            return request_failed(1, "该部门不存在该自定义属性", status_code=403)
     
         attribute.delete()
         return request_success()
