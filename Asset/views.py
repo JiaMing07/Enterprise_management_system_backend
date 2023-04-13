@@ -215,6 +215,40 @@ def attribute_list(req: HttpRequest, department: any):
         return BAD_METHOD
     
 @CheckRequire    
+def attribute_delete(req: HttpRequest):
+    
+    if req.method == 'DELETE':
+        attribute_name = json.loads(req.body.decode("utf-8")).get('name')
+        department = json.loads(req.body.decode("utf-8")).get('department')
+
+        CheckToken(req)
+        token = req.COOKIES['token'] 
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        user = User.objects.get(username=decoded['username'])
+
+        # asset_super can see son depart
+        if user.asset_super:
+            children_list = user.department.get_children()
+
+            if department != user.department and department not in children_list:
+                return request_failed(2, "没有删除该部门自定义属性的权限", status_code=403)
+
+        # others can see own depart
+        else:
+            return request_failed(2, "没有删除该部门自定义属性的权限", status_code=403)
+        
+        # get list
+        attribute = Attribute.objects.filter(entity=user.entity, department=department, name=attribute_name).first()
+        if attribute is None:
+            return request_failed(1, "该部门不存在该自定义属性", status_code=403)
+    
+        attribute.delete()
+        return request_success()
+
+    else:
+        return BAD_METHOD
+    
+@CheckRequire    
 def asset_attribute(req: HttpRequest):
 
     if req.method == 'POST':

@@ -8,5 +8,6 @@ urlpatterns = [
     path('add', views.asset_add),
     path('attribute/add', views.attribute_add),
     path('attribute/<department>/list', views.attribute_list),
+    path('attribute/delete', views.attribute_delete),
     path('attribute', views.asset_attribute),
 ]
