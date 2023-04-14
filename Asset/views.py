@@ -257,6 +257,88 @@ def attribute_delete(req: HttpRequest):
         return BAD_METHOD
     
 @CheckRequire    
+def attribute_edit(req: HttpRequest):
+    
+    if req.method == 'PUT':
+        name = json.loads(req.body.decode("utf-8")).get('name')
+        new_name = json.loads(req.body.decode("utf-8")).get('new_name')
+        department_name = json.loads(req.body.decode("utf-8")).get('department')
+        new_depart_name = json.loads(req.body.decode("utf-8")).get('new_depart')
+
+        checklength(new_name, 0, 50, "attribute_name")
+
+        CheckToken(req)
+        token = req.COOKIES['token'] 
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        user = User.objects.get(username=decoded['username'])
+
+        department = Department.objects.filter(entity=user.entity, name=department_name).first()
+        attribute = Attribute.objects.filter(entity=user.entity, department=department, name=name).first()
+
+        # whether exist
+        if attribute is None:
+            return request_failed(1, "该部门不存在该自定义属性", status_code=403)
+        if department is None:
+            return request_failed(1, "该企业不存在该部门", status_code=403)
+        
+        # whether edit name:
+        if new_name is not None:
+
+            # whether same name
+            new_attribute = Attribute.objects.filter(entity=user.entity, department=department, name=new_name).first()
+            if new_attribute is not None:
+                return request_failed(3, "当前部门已存在该属性", status_code=403)
+
+            # entity_super can edit all deps in entity
+            if user.entity_super:
+                attribute.name = new_name
+                
+            # asset_super can see son depart
+            elif user.asset_super:
+                children_list = user.department.get_children()
+
+                if department != user.department and department not in children_list:
+                    return request_failed(2, "没有修改该部门自定义属性名称的权限", status_code=403)
+                
+                attribute.name = new_name
+
+            # others can see own depart
+            else:
+                return request_failed(2, "没有修改该部门自定义属性名称的权限", status_code=403)
+            
+        # whether edit department
+        if new_depart_name is not None:
+
+            # whether same name
+            new_depart = Department.objects.filter(entity=user.entity, name=new_depart_name).first()
+            new_attribute = Attribute.objects.filter(entity=user.entity, department=new_depart, name=attribute.name).first()
+            if new_attribute is not None:
+                return request_failed(3, "新部门已存在该属性", status_code=403)
+
+            # entity_super can edit all deps in entity
+            if user.entity_super:
+                attribute.department = new_name
+                
+            # asset_super can see son depart
+            elif user.asset_super:
+                children_list = user.department.get_children()
+
+                if department != user.department and department not in children_list:
+                    return request_failed(2, "没有修改该自定义属性部门的权限", status_code=403)
+                
+                attribute.name = new_name
+
+            # others can see own depart
+            else:
+                return request_failed(2, "没有修改该自定义属性部门的权限", status_code=403)
+        
+        attribute.save()
+        return request_success()
+
+    else:
+        return BAD_METHOD
+    
+@CheckRequire    
 def asset_attribute(req: HttpRequest):
 
     if req.method == 'POST':
