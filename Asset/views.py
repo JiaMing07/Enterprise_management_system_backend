@@ -36,7 +36,6 @@ def asset_category_list(req: HttpRequest):
             else:
                 category = parent
         category_list = category.sub_tree()["sub-categories"][0]
-        print(category_list["sub-categories"])
         return_data = {
             "categories": category_list["sub-categories"],
         }
@@ -69,6 +68,27 @@ def asset_category_add(req: HttpRequest):
             return request_failed(2, "该资产类型已存在", status_code=403)
         category = AssetCategory(name=name, entity=entity, parent=parent, is_number=is_number)
         category.save()
+        return request_success()
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
+def asset_category_delete(req: HttpRequest):
+    if req.method == 'DELETE':
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+
+        body = json.loads(req.body.decode("utf-8"))
+        categoryName = get_args(body, ["categoryName"], ["string"])
+        checklength(categoryName, 0, 50, "categoryName")
+
+        category = AssetCategory.objects.filter(entity=entity, name=categoryName).first()
+        if category is None:
+            return request_failed(1, "category not found", status_code=404)
+        
+        category.delete()
         return request_success()
     else:
         return BAD_METHOD
@@ -130,6 +150,27 @@ def asset_add(req: HttpRequest):
         asset = Asset(name=name, description=description, position=position, value=value, owner=owner, 
                       number=number, category=category, entity=entity, parent=parent, image_url=image_url)
         asset.save()
+        return request_success()
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
+def asset_delete(req: HttpRequest):
+    if req.method == 'DELETE':
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+
+        body = json.loads(req.body.decode("utf-8"))
+        assetName = get_args(body, ["assetName"], ["string"])
+        checklength(assetName, 0, 50, "assetName")
+
+        asset = Asset.objects.filter(entity=entity, name=assetName).first()
+        if asset is None:
+            return request_failed(1, "asset not found", status_code=404)
+        
+        asset.delete()
         return request_success()
     else:
         return BAD_METHOD
