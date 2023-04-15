@@ -47,6 +47,18 @@ class AttributeTests(TestCase):
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post("/asset/attribute/add", data=payload, content_type="application/json")
     
+    # Utility functions    
+    def put_attribute_edit(self, name, newName, department, newDepartment):
+        payload = {
+            'name': name,
+            'new_name': newName,
+            'department': department,
+            'new_depart':newDepartment
+        }
+
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.post("/asset/attribute/edit", data=payload, content_type="application/json")
+    
     def delete_attribute_delete(self, name, department):
         payload = {
             'name': name,
