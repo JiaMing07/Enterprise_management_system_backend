@@ -286,6 +286,10 @@ def attribute_edit(req: HttpRequest):
 
             # whether same name
             new_attribute = Attribute.objects.filter(entity=user.entity, department=department, name=new_name).first()
+            
+            if new_depart_name is not None:
+                new_attribute = Attribute.objects.filter(entity=user.entity, department=new_depart_name, name=new_name).first()
+            
             if new_attribute is not None:
                 return request_failed(3, "当前部门已存在该属性", status_code=403)
 
@@ -295,9 +299,9 @@ def attribute_edit(req: HttpRequest):
                 
             # asset_super can see son depart
             elif user.asset_super:
-                children_list = user.department.get_children()
+                ancestor_list = department.get_ancestors()
 
-                if department != user.department and department not in children_list:
+                if department != user.department and user.department not in ancestor_list:
                     return request_failed(2, "没有修改该部门自定义属性名称的权限", status_code=403)
                 
                 attribute.name = new_name

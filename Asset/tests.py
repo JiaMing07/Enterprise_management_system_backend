@@ -57,7 +57,7 @@ class AttributeTests(TestCase):
         }
 
         payload = {k: v for k, v in payload.items() if v is not None}
-        return self.client.post("/asset/attribute/edit", data=payload, content_type="application/json")
+        return self.client.put("/asset/attribute/edit", data=payload, content_type="application/json")
     
     def delete_attribute_delete(self, name, department):
         payload = {
@@ -583,3 +583,57 @@ class AttributeTests(TestCase):
         res = self.delete_attribute_delete(name, department)
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], "Succeed")
+
+    def test_attribute_edit(self):
+        # token
+        user = User.objects.filter(username='test_attribute').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("asset_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        # add 1, dep
+        name = "attri_1"
+        department = "dep"
+        res = self.post_attribute_add(name, department)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        # add 2, dep
+        name = "attri_2"
+        department = "dep"
+        res = self.post_attribute_add(name, department)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        # add 3, dep_child
+        name = "attri_3"
+        department = "dep_child"
+        res = self.post_attribute_add(name, department)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        # new_name length, "Bad length of [attribute_name]"
+
+        # attribute not exist, "该部门不存在该自定义属性", 1
+
+        # department not exist, "该企业不存在该部门", 1
+
+        # department has new_attri, "当前部门已存在该属性", 3
+
+        # asset_super, "没有修改该部门自定义属性名称的权限", 2
+
+        # asset_super, son_depart, "Succeed", 0
+
+        # asset_super, own_depart, "Succeed", 0
+
+        # staff, "没有修改该部门自定义属性名称的权限", 2
+
+        # new_depart, "新部门已存在该属性", 3
+
+        # entity_super, all depart in entity, "Succeed", 0
+
+        # entity_super, all depart in entity, "Succeed", 0
