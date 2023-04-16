@@ -81,6 +81,7 @@ class Asset(MPTTModel):
             "number": self.number,
             "state": self.state,
             "entity": self.entity.name,
+            "department": self.department.name,
             "image": self.image_url,
         }
     

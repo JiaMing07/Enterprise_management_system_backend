@@ -79,6 +79,27 @@ def asset_category_add(req: HttpRequest):
         return BAD_METHOD
     
 @CheckRequire
+def asset_category_delete(req: HttpRequest):
+    if req.method == 'DELETE':
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+
+        body = json.loads(req.body.decode("utf-8"))
+        categoryName = body.get('categoryName')
+        checklength(categoryName, 0, 50, "categoryName")
+
+        category = AssetCategory.objects.filter(entity=entity, name=categoryName).first()
+        if category is None:
+            return request_failed(1, "category not found", status_code=404)
+        
+        category.delete()
+        return request_success()
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
 def asset_list(req: HttpRequest):
     if req.method == 'GET':
         token, decoded = CheckToken(req)
@@ -88,7 +109,7 @@ def asset_list(req: HttpRequest):
         return_data = {
             "assets": [
                 return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
-                                                 "position", "value", "user", "number", "state", "image"])
+                                                 "position", "value", "user", "number", "state", "department"])
             for asset in assets],
         }
         return request_success(return_data)
@@ -135,9 +156,39 @@ def asset_add(req: HttpRequest):
         owner = User.objects.filter(entity=entity, department=department, asset_super=True).first()
         if owner is None:
             return request_failed(5, "部门不存在资产管理员",status_code=404)
-        asset = Asset(name=name, description=description, position=position, value=value, owner=owner,  department=department,
-                      number=number, category=category, entity=entity, parent=parent, image_url=image_url)
+        department = owner_user.department
+        ancestor_list = department.get_ancestors(include_self=True)
+        if user.department not in ancestor_list:
+            return request_failed(5, "部门不在管理范围内", status_code=403)
+        asset = Asset(name=name, description=description, position=position, value=value, owner=owner, number=number,  department=department,
+                      category=category, entity=entity, department=department, parent=parent, image_url=image_url)
         asset.save()
+        return request_success()
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
+def asset_delete(req: HttpRequest):
+    if req.method == 'DELETE':
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+
+        body = json.loads(req.body.decode("utf-8"))
+        assetName = body.get('assetName')
+        checklength(assetName, 0, 50, "assetName")
+
+        asset = Asset.objects.filter(entity=entity, name=assetName).first()
+        if asset is None:
+            return request_failed(1, "asset not found", status_code=404)
+        
+        department = asset.department
+        ancestor_list = department.get_ancestors(include_self=True)
+        if user.department not in ancestor_list:
+            return request_failed(2, "部门不在管理范围内", status_code=403)
+        
+        asset.delete()
         return request_success()
     else:
         return BAD_METHOD
@@ -157,17 +208,17 @@ def attribute_add(req: HttpRequest):
         if user.token != token:
             return request_failed(-6, "用户不在线", status_code=403)
 
-        # whether check asset_super
-        if not user.asset_super:
-            return request_failed(2, "只有资产管理员可添加属性", status_code=403)
-        
-        else:
+        # whether check asset_super and entity_super
+        if user.asset_super:
             # get son department
             children_list = depart.get_children()
 
             if department != depart and department not in children_list:
-                    return request_failed(2, "没有添加该部门自定义属性的权限", status_code=403)
-
+                return request_failed(2, "没有添加该部门自定义属性的权限", status_code=403)
+        
+        if not user.entity_super and not user.asset_super:
+            return request_failed(2, "只有资产管理员可添加属性", status_code=403)
+            
         # check format
         checklength(name, 0, 50, "atrribute_name")
 
@@ -175,12 +226,11 @@ def attribute_add(req: HttpRequest):
         attri = Attribute.objects.filter(name=name).first()
         if attri is not None:
             return request_failed(1, "自定义属性已存在", status_code=403)
-
+        
         # save
-        else:
-            new_attri = Attribute(name=name, entity=user.entity, department=department)
-            new_attri.save()
-            return request_success()
+        new_attri = Attribute(name=name, entity=user.entity, department=department)
+        new_attri.save()
+        return request_success()
    
     else:
         return BAD_METHOD
@@ -206,7 +256,7 @@ def attribute_list(req: HttpRequest, department: any):
                 return request_failed(1, "没有查看该部门自定义属性的权限", status_code=403)
 
         # others can see own depart
-        else:
+        if not user.asset_super and not user.entity_super:
             if get_department != user.department:
                 return request_failed(1, "没有查看该部门自定义属性的权限", status_code=403)
         
@@ -218,6 +268,49 @@ def attribute_list(req: HttpRequest, department: any):
             for attribute in attributes],
         }
         return request_success(return_data)
+
+    else:
+        return BAD_METHOD
+    
+@CheckRequire    
+def attribute_delete(req: HttpRequest):
+    
+    if req.method == 'DELETE':
+        attribute_name = json.loads(req.body.decode("utf-8")).get('name')
+        department_name = json.loads(req.body.decode("utf-8")).get('department')
+
+        CheckToken(req)
+        token = req.COOKIES['token'] 
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        user = User.objects.get(username=decoded['username'])
+
+        department = Department.objects.filter(entity=user.entity, name=department_name).first()
+        attribute = Attribute.objects.filter(entity=user.entity, department=department, name=attribute_name).first()
+
+        # get list
+        if attribute is None:
+            return request_failed(1, "该部门不存在该自定义属性", status_code=403)
+        if department is None:
+            return request_failed(1, "该企业不存在该部门", status_code=403)
+        
+        # entity_super can edit all deps in entity
+        if user.entity_super:
+            attribute.delete()
+            return request_success()
+            
+        # asset_super can see son depart
+        elif user.asset_super:
+            children_list = user.department.get_children()
+
+            if department != user.department and department not in children_list:
+                return request_failed(2, "没有删除该部门自定义属性的权限", status_code=403)
+            
+            attribute.delete()
+            return request_success()
+
+        # others can see own depart
+        else:
+            return request_failed(2, "没有删除该部门自定义属性的权限", status_code=403)
 
     else:
         return BAD_METHOD
@@ -265,35 +358,25 @@ def asset_attribute(req: HttpRequest):
     else:
         return BAD_METHOD
     
-def asset_tree(req: HttpRequest):
+@CheckRequire    
+def asset_assetName(req: HttpRequest, assetName: str):
     if req.method == 'GET':
         token, decoded = CheckToken(req)
         user = User.objects.filter(username=decoded['username']).first()
         entity = user.entity
-        department = user.department
-        if entity.name == department.name:
-            asset = Asset.objects.filter(entity=entity).first()
-        else:
-            asset = Asset.objects.filter(entity=entity).filter(department=department).first()
+
+        checklength(assetName, 0, 50, 'assetName')
+        asset = Asset.objects.filter(entity=entity, name=assetName).first()
         if asset is None:
-            return_data = {
-                "assets": {},
-            }
-            return request_success(return_data)
-        while True:
-            parent = asset.get_ancestors(ascending=True).first()
-            if (parent is None or parent.entity != entity):
-                break
-            else:
-                asset = parent
-        asset_list = asset.sub_tree()["sub-assets"]
-        if len(asset_list) == 0:
-            return_data = {
-                "assets": [],
-            }
-        else:
-            return_data = {
-                "assets": asset_list,
-            }
+            return request_failed(1, "asset not found", status_code=404)
+        
+        property = asset.serialize()
+        assetAttributes = AssetAttribute.objects.filter(asset=asset)
+        for assetAttribute in assetAttributes:
+            property[assetAttribute.attribute.name] = assetAttribute.description
+        return_data = {
+            "property": property,
+        }
         return request_success(return_data)
-    return BAD_METHOD
+    else:
+        return BAD_METHOD
