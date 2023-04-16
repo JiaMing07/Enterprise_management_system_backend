@@ -50,6 +50,7 @@ def asset_category_list(req: HttpRequest):
     
 @CheckRequire
 def asset_category_add(req: HttpRequest):
+    print(req.COOKIES)
     if req.method == 'POST':
         CheckAuthority(req, ["entity_super", "asset_super"])
         body = json.loads(req.body.decode("utf-8"))
@@ -116,6 +117,8 @@ def asset_add(req: HttpRequest):
             parentName = entity.name
             parent = Asset.objects.filter(name=entity.name).first()
             if parent is None:
+                Asset.root()
+                print("yes")
                 parent = Asset(name=entity.name, owner=user.username, 
                                category=AssetCategory.root(), entity=entity, department=Department.objects.filter(entity=entity, name=entity.name).first(), parent=Asset.root())
                 parent.save()
@@ -263,3 +266,34 @@ def asset_attribute(req: HttpRequest):
 
     else:
         return BAD_METHOD
+    
+def asset_tree(req: HttpRequest):
+    if req.method == 'GET':
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        department = user.department
+        if entity.name == department.name:
+            category = AssetCategory.objects.filter(entity=entity).first()
+        if category is None:
+            return_data = {
+                "categories": {},
+            }
+            return request_success(return_data)
+        while True:
+            parent = category.get_ancestors(ascending=True).first()
+            if (parent is None or parent.entity != entity):
+                break
+            else:
+                category = parent
+        category_list = category.sub_tree()["sub-categories"]
+        if len(category_list) == 0:
+            return_data = {
+                "categories": [],
+            }
+        else:
+            return_data = {
+                "categories": category_list,
+            }
+        return request_success(return_data)
+    return BAD_METHOD

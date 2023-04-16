@@ -99,10 +99,10 @@ def add_category():
         category_3.save()
 
 def add_asset():
-    from Department.models import Entity
+    from Department.models import Entity, Department
     from Asset.models import AssetCategory, Asset
     entity=Entity.objects.filter(name="admin_entity").first()
     if not Asset.objects.filter(name="asset_base").exists():
-        category_1 = Asset(name="asset_base",entity=entity, category=AssetCategory.objects.filter(name="category_base").first())
+        category_1 = Asset(name="asset_base",entity=entity, category=AssetCategory.objects.filter(name="category_base").first(), department=Department.objects.filter(name="admin_department").first())
         print(category_1)
         category_1.save()

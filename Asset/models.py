@@ -83,6 +83,17 @@ class Asset(MPTTModel):
             "entity": self.entity.name,
             "image": self.image_url,
         }
+    
+    def sub_tree(self):
+        children_list = []
+        children = self.get_children()
+        for child in children:
+            children_list.append(child.sub_tree())
+        
+        return {
+            "assetName": self.name,
+            "sub-assets": children_list,
+        }
 
 
 class Attribute(models.Model):
