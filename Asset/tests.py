@@ -117,6 +117,9 @@ class AttributeTests(TestCase):
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post("/asset/attribute", data=payload, content_type="application/json")
     
+    def get_asset_assetName(self, assetName):
+        return self.client.get(f"/asset/{assetName}")
+    
     # Now start testcases. 
     def test_asset_category_add(self):
         user = User.objects.filter(username='test_user').first()
@@ -697,3 +700,55 @@ class AttributeTests(TestCase):
         res = self.delete_attribute_delete(name, department)
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], "Succeed")
+
+    def test_get_asset_assetName(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("asset_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        self.assertEqual(len(Asset.objects.all()), 1)
+
+        assetName = 'computer'
+        parentName = 'ass'
+        description = 'des'
+        position = 'pos'
+        value = '1000'
+        owner = 'Alice'
+        number = 1
+        categoryName = 'cate'
+        image = '127.0.0.1'
+        
+        res = self.post_asset_add(assetName, parentName, description, position, 
+                                           value, owner, number, categoryName, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(len(Asset.objects.all()), 2)
+        self.assertTrue(Asset.objects.filter(name=assetName).exists())
+
+        attributeName = "GPU"
+        department = "dep"
+        res = self.post_attribute_add(attributeName, department)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        assetName = "computer"
+        attributeName = "GPU"
+        description = "RTX4090"
+        res = self.post_asset_attribute_add(assetName, attributeName, description)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], "Succeed")
+
+        assetName = 'computer'
+        res = self.get_asset_assetName(assetName)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['property']['GPU'], "RTX4090")
+
+        assetName = 'asset_1'
+        res = self.get_asset_assetName(assetName)
+        self.assertEqual(res.json()['code'], 1)

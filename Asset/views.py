@@ -348,3 +348,26 @@ def asset_attribute(req: HttpRequest):
 
     else:
         return BAD_METHOD
+    
+@CheckRequire    
+def asset_assetName(req: HttpRequest, assetName: str):
+    if req.method == 'GET':
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+
+        checklength(assetName, 0, 50, 'assetName')
+        asset = Asset.objects.filter(entity=entity, name=assetName).first()
+        if asset is None:
+            return request_failed(1, "asset not found", status_code=404)
+        
+        property = asset.serialize()
+        assetAttributes = AssetAttribute.objects.filter(asset=asset)
+        for assetAttribute in assetAttributes:
+            property[assetAttribute.attribute.name] = assetAttribute.description
+        return_data = {
+            "property": property,
+        }
+        return request_success(return_data)
+    else:
+        return BAD_METHOD
