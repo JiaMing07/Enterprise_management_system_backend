@@ -748,6 +748,7 @@ class AttributeTests(TestCase):
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], "Succeed")
         self.assertEqual(res.json()['property']['GPU'], "RTX4090")
+        self.assertEqual(res.json()['property']['assetName'], f"{assetName}")
 
         assetName = 'asset_1'
         res = self.get_asset_assetName(assetName)
