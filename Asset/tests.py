@@ -31,10 +31,11 @@ class AttributeTests(TestCase):
         md5.update(password.encode('utf-8'))
         pwd = md5.hexdigest()
         User.objects.create(username='Alice', password=pwd, department=dep, entity=ent)
+        User.objects.create(username='George', password=pwd, department=dep, entity=ent, asset_super=True)
         User.objects.create(username='test_attribute', password=pwd, department=dep, entity=ent)
         user = User.objects.create(username='test_user', password=pwd, department=dep, entity=ent)
         category = AssetCategory.objects.create(name='cate', entity=ent)
-        Asset.objects.create(name='ass', entity=ent, owner=user.username, category=category)
+        Asset.objects.create(name='ass', entity=ent, owner=user.username, category=category, department=dep)
         
     # Utility functions    
     def post_attribute_add(self, name, department):
@@ -65,14 +66,14 @@ class AttributeTests(TestCase):
     def get_asset_list(self):
         return self.client.get(f"/asset/list")
     
-    def post_asset_add(self, name, parent, description, position, value, owner, number, category, image):
+    def post_asset_add(self, name, parent, description, position, value, department, number, category, image):
         payload = {
             "name": name, 
             "parent": parent, 
             "description": description, 
             "position": position, 
             "value": value, 
-            "owner": owner,
+            "department": department,
             "number": number, 
             "category": category,
             "image": image,
@@ -156,13 +157,13 @@ class AttributeTests(TestCase):
         description = 'des'
         position = 'pos'
         value = '1000'
-        owner = 'Alice'
+        department = 'dep'
         number = 1
         categoryName = 'cate'
         image = '127.0.0.1'
         
         res = self.post_asset_add(assetName, parentName, description, position, 
-                                           value, owner, number, categoryName, image)
+                                           value, department, number, categoryName, image)
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(len(Asset.objects.all()), 3)
@@ -174,13 +175,13 @@ class AttributeTests(TestCase):
         description = 'des'
         position = 'pos'
         value = '1000'
-        owner = 'Alice'
+        department = 'dep'
         number = 1
         categoryName = 'cate'
         image = '127.0.0.1'
         
         res = self.post_asset_add(assetName, parentName, description, position, 
-                                           value, owner, number, categoryName, image)
+                                           value, department, number, categoryName, image)
         self.assertEqual(res.json()['code'], 1)
         self.assertEqual(len(Asset.objects.all()), 3)
 
@@ -190,29 +191,29 @@ class AttributeTests(TestCase):
         description = 'des'
         position = 'pos'
         value = '1000'
-        owner = 'Alice'
+        department = 'dep'
         number = 1
         categoryName = 'cat'
         image = '127.0.0.1'
         
         res = self.post_asset_add(assetName, parentName, description, position, 
-                                           value, owner, number, categoryName, image)
+                                           value, department, number, categoryName, image)
         self.assertEqual(res.json()['code'], 2)
         self.assertEqual(len(Asset.objects.all()), 3)
 
-        # test owner not found
+        # test department not found
         assetName = 'computer'
         parentName = ''
         description = 'des'
         position = 'pos'
         value = '1000'
-        owner = 'Bob'
+        department = 'Bob'
         number = 1
         categoryName = 'cate'
         image = '127.0.0.1'
         
         res = self.post_asset_add(assetName, parentName, description, position, 
-                                           value, owner, number, categoryName, image)
+                                           value, department, number, categoryName, image)
         self.assertEqual(res.json()['code'], 3)
         self.assertEqual(len(Asset.objects.all()), 3)
 
@@ -222,13 +223,13 @@ class AttributeTests(TestCase):
         description = 'des'
         position = 'pos'
         value = '1000'
-        owner = 'Alice'
+        department = 'dep'
         number = 1
         categoryName = 'cate'
         image = '127.0.0.1'
         
         res = self.post_asset_add(assetName, parentName, description, position, 
-                                           value, owner, number, categoryName, image)
+                                           value, department, number, categoryName, image)
         self.assertEqual(res.json()['code'], 4)
         self.assertEqual(len(Asset.objects.all()), 3)
 

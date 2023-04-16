@@ -35,10 +35,15 @@ def asset_category_list(req: HttpRequest):
                 break
             else:
                 category = parent
-        category_list = category.sub_tree()["sub-categories"][0]
-        return_data = {
-            "categories": category_list["sub-categories"],
-        }
+        category_list = category.sub_tree()["sub-categories"]
+        if len(category_list) == 0:
+            return_data = {
+                "categories": [],
+            }
+        else:
+            return_data = {
+                "categories": category_list,
+            }
         return request_success(return_data)
     else:
         return BAD_METHOD
@@ -78,7 +83,7 @@ def asset_list(req: HttpRequest):
         token, decoded = CheckToken(req)
         user = User.objects.filter(username=decoded['username']).first()
         entity = user.entity
-        assets = Asset.objects.filter(entity=entity)
+        assets = Asset.objects.filter(entity=entity).exclude(name=entity.name)
         return_data = {
             "assets": [
                 return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
@@ -94,15 +99,15 @@ def asset_add(req: HttpRequest):
     if req.method == 'POST':
         CheckAuthority(req, ["entity_super", "asset_super"])
         body = json.loads(req.body.decode("utf-8"))
-        name, parentName, description, position, value, owner, number, categoryName, image_url = get_args(
-            body, ["name", "parent", "description", "position", "value", "owner", "number", "category", "image"], 
+        name, parentName, description, position, value, department, number, categoryName, image_url = get_args(
+            body, ["name", "parent", "description", "position", "value", "department", "number", "category", "image"], 
             ["string", "string", "string", "string", "int", "string", "int", "string", "string"])
         token, decoded = CheckToken(req)
         user = User.objects.filter(username=decoded['username']).first()
         entity = user.entity
         checklength(name, 0, 50, "assetName")
         checklength(parentName, -1, 50, "parentName")
-        checklength(owner, 0, 50, "owner")
+        checklength(department, 0, 30, "department")
         checklength(categoryName, 0, 50, "categoryName")
         checklength(description, 0, 300, "description")
         checklength(position, 0, 300, "position")
@@ -112,7 +117,7 @@ def asset_add(req: HttpRequest):
             parent = Asset.objects.filter(name=entity.name).first()
             if parent is None:
                 parent = Asset(name=entity.name, owner=user.username, 
-                               category=AssetCategory.root(), entity=entity, parent=Asset.root())
+                               category=AssetCategory.root(), entity=entity, department=Department.objects.filter(entity=entity, name=entity.name).first(), parent=Asset.root())
                 parent.save()
         parent = Asset.objects.filter(entity=entity, name=parentName).first()
         if parent is None:
@@ -120,13 +125,16 @@ def asset_add(req: HttpRequest):
         category = AssetCategory.objects.filter(name=categoryName, entity=entity).first()
         if category is None:
             return request_failed(2, "资产类型不存在", status_code=404)
-        owner_user = User.objects.filter(username=owner).first()
-        if owner_user is None:
+        department = Department.objects.filter(entity=entity, name=department).first()
+        if department is None:
             return request_failed(3, "挂账人不存在", status_code=404)
         asset = Asset.objects.filter(entity=entity, name=name).first()
         if asset:
             return request_failed(4, "该资产已存在", status_code=403)
-        asset = Asset(name=name, description=description, position=position, value=value, owner=owner, 
+        owner = User.objects.filter(entity=entity, department=department, asset_super=True).first()
+        if owner is None:
+            return request_failed(5, "部门不存在资产管理员",status_code=404)
+        asset = Asset(name=name, description=description, position=position, value=value, owner=owner,  department=department,
                       number=number, category=category, entity=entity, parent=parent, image_url=image_url)
         asset.save()
         return request_success()

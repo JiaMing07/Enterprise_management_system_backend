@@ -11,7 +11,7 @@ from utils.utils_getbody import get_args
 from utils.utils_checklength import checklength
 from utils.utils_checkauthority import CheckAuthority, CheckToken
 from eam_backend.settings import SECRET_KEY
-from  utils.utils_startup import init_department, init_entity, add_menu, add_users,admin_user, add_category
+from  utils.utils_startup import init_department, init_entity, add_menu, add_users,admin_user, add_category, add_asset
 import jwt
 from django.db.utils import IntegrityError, OperationalError
 
@@ -35,6 +35,7 @@ def startup(req: HttpRequest):
         admin_user()
         add_users()
         add_category()
+        add_asset()
         # add_menu()
     except (OperationalError, IntegrityError):
         pass
