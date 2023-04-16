@@ -119,6 +119,7 @@ def asset_list(req: HttpRequest):
 @CheckRequire
 def asset_add(req: HttpRequest):
     if req.method == 'POST':
+        print("yes")
         CheckAuthority(req, ["entity_super", "asset_super"])
         body = json.loads(req.body.decode("utf-8"))
         name, parentName, description, position, value, department, number, categoryName, image_url = get_args(
@@ -149,18 +150,17 @@ def asset_add(req: HttpRequest):
             return request_failed(2, "资产类型不存在", status_code=404)
         department = Department.objects.filter(entity=entity, name=department).first()
         if department is None:
-            return request_failed(3, "挂账人不存在", status_code=404)
+            return request_failed(3, "挂账部门不存在", status_code=404)
         asset = Asset.objects.filter(entity=entity, name=name).first()
         if asset:
             return request_failed(4, "该资产已存在", status_code=403)
         owner = User.objects.filter(entity=entity, department=department, asset_super=True).first()
         if owner is None:
             return request_failed(5, "部门不存在资产管理员",status_code=404)
-        department = owner_user.department
         ancestor_list = department.get_ancestors(include_self=True)
         if user.department not in ancestor_list:
             return request_failed(5, "部门不在管理范围内", status_code=403)
-        asset = Asset(name=name, description=description, position=position, value=value, owner=owner, number=number,  department=department,
+        asset = Asset(name=name, description=description, position=position, value=value, owner=owner, number=number,
                       category=category, entity=entity, department=department, parent=parent, image_url=image_url)
         asset.save()
         return request_success()
@@ -380,3 +380,34 @@ def asset_assetName(req: HttpRequest, assetName: str):
         return request_success(return_data)
     else:
         return BAD_METHOD
+
+@CheckRequire
+def asset_tree(req: HttpRequest):
+    if req.method == 'GET':
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        department = user.department
+        asset = Asset.objects.filter(entity=entity).first()
+        if asset is None:
+            return_data = {
+                "assets": {},
+            }
+            return request_success(return_data)
+        while True:
+            parent = asset.get_ancestors(ascending=True).first()
+            if (parent is None or parent.entity != entity):
+                break
+            else:
+                asset = parent
+        asset_list = asset.sub_tree()["sub-assets"]
+        if len(asset_list) == 0:
+            return_data = {
+                "assets": [],
+            }
+        else:
+            return_data = {
+                "assets": asset_list,
+            }
+        return request_success(return_data)
+    return BAD_METHOD
