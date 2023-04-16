@@ -57,6 +57,7 @@ class Asset(MPTTModel):
     category = models.ForeignKey(AssetCategory, on_delete=models.CASCADE)
     parent = TreeForeignKey('self', blank=True, null=True, on_delete=models.CASCADE)
     entity = models.ForeignKey(Entity, on_delete=models.CASCADE)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE)
     image_url = models.CharField(max_length=300)
     @classmethod
     def root(cls):
@@ -80,6 +81,7 @@ class Asset(MPTTModel):
             "number": self.number,
             "state": self.state,
             "entity": self.entity.name,
+            "department": self.department.name,
             "image": self.image_url,
         }
 

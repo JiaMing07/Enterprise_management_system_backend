@@ -81,7 +81,7 @@ def asset_category_delete(req: HttpRequest):
         entity = user.entity
 
         body = json.loads(req.body.decode("utf-8"))
-        categoryName = get_args(body, ["categoryName"], ["string"])
+        categoryName = body.get('categoryName')
         checklength(categoryName, 0, 50, "categoryName")
 
         category = AssetCategory.objects.filter(entity=entity, name=categoryName).first()
@@ -103,7 +103,7 @@ def asset_list(req: HttpRequest):
         return_data = {
             "assets": [
                 return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
-                                                 "position", "value", "user", "number", "state"])
+                                                 "position", "value", "user", "number", "state", "department"])
             for asset in assets],
         }
         return request_success(return_data)
@@ -132,7 +132,7 @@ def asset_add(req: HttpRequest):
             parentName = entity.name
             parent = Asset.objects.filter(name=entity.name).first()
             if parent is None:
-                parent = Asset(name=entity.name, owner=user.username, 
+                parent = Asset(name=entity.name, owner=user.username, department=user.department, 
                                category=AssetCategory.root(), entity=entity, parent=Asset.root())
                 parent.save()
         parent = Asset.objects.filter(entity=entity, name=parentName).first()
@@ -147,8 +147,12 @@ def asset_add(req: HttpRequest):
         asset = Asset.objects.filter(entity=entity, name=name).first()
         if asset:
             return request_failed(4, "该资产已存在", status_code=403)
-        asset = Asset(name=name, description=description, position=position, value=value, owner=owner, 
-                      number=number, category=category, entity=entity, parent=parent, image_url=image_url)
+        department = owner_user.department
+        ancestor_list = department.get_ancestors(include_self=True)
+        if user.department not in ancestor_list:
+            return request_failed(5, "部门不在管理范围内", status_code=403)
+        asset = Asset(name=name, description=description, position=position, value=value, owner=owner, number=number, 
+                      category=category, entity=entity, department=department, parent=parent, image_url=image_url)
         asset.save()
         return request_success()
     else:
@@ -163,12 +167,17 @@ def asset_delete(req: HttpRequest):
         entity = user.entity
 
         body = json.loads(req.body.decode("utf-8"))
-        assetName = get_args(body, ["assetName"], ["string"])
+        assetName = body.get('assetName')
         checklength(assetName, 0, 50, "assetName")
 
         asset = Asset.objects.filter(entity=entity, name=assetName).first()
         if asset is None:
             return request_failed(1, "asset not found", status_code=404)
+        
+        department = asset.department
+        ancestor_list = department.get_ancestors(include_self=True)
+        if user.department not in ancestor_list:
+            return request_failed(2, "部门不在管理范围内", status_code=403)
         
         asset.delete()
         return request_success()
