@@ -88,7 +88,7 @@ def asset_list(req: HttpRequest):
         return_data = {
             "assets": [
                 return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
-                                                 "position", "value", "user", "number", "state"])
+                                                 "position", "value", "user", "number", "state", "image"])
             for asset in assets],
         }
         return request_success(return_data)
@@ -112,13 +112,11 @@ def asset_add(req: HttpRequest):
         checklength(categoryName, 0, 50, "categoryName")
         checklength(description, 0, 300, "description")
         checklength(position, 0, 300, "position")
-        checklength(image_url, 0, 300, "imageURL")
+        checklength(image_url, -1, 300, "imageURL")
         if parentName == "":
             parentName = entity.name
             parent = Asset.objects.filter(name=entity.name).first()
             if parent is None:
-                Asset.root()
-                print("yes")
                 parent = Asset(name=entity.name, owner=user.username, 
                                category=AssetCategory.root(), entity=entity, department=Department.objects.filter(entity=entity, name=entity.name).first(), parent=Asset.root())
                 parent.save()
@@ -274,26 +272,28 @@ def asset_tree(req: HttpRequest):
         entity = user.entity
         department = user.department
         if entity.name == department.name:
-            category = AssetCategory.objects.filter(entity=entity).first()
-        if category is None:
+            asset = Asset.objects.filter(entity=entity).first()
+        else:
+            asset = Asset.objects.filter(entity=entity).filter(department=department).first()
+        if asset is None:
             return_data = {
-                "categories": {},
+                "assets": {},
             }
             return request_success(return_data)
         while True:
-            parent = category.get_ancestors(ascending=True).first()
+            parent = asset.get_ancestors(ascending=True).first()
             if (parent is None or parent.entity != entity):
                 break
             else:
-                category = parent
-        category_list = category.sub_tree()["sub-categories"]
-        if len(category_list) == 0:
+                asset = parent
+        asset_list = asset.sub_tree()["sub-assets"]
+        if len(asset_list) == 0:
             return_data = {
-                "categories": [],
+                "assets": [],
             }
         else:
             return_data = {
-                "categories": category_list,
+                "assets": asset_list,
             }
         return request_success(return_data)
     return BAD_METHOD
