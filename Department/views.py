@@ -184,3 +184,15 @@ def entity_delete(req: HttpRequest, entity_name: str):
         return request_success()
     else:
         return BAD_METHOD
+
+@CheckRequire
+def entity_department_subtree(req: HttpRequest):
+    if req.method == 'GET':
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        department = user.department
+        return_data = {
+            "assets": department.sub_tree()
+        }
+        return request_success(return_data)
+    return BAD_METHOD

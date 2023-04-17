@@ -105,11 +105,11 @@ def asset_list(req: HttpRequest):
         token, decoded = CheckToken(req)
         user = User.objects.filter(username=decoded['username']).first()
         entity = user.entity
-        assets = Asset.objects.filter(entity=entity).exclude(name=entity.name)
+        assets = Asset.objects.filter(entity=entity).exclude(name=entity.name).order_by('id')
         return_data = {
             "assets": [
                 return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
-                                                 "position", "value", "user", "number", "state", "department"])
+                                                 "position", "value", "user", "number", "state", "department", "image"])
             for asset in assets],
         }
         return request_success(return_data)
@@ -118,6 +118,8 @@ def asset_list(req: HttpRequest):
 
 @CheckRequire
 def asset_add(req: HttpRequest):
+    body = json.loads(req.body.decode("utf-8"))
+    print(body)
     if req.method == 'POST':
         print("yes")
         CheckAuthority(req, ["entity_super", "asset_super"])
@@ -388,26 +390,27 @@ def asset_tree(req: HttpRequest):
         user = User.objects.filter(username=decoded['username']).first()
         entity = user.entity
         department = user.department
-        asset = Asset.objects.filter(entity=entity).first()
-        if asset is None:
-            return_data = {
-                "assets": {},
-            }
-            return request_success(return_data)
-        while True:
-            parent = asset.get_ancestors(ascending=True).first()
-            if (parent is None or parent.entity != entity):
-                break
-            else:
-                asset = parent
-        asset_list = asset.sub_tree()["sub-assets"]
-        if len(asset_list) == 0:
-            return_data = {
-                "assets": [],
-            }
-        else:
-            return_data = {
-                "assets": asset_list,
-            }
+        asset = Asset.objects.filter(entity=entity)
+        def subtree_department(department):
+            children_list = [department.id]
+            children = department.get_children()
+            for child in children:
+                children_list += subtree_department(child)
+            return children_list
+        department_tree = subtree_department(department)
+        print(department_tree)
+        assets = asset.filter(department__id__in=department_tree)
+        print(assets)
+        assets_list = []
+        for ass in assets:
+            if ass.parent.name == entity.name:
+                assets_list.append(ass)
+        print(assets_list)
+        return_list = []
+        for ass in assets_list:
+            return_list.append(ass.sub_tree())
+        return_data = {
+            "assets": return_list
+        }
         return request_success(return_data)
     return BAD_METHOD
