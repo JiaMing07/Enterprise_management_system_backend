@@ -42,7 +42,9 @@ class AssetCategory(MPTTModel):
             "is_number": self.is_number,
             "sub-categories": children_list,
         }
-
+    
+    class Meta:
+        unique_together = ['entity', 'name']
 
 class Asset(MPTTModel):
     '''资产'''
@@ -95,6 +97,8 @@ class Asset(MPTTModel):
             "assetName": self.name,
             "sub-assets": children_list,
         }
+    class Meta:
+        unique_together = ['entity', 'name']
 
 
 class Attribute(models.Model):
@@ -111,6 +115,9 @@ class Attribute(models.Model):
             "entity": self.entity.name,
             "department": self.department.name,
         }
+    
+    class Meta:
+        unique_together = ['entity', 'name']
 
 class AssetAttribute(models.Model):
     id = models.BigAutoField(primary_key=True)

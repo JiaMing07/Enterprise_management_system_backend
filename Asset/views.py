@@ -19,6 +19,7 @@ import jwt
 # Create your views here.
 @CheckRequire
 def asset_category_list(req: HttpRequest):
+    print(req.COOKIES)
     if req.method == 'GET':
         token, decoded = CheckToken(req)
         user = User.objects.filter(username=decoded['username']).first()
@@ -121,7 +122,6 @@ def asset_add(req: HttpRequest):
     body = json.loads(req.body.decode("utf-8"))
     print(body)
     if req.method == 'POST':
-        print("yes")
         CheckAuthority(req, ["entity_super", "asset_super"])
         body = json.loads(req.body.decode("utf-8"))
         name, parentName, description, position, value, department, number, categoryName, image_url = get_args(
@@ -132,11 +132,12 @@ def asset_add(req: HttpRequest):
         entity = user.entity
         checklength(name, 0, 50, "assetName")
         checklength(parentName, -1, 50, "parentName")
-        checklength(department, 0, 30, "department")
+        checklength(department, -1, 30, "department")
         checklength(categoryName, 0, 50, "categoryName")
         checklength(description, 0, 300, "description")
         checklength(position, 0, 300, "position")
         checklength(image_url, -1, 300, "imageURL")
+        print(f"d{department}")
         if parentName == "":
             parentName = entity.name
             parent = Asset.objects.filter(name=entity.name).first()
@@ -144,15 +145,20 @@ def asset_add(req: HttpRequest):
                 parent = Asset(name=entity.name, owner=user.username, 
                                category=AssetCategory.root(), entity=entity, department=Department.objects.filter(entity=entity, name=entity.name).first(), parent=Asset.root())
                 parent.save()
-        parent = Asset.objects.filter(entity=entity, name=parentName).first()
-        if parent is None:
-            return request_failed(1, "父资产不存在", status_code=404)
+            if department == "":
+                department = user.department
+            else:
+                department = Department.objects.filter(entity=entity, name=department).first()
+                if department is None:
+                    return request_failed(3, "挂账部门不存在", status_code=404)
+        else:
+            parent = Asset.objects.filter(entity=entity, name=parentName).first()
+            if parent is None:
+                return request_failed(1, "父资产不存在", status_code=404)
+            department = parent.department
         category = AssetCategory.objects.filter(name=categoryName, entity=entity).first()
         if category is None:
             return request_failed(2, "资产类型不存在", status_code=404)
-        department = Department.objects.filter(entity=entity, name=department).first()
-        if department is None:
-            return request_failed(3, "挂账部门不存在", status_code=404)
         asset = Asset.objects.filter(entity=entity, name=name).first()
         if asset:
             return request_failed(4, "该资产已存在", status_code=403)
@@ -247,23 +253,9 @@ def attribute_list(req: HttpRequest, department: any):
         token = req.COOKIES['token'] 
         decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         user = User.objects.get(username=decoded['username'])
-
-        get_department = Department.objects.get(entity=user.entity, name=department)
-
-        # asset_super can see son depart
-        if user.asset_super:
-            children_list = user.department.get_children()
-
-            if get_department != user.department and get_department not in children_list:
-                return request_failed(1, "没有查看该部门自定义属性的权限", status_code=403)
-
-        # others can see own depart
-        if not user.asset_super and not user.entity_super:
-            if get_department != user.department:
-                return request_failed(1, "没有查看该部门自定义属性的权限", status_code=403)
         
         # get list
-        attributes = Attribute.objects.filter(entity=user.entity).filter(department=get_department)
+        attributes = Attribute.objects.filter(entity=user.entity)
         return_data = {
             "attributes": [
                 return_field(attribute.serialize(), ["id", "name"])
@@ -414,3 +406,16 @@ def asset_tree(req: HttpRequest):
         }
         return request_success(return_data)
     return BAD_METHOD
+
+@CheckRequire
+def asset_category_number(req: HttpRequest, category_name: str):
+    if req.method == 'GET':
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        category = AssetCategory.objects.filter(entity=user.entity, name=category_name).first()
+        is_number = category.is_number
+        return request_success({
+            "is_number": is_number
+        })
+    else:
+        return BAD_METHOD

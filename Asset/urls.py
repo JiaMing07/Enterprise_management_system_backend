@@ -14,4 +14,5 @@ urlpatterns = [
     path('attribute/delete', views.attribute_delete),
     path('attribute', views.asset_attribute),
     path('<assetName>', views.asset_assetName),
+    path('category/<category_name>/number', views.asset_category_number),
 ]

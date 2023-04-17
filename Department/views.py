@@ -192,7 +192,8 @@ def entity_department_subtree(req: HttpRequest):
         user = User.objects.filter(username=decoded['username']).first()
         department = user.department
         return_data = {
-            "assets": department.sub_tree()
+            "departments": department.sub_tree()
         }
+        print(return_data)
         return request_success(return_data)
     return BAD_METHOD

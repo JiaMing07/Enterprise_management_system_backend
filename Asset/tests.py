@@ -124,6 +124,9 @@ class AttributeTests(TestCase):
     def get_asset_tree(self):
         return self.client.get(f'/asset/tree')
     
+    def get_category_is_number(self,category_name):
+        return self.client.get(f'category/{category_name}/number')
+    
     # Now start testcases. 
     def test_asset_category_add(self):
         user = User.objects.filter(username='test_user').first()
@@ -770,3 +773,16 @@ class AttributeTests(TestCase):
 
         res = self.get_asset_tree()
         self.assertEqual(res.json()['info'], "Succeed")
+
+    def test_category_is_number(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+        category_name = 'cate'
+
+        res = self.get_category_is_number(category_name)
