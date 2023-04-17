@@ -390,14 +390,13 @@ def asset_tree(req: HttpRequest):
                 children_list += subtree_department(child)
             return children_list
         department_tree = subtree_department(department)
-        print(department_tree)
         assets = asset.filter(department__id__in=department_tree)
-        print(assets)
         assets_list = []
         for ass in assets:
+            if ass.parent == None:
+                break
             if ass.parent.name == entity.name:
                 assets_list.append(ass)
-        print(assets_list)
         return_list = []
         for ass in assets_list:
             return_list.append(ass.sub_tree())

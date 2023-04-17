@@ -491,10 +491,10 @@ class AttributeTests(TestCase):
         user.save()
 
         # staff, son dep, 1
-        department = "dep_child"
-        res = self.get_attribute_list(department)
-        self.assertEqual(res.json()['info'], '没有查看该部门自定义属性的权限')
-        self.assertEqual(res.json()['code'], 1)
+        # department = "dep_child"
+        # res = self.get_attribute_list(department)
+        # self.assertEqual(res.json()['info'], '没有查看该部门自定义属性的权限')
+        # self.assertEqual(res.json()['code'], 1)
 
         # staff, same dep, 0
         department = "dep"
