@@ -276,10 +276,10 @@ def attribute_edit(req: HttpRequest):
         attribute = Attribute.objects.filter(entity=user.entity, department=department, name=name).first()
 
         # whether exist
-        if attribute is None:
-            return request_failed(1, "该部门不存在该自定义属性", status_code=403)
         if department is None:
             return request_failed(1, "该企业不存在该部门", status_code=403)
+        if attribute is None:
+            return request_failed(1, "该部门不存在该自定义属性", status_code=403)
         
         # whether edit name:
         if new_name is not None:
@@ -288,9 +288,13 @@ def attribute_edit(req: HttpRequest):
             new_attribute = Attribute.objects.filter(entity=user.entity, department=department, name=new_name).first()
             
             if new_depart_name is not None:
-                new_attribute = Attribute.objects.filter(entity=user.entity, department=new_depart_name, name=new_name).first()
+                new_depart = Department.objects.filter(entity=user.entity, name=new_depart_name).first()
+                new_attribute = Attribute.objects.filter(entity=user.entity, department=new_depart, name=new_name).first()
             
-            if new_attribute is not None:
+            if new_attribute is not None and new_depart_name is not None:
+                return request_failed(3, "新部门已存在该属性", status_code=403)
+            
+            if new_attribute is not None and new_depart_name is None:
                 return request_failed(3, "当前部门已存在该属性", status_code=403)
 
             # entity_super can edit all deps in entity
@@ -321,7 +325,7 @@ def attribute_edit(req: HttpRequest):
 
             # entity_super can edit all deps in entity
             if user.entity_super:
-                attribute.department = new_name
+                attribute.department = new_depart
                 
             # asset_super can see son depart
             elif user.asset_super:
@@ -330,7 +334,7 @@ def attribute_edit(req: HttpRequest):
                 if department != user.department and department not in children_list:
                     return request_failed(2, "没有修改该自定义属性部门的权限", status_code=403)
                 
-                attribute.name = new_name
+                attribute.department = new_depart
 
             # others can see own depart
             else:
