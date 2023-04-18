@@ -366,9 +366,9 @@ def asset_attribute(req: HttpRequest):
         if user.token != token:
             return request_failed(-6, "用户不在线", status_code=403)
 
-        # whether check asset_super
-        if not user.asset_super:
-            return request_failed(2, "只有资产管理员可为资产添加属性", status_code=403)
+        # whether
+        if not user.asset_super and not user.entity_super:
+            return request_failed(2, "没有为资产添加属性的权限", status_code=403)
         
         # get asset and attribute
         asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
@@ -385,6 +385,43 @@ def asset_attribute(req: HttpRequest):
             new_pair = AssetAttribute(asset=asset, attribute=attribute, description=description)
             new_pair.save()
             return request_success()
+
+    elif req.method == 'DELETE':
+        body = json.loads(req.body.decode("utf-8"))
+        asset_name, attribute_name = get_args(body, ['asset', 'attribute'], ['string','string'])
+        checklength(asset_name, 0, 50, "asset")
+        checklength(attribute_name, 0, 50, "attribute")
+        
+        # check token and get entity
+        CheckToken(req)
+        token = req.COOKIES['token'] 
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        user = User.objects.get(username=decoded['username'])
+
+        if user.token != token:
+            return request_failed(-6, "用户不在线", status_code=403)
+
+        # whether
+        if not user.asset_super and not user.entity_super:
+            return request_failed(2, "没有为资产添加属性的权限", status_code=403)
+        
+        # get asset and attribute
+        asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
+        attribute = Attribute.objects.filter(name=attribute_name, entity=user.entity, department=user.department).first()
+
+        # filter whether exist
+        if asset is None:
+            return request_failed(1, "资产不存在", status_code=403)
+        if attribute is None:
+            return request_failed(1, "自定义属性不存在", status_code=403)
+        
+         # save
+        old_pair = AssetAttribute.objects.filter(asset=asset, attribute=attribute)
+        if old_pair is None:
+            return request_failed(1, "资产没有该属性", status_code=403)
+        
+        old_pair.delete()
+        return request_success()
 
     else:
         return BAD_METHOD
