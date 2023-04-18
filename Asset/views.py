@@ -409,9 +409,12 @@ def asset_tree(req: HttpRequest):
 @CheckRequire
 def asset_category_number(req: HttpRequest, category_name: str):
     if req.method == 'GET':
+        print(1)
         token, decoded = CheckToken(req)
         user = User.objects.filter(username=decoded['username']).first()
         category = AssetCategory.objects.filter(entity=user.entity, name=category_name).first()
+        if category is None:
+            return request_failed(1, "不存在此资产", status_code=404)
         is_number = category.is_number
         return request_success({
             "is_number": is_number

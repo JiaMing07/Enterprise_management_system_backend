@@ -125,7 +125,7 @@ class AttributeTests(TestCase):
         return self.client.get(f'/asset/tree')
     
     def get_category_is_number(self,category_name):
-        return self.client.get(f'category/{category_name}/number')
+        return self.client.get(f'/asset/category/{category_name}/number')
     
     # Now start testcases. 
     def test_asset_category_add(self):
@@ -786,3 +786,10 @@ class AttributeTests(TestCase):
         category_name = 'cate'
 
         res = self.get_category_is_number(category_name)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], "Succeed")
+
+        category_name = 'c_1'
+        res = self.get_category_is_number(category_name)
+        self.assertEqual(res.json()['code'], 1)
+        self.assertEqual(res.json()['info'], "不存在此资产")
