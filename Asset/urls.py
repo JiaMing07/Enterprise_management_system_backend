@@ -12,6 +12,7 @@ urlpatterns = [
     path('delete', views.asset_delete),
     path('attribute/add', views.attribute_add),
     path('attribute/<department>/list', views.attribute_list),
+    path('attribute/edit', views.attribute_edit),
     path('attribute/delete', views.attribute_delete),
     path('attribute', views.asset_attribute),
     path('<assetName>', views.asset_assetName),
