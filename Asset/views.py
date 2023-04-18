@@ -228,7 +228,7 @@ def attribute_add(req: HttpRequest):
             return request_failed(2, "只有资产管理员可添加属性", status_code=403)
             
         # check format
-        checklength(name, 0, 50, "atrribute_name")
+        checklength(name, 0, 50, "attribute_name")
 
         # filter whether exist
         attri = Attribute.objects.filter(name=name).first()
@@ -315,6 +315,7 @@ def asset_attribute(req: HttpRequest):
     if req.method == 'POST':
         # check format
         body = json.loads(req.body.decode("utf-8"))
+        print(body)
         asset_name, attribute_name, description = get_args(body, ['asset', 'attribute', 'description'], ['string','string','string'])
         checklength(asset_name, 0, 50, "asset")
         checklength(attribute_name, 0, 50, "attribute")
@@ -409,7 +410,6 @@ def asset_tree(req: HttpRequest):
 @CheckRequire
 def asset_category_number(req: HttpRequest, category_name: str):
     if req.method == 'GET':
-        print(1)
         token, decoded = CheckToken(req)
         user = User.objects.filter(username=decoded['username']).first()
         category = AssetCategory.objects.filter(entity=user.entity, name=category_name).first()
@@ -419,5 +419,39 @@ def asset_category_number(req: HttpRequest, category_name: str):
         return request_success({
             "is_number": is_number
         })
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
+def asset_query(req: HttpRequest, type: str, description: str, attribute:str):
+    if req.method == 'GET':
+        attribute=attribute[:-1]
+        description = description[:-1]
+        if type == "asset_name":
+            assets = Asset.objects.filter(name__icontains=description)
+        elif type == "asset_description":
+            assets = Asset.objects.filter(description__icontains=description)
+        elif type == "asset_position":
+            assets = Asset.objects.filter(position__icontains=description)
+        elif type == "asset_type":
+            assets = Asset.objects.filter(category__name__icontains=description)
+        elif type == "asset_attribute":
+            attribute_assets = AssetAttribute.objects.filter(description__icontains=description, attribute__name__icontains=attribute)
+            assets = []
+            for ass in attribute_assets:
+                assets.append(ass.asset)
+        elif type == "asset_status":
+            assets = Asset.objects.filter(state__icontains=description)
+        elif type == "asset_department":
+            assets = Asset.objects.filter(department__name__icontains=description)
+        else:
+            return request_failed(1, "此搜索类型不存在", status_code=403)
+        return_data = {
+            "assets": [
+                return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
+                                                 "position", "value", "user", "number", "state", "department", "image"])
+            for asset in assets],
+        }
+        return request_success(return_data)
     else:
         return BAD_METHOD

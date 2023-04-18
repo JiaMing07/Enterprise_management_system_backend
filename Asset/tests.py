@@ -127,6 +127,9 @@ class AttributeTests(TestCase):
     def get_category_is_number(self,category_name):
         return self.client.get(f'/asset/category/{category_name}/number')
     
+    def get_asset_query(self, type, description, attribute):
+        return self.client.get(f'/asset/query/{type}/{description}/{attribute}')
+    
     # Now start testcases. 
     def test_asset_category_add(self):
         user = User.objects.filter(username='test_user').first()
@@ -793,3 +796,76 @@ class AttributeTests(TestCase):
         res = self.get_category_is_number(category_name)
         self.assertEqual(res.json()['code'], 1)
         self.assertEqual(res.json()['info'], "不存在此资产")
+
+    def test_asset_query(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+        
+        # type = "asset_name"
+        type = "asset_name"
+        description = "a"
+        attribute = "1"
+
+        res = self.get_asset_query(type, description, attribute)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        # type = "asset_description"
+        type = "asset_description"
+        description = "a"
+        attribute = "1"
+
+        res = self.get_asset_query(type, description, attribute)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        
+        # type = "asset_position"
+        type = "asset_position"
+        description = "a"
+        attribute = "1"
+
+        res = self.get_asset_query(type, description, attribute)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        # type = "asset_type"
+        type = "asset_type"
+        description = "a"
+        attribute = "1"
+
+        res = self.get_asset_query(type, description, attribute)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        # type = "asset_status"
+        type = "asset_status"
+        description = "a"
+        attribute = "1"
+
+        res = self.get_asset_query(type, description, attribute)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+        
+        # type = "asset_department"
+        type = "asset_department"
+        description = "a"
+        attribute = "1"
+
+        res = self.get_asset_query(type, description, attribute)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        # error_type
+        type = "department"
+        description = "a"
+        attribute = "1"
+
+        res = self.get_asset_query(type, description, attribute)
+        self.assertEqual(res.json()['code'], 1)
+        self.assertEqual(res.json()['info'], '此搜索类型不存在')
