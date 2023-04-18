@@ -403,25 +403,17 @@ def asset_attribute(req: HttpRequest):
     if req.method == 'POST':
         # check format
         body = json.loads(req.body.decode("utf-8"))
-        print(body)
         asset_name, attribute_name, description = get_args(body, ['asset', 'attribute', 'description'], ['string','string','string'])
         checklength(asset_name, 0, 50, "asset")
         checklength(attribute_name, 0, 50, "attribute")
         checklength(description, 0, 300, "description")
 
         # check token and get entity
-        CheckToken(req)
+        CheckAuthority(req, ["entity_super", "asset_super"])
         token = req.COOKIES['token'] 
         decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         user = User.objects.get(username=decoded['username'])
-    
-        if user.token != token:
-            return request_failed(-6, "用户不在线", status_code=403)
 
-        # whether
-        if not user.asset_super and not user.entity_super:
-            return request_failed(2, "没有为资产添加属性的权限", status_code=403)
-        
         # get asset and attribute
         asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
         attribute = Attribute.objects.filter(name=attribute_name, entity=user.entity).first()
@@ -445,17 +437,10 @@ def asset_attribute(req: HttpRequest):
         checklength(attribute_name, 0, 50, "attribute")
         
         # check token and get entity
-        CheckToken(req)
+        CheckAuthority(req, ["entity_super", "asset_super"])
         token = req.COOKIES['token'] 
         decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         user = User.objects.get(username=decoded['username'])
-
-        if user.token != token:
-            return request_failed(-6, "用户不在线", status_code=403)
-
-        # whether
-        if not user.asset_super and not user.entity_super:
-            return request_failed(2, "没有为资产添加属性的权限", status_code=403)
         
         # get asset and attribute
         asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
@@ -468,7 +453,7 @@ def asset_attribute(req: HttpRequest):
             return request_failed(1, "自定义属性不存在", status_code=403)
         
          # save
-        old_pair = AssetAttribute.objects.filter(asset=asset, attribute=attribute)
+        old_pair = AssetAttribute.objects.filter(asset=asset, attribute=attribute).first()
         if old_pair is None:
             return request_failed(1, "资产没有该属性", status_code=403)
         

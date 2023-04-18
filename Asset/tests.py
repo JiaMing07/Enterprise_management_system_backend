@@ -620,7 +620,7 @@ class AttributeTests(TestCase):
         attribute = "2"
         description = "This is a description."
         res = self.post_asset_attribute_add(asset, attribute, description)
-        self.assertEqual(res.json()['code'], 2)
+        self.assertEqual(res.json()['code'], -2)
         # self.assertEqual(res.json()['info'], "只有资产管理员可为资产添加属性")
 
         # asset not exist, 1, "资产不存在"
@@ -910,6 +910,7 @@ class AttributeTests(TestCase):
         attributeName = "GPU"
         description = "RTX4090"
         res = self.post_asset_attribute_add(assetName, attributeName, description)
+        self.assertEqual(res.json()['info'], "Succeed")
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], "Succeed")
 
