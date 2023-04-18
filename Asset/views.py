@@ -63,7 +63,7 @@ def asset_category_add(req: HttpRequest):
         checklength(parentName, -1, 50, "parentName")
         if parentName == "":
             parentName = entity.name
-            parent = AssetCategory.objects.filter(name=entity.name).first()
+            parent = AssetCategory.objects.filter(name=entity.name, entity=entity).first()
             if parent is None:
                 parent = AssetCategory(name=entity.name, entity=entity, parent=AssetCategory.root())
                 parent.save()
@@ -74,6 +74,46 @@ def asset_category_add(req: HttpRequest):
         if category:
             return request_failed(2, "该资产类型已存在", status_code=403)
         category = AssetCategory(name=name, entity=entity, parent=parent, is_number=is_number)
+        category.save()
+        return request_success()
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
+def asset_category_edit(req: HttpRequest):
+    if req.method == 'PUT':
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        body = json.loads(req.body.decode("utf-8"))
+        oldName, categoryName, parentName, is_number = get_args(body, ["oldName", "name", "parent", "is_number"], 
+                                                             ["string", "string", "string", "bool"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        checklength(oldName, 0, 50, "oldCategoryName")
+        checklength(categoryName, 0, 50, "CategoryName")
+        checklength(parentName, -1, 50, "parentName")
+
+        category = AssetCategory.objects.filter(name=oldName, entity=entity).first()
+        if category is None:
+            return request_failed(1, "旧资产类型不存在", status_code=404)
+        
+        category_2 = AssetCategory.objects.filter(name=categoryName, entity=entity).first()
+        if category_2 and category_2.id != category.id:
+            return request_failed(2, "新资产类型已存在", status_code=403)
+        
+        if parentName == "":
+            parentName = entity.name
+            parent = AssetCategory.objects.filter(name=entity.name, entity=entity).first()
+            if parent is None:
+                parent = AssetCategory(name=entity.name, entity=entity, parent=AssetCategory.root())
+                parent.save()
+        parent = AssetCategory.objects.filter(entity=entity, name=parentName).first()
+        if parent is None:
+            return request_failed(3, "父资产类型不存在", status_code=404)
+        
+        category.name = categoryName
+        category.parent = parent
+        category.is_number = is_number
         category.save()
         return request_success()
     else:
@@ -168,8 +208,82 @@ def asset_add(req: HttpRequest):
         ancestor_list = department.get_ancestors(include_self=True)
         if user.department not in ancestor_list:
             return request_failed(5, "部门不在管理范围内", status_code=403)
-        asset = Asset(name=name, description=description, position=position, value=value, owner=owner, number=number,
+        asset = Asset(name=name, description=description, position=position, value=value, owner=owner.username, number=number,
                       category=category, entity=entity, department=department, parent=parent, image_url=image_url)
+        asset.save()
+        return request_success()
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
+def asset_edit(req: HttpRequest):
+    if req.method == 'PUT':
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        body = json.loads(req.body.decode("utf-8"))
+        oldName, assetName, parentName, description, position, value, owner, number, state, categoryName, image_url = get_args(
+            body, ["oldName", "name", "parent", "description", "position", "value", "owner", "number", "state", "category", "image"], 
+            ["string", "string", "string", "string", "string", "int", "string", "int", "string", "string", "string"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        checklength(oldName, 0, 50, "oldAssetName")
+        checklength(assetName, 0, 50, "assetName")
+        checklength(parentName, -1, 50, "parentName")
+        checklength(categoryName, 0, 50, "categoryName")
+        checklength(description, 0, 300, "description")
+        checklength(position, 0, 300, "position")
+        checklength(owner, 0, 50, "ownerName")
+        checklength(state, 0, 50, "state")
+        checklength(image_url, -1, 300, "imageURL")
+
+        asset = Asset.objects.filter(name=oldName, entity=entity).first()
+        if asset is None:
+            return request_failed(1, "旧资产不存在", status_code=404)
+        
+        asset_2 = Asset.objects.filter(name=assetName, entity=entity).first()
+        if asset_2 and asset_2.id != asset.id:
+            return request_failed(2, "新资产名称已存在", status_code=403)
+        
+        category = AssetCategory.objects.filter(name=categoryName, entity=entity).first()
+        if category is None:
+            return request_failed(3, "资产类型不存在", status_code=404)
+        
+        owner_user = User.objects.filter(entity=entity, username=owner).first()
+        if owner_user is None:
+            return request_failed(4, "挂账人不存在",status_code=404)
+        
+        assetDepartment = asset.department
+        ancestor_list = assetDepartment.get_ancestors(include_self=True)
+        if user.department not in ancestor_list:
+            return request_failed(5, "资产不在管理范围内", status_code=403)
+        
+        department = owner_user.department
+        ancestor_list = department.get_ancestors(include_self=True)
+        if user.department not in ancestor_list:
+            return request_failed(6, "挂账人不在管理范围内", status_code=403)
+        
+        if parentName == "":
+            parentName = entity.name
+            parent = Asset.objects.filter(entity=entity, name=entity.name).first()
+            if parent is None:
+                parent = Asset(name=entity.name, owner=user.username, category=AssetCategory.root(), entity=entity, 
+                               department=Department.objects.filter(entity=entity, name=entity.name).first(), parent=Asset.root())
+                parent.save()
+        parent = Asset.objects.filter(entity=entity, name=parentName).first()
+        if parent is None:
+            return request_failed(7, "父资产不存在", status_code=404)
+        
+        asset.name = assetName
+        asset.parent = parent
+        asset.description = description
+        asset.position = position
+        asset.value = value
+        asset.owner = owner
+        asset.number = number
+        asset.state = state
+        asset.category = category
+        asset.department = department
+        asset.image_url = image_url
         asset.save()
         return request_success()
     else:
