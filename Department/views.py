@@ -194,6 +194,5 @@ def entity_department_subtree(req: HttpRequest):
         return_data = {
             "departments": department.sub_tree()
         }
-        print(return_data)
         return request_success(return_data)
     return BAD_METHOD

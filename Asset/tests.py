@@ -73,6 +73,17 @@ class AttributeTests(TestCase):
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post("/asset/category/add", data=payload, content_type="application/json")
     
+    def put_asset_category_edit(self, oldName, name, parent, is_number):
+        payload = {
+            'oldName': oldName,
+            'name': name,
+            'parent': parent,
+            'is_number': is_number,
+        }
+
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.put("/asset/category/edit", data=payload, content_type="application/json")
+    
     def delete_asset_category(self, categoryName):
         payload = {
             'categoryName': categoryName,
@@ -99,6 +110,24 @@ class AttributeTests(TestCase):
 
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post("/asset/add", data=payload, content_type="application/json")
+    
+    def put_asset_edit(self, oldName, name, parent, description, position, value, owner, number, state, category, image):
+        payload = {
+            'oldName': oldName,
+            "name": name, 
+            "parent": parent, 
+            "description": description, 
+            "position": position, 
+            "value": value, 
+            "owner": owner,
+            "number": number,
+            "state": state,
+            "category": category,
+            "image": image,
+        }
+
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.put("/asset/edit", data=payload, content_type="application/json")
     
     def delete_asset(self, assetName):
         payload = {
@@ -173,6 +202,51 @@ class AttributeTests(TestCase):
         res = self.get_asset_category_list()
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
+
+    def test_asset_category_edit(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        categoryName = 'category_1'
+        parent = "cate"
+        is_number = False
+        
+        res = self.post_asset_category_add(categoryName, parent, is_number)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        self.assertEqual(len(AssetCategory.objects.all()), 2)
+        oldName = 'category_1'
+        self.assertTrue(AssetCategory.objects.filter(name=oldName).exists())
+        newName = 'category_2'
+        parent = "cate"
+        is_number = True
+
+        res = self.put_asset_category_edit(oldName, newName, parent, is_number)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(len(AssetCategory.objects.all()), 2)
+        self.assertFalse(AssetCategory.objects.filter(name=oldName).exists())
+        self.assertTrue(AssetCategory.objects.filter(name=newName).exists())
+
+        res = self.put_asset_category_edit(oldName, newName, parent, is_number)
+        self.assertEqual(res.json()['code'], 1)
+
+        oldName = 'cate'
+        res = self.put_asset_category_edit(oldName, newName, parent, is_number)
+        self.assertEqual(res.json()['code'], 2)
+
+        oldName = 'category_2'
+        newName = 'category_1'
+        parent = "category_3"
+        res = self.put_asset_category_edit(oldName, newName, parent, is_number)
+        self.assertEqual(res.json()['code'], 3)
 
     def test_asset_category_delete(self):
         user = User.objects.filter(username='test_user').first()
@@ -307,6 +381,103 @@ class AttributeTests(TestCase):
         res = self.get_asset_list()
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
+
+    def test_asset_edit(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        assetName = 'computer'
+        parentName = 'ass'
+        description = 'des'
+        position = 'pos'
+        value = '1000'
+        department = 'dep'
+        number = 1
+        categoryName = 'cate'
+        image = '127.0.0.1'
+        
+        res = self.post_asset_add(assetName, parentName, description, position, 
+                                           value, department, number, categoryName, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        oldName = 'computer'
+        self.assertEqual(len(Asset.objects.all()), 2)
+        self.assertTrue(Asset.objects.filter(name=oldName).exists())
+        newName = 'mobile phone'
+        parentName = 'ass'
+        description = 'des'
+        position = 'pos'
+        value = '1000'
+        owner = 'Alice'
+        number = 1
+        state = 'IN_USE'
+        categoryName = 'cate'
+        image = '127.0.0.1'
+
+        res = self.put_asset_edit(oldName, newName, parentName, description, position, 
+                                  value, owner, number, state, categoryName, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(len(Asset.objects.all()), 2)
+        self.assertFalse(Asset.objects.filter(name=oldName).exists())
+        self.assertTrue(Asset.objects.filter(name=newName).exists())
+        
+        res = self.put_asset_edit(oldName, newName, parentName, description, position, 
+                                  value, owner, number, state, categoryName, image)
+        self.assertEqual(res.json()['code'], 1)
+
+        oldName = 'mobile phone'
+        newName = 'ass'
+        res = self.put_asset_edit(oldName, newName, parentName, description, position, 
+                                  value, owner, number, state, categoryName, image)
+        self.assertEqual(res.json()['code'], 2)
+
+        newName = 'computer'
+        categoryName = 'category_1'
+        res = self.put_asset_edit(oldName, newName, parentName, description, position, 
+                                  value, owner, number, state, categoryName, image)
+        self.assertEqual(res.json()['code'], 3)
+
+        owner = 'Bob'
+        categoryName = 'cate'
+        res = self.put_asset_edit(oldName, newName, parentName, description, position, 
+                                  value, owner, number, state, categoryName, image)
+        self.assertEqual(res.json()['code'], 4)
+
+        owner = 'Alice'
+        parentName = 'asset_1'
+        res = self.put_asset_edit(oldName, newName, parentName, description, position, 
+                                  value, owner, number, state, categoryName, image)
+        self.assertEqual(res.json()['code'], 7)
+
+        parentName = 'ass'
+
+        user = User.objects.filter(username='Alice').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("asset_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        owner = 'test_user'
+        res = self.put_asset_edit(oldName, newName, parentName, description, position, 
+                                  value, owner, number, state, categoryName, image)
+        self.assertEqual(res.json()['code'], 6)
+
+        owner = 'Alice'
+        oldName = 'ass'
+        res = self.put_asset_edit(oldName, newName, parentName, description, position, 
+                                  value, owner, number, state, categoryName, image)
+        self.assertEqual(res.json()['code'], 5)
 
     def test_asset_delete(self):
         user = User.objects.filter(username='test_user').first()

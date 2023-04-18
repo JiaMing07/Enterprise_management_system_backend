@@ -4,10 +4,12 @@ import Asset.views as views
 urlpatterns = [
     path('category/list', views.asset_category_list),
     path('category/add', views.asset_category_add),
+    path('category/edit', views.asset_category_edit),
     path('category/delete', views.asset_category_delete),
     path('list', views.asset_list),
     path('tree', views.asset_tree),
     path('add', views.asset_add),
+    path('edit', views.asset_edit),
     path('delete', views.asset_delete),
     path('attribute/add', views.attribute_add),
     path('attribute/<department>/list', views.attribute_list),
