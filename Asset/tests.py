@@ -1022,6 +1022,15 @@ class AttributeTests(TestCase):
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
 
+        # type = "asset_department"
+        type = "asset_owner"
+        description = "a"
+        attribute = "1"
+
+        res = self.get_asset_query(type, description, attribute)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
         # error_type
         type = "department"
         description = "a"

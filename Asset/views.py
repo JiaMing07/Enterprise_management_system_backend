@@ -19,7 +19,6 @@ import jwt
 # Create your views here.
 @CheckRequire
 def asset_category_list(req: HttpRequest):
-    print(req.COOKIES)
     if req.method == 'GET':
         token, decoded = CheckToken(req)
         user = User.objects.filter(username=decoded['username']).first()
@@ -51,7 +50,6 @@ def asset_category_list(req: HttpRequest):
     
 @CheckRequire
 def asset_category_add(req: HttpRequest):
-    print(req.COOKIES)
     if req.method == 'POST':
         CheckAuthority(req, ["entity_super", "asset_super"])
         body = json.loads(req.body.decode("utf-8"))
@@ -135,7 +133,6 @@ def asset_add(req: HttpRequest):
         checklength(description, 0, 300, "description")
         checklength(position, 0, 300, "position")
         checklength(image_url, -1, 300, "imageURL")
-        print(f"d{department}")
         if parentName == "":
             parentName = entity.name
             parent = Asset.objects.filter(name=entity.name).first()
@@ -558,6 +555,8 @@ def asset_query(req: HttpRequest, type: str, description: str, attribute:str):
             assets = Asset.objects.filter(state__icontains=description)
         elif type == "asset_department":
             assets = Asset.objects.filter(department__name__icontains=description)
+        elif type == "asset_owner":
+            assets = Asset.objects.filter(owner__icontains=description)
         else:
             return request_failed(1, "此搜索类型不存在", status_code=403)
         assets = assets.filter(entity=entity).exclude(name=entity.name).order_by('id')
