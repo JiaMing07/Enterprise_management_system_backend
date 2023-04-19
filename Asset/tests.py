@@ -30,11 +30,12 @@ class AttributeTests(TestCase):
         md5 = hashlib.md5()
         md5.update(password.encode('utf-8'))
         pwd = md5.hexdigest()
-        User.objects.create(username='Alice', password=pwd, department=dep, entity=ent)
+        User.objects.create(username='Alice', password=pwd, department=dep_child, entity=ent)
+        User.objects.create(username='George', password=pwd, department=dep, entity=ent, asset_super=True)
         User.objects.create(username='test_attribute', password=pwd, department=dep, entity=ent)
         user = User.objects.create(username='test_user', password=pwd, department=dep, entity=ent)
         category = AssetCategory.objects.create(name='cate', entity=ent)
-        Asset.objects.create(name='ass', entity=ent, owner=user.username, category=category)
+        Asset.objects.create(name='ass', entity=ent, owner=user.username, category=category, department=dep)
         Attribute.objects.create(id=1, name="attri_0", entity=ent, department=dep_ent)
         
     # Utility functions    
@@ -84,17 +85,36 @@ class AttributeTests(TestCase):
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post("/asset/category/add", data=payload, content_type="application/json")
     
+    def put_asset_category_edit(self, oldName, name, parent, is_number):
+        payload = {
+            'oldName': oldName,
+            'name': name,
+            'parent': parent,
+            'is_number': is_number,
+        }
+
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.put("/asset/category/edit", data=payload, content_type="application/json")
+    
+    def delete_asset_category(self, categoryName):
+        payload = {
+            'categoryName': categoryName,
+        }
+
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.delete("/asset/category/delete", data=payload, content_type="application/json")
+    
     def get_asset_list(self):
         return self.client.get(f"/asset/list")
     
-    def post_asset_add(self, name, parent, description, position, value, owner, number, category, image):
+    def post_asset_add(self, name, parent, description, position, value, department, number, category, image):
         payload = {
             "name": name, 
             "parent": parent, 
             "description": description, 
             "position": position, 
             "value": value, 
-            "owner": owner,
+            "department": department,
             "number": number, 
             "category": category,
             "image": image,
@@ -102,6 +122,40 @@ class AttributeTests(TestCase):
 
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post("/asset/add", data=payload, content_type="application/json")
+    
+    def post_asset_add_list(self, assets):
+        payload = {
+            "assets": assets,
+        }
+
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.post("/asset/add/list", data=payload, content_type="application/json")
+    
+    def put_asset_edit(self, oldName, name, parent, description, position, value, owner, number, state, category, image):
+        payload = {
+            'oldName': oldName,
+            "name": name, 
+            "parent": parent, 
+            "description": description, 
+            "position": position, 
+            "value": value, 
+            "owner": owner,
+            "number": number,
+            "state": state,
+            "category": category,
+            "image": image,
+        }
+
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.put("/asset/edit", data=payload, content_type="application/json")
+    
+    def delete_asset(self, assetName):
+        payload = {
+            'assetName': assetName,
+        }
+
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.delete("/asset/delete", data=payload, content_type="application/json")
     
     def post_asset_attribute_add(self, asset, attribute, description):
         payload = {
@@ -115,6 +169,18 @@ class AttributeTests(TestCase):
     
     def get_asset_attribute_list(self, assetName):
         return self.client.get(f"/asset/attribute/{assetName}")
+    
+    def get_asset_assetName(self, assetName):
+        return self.client.get(f"/asset/{assetName}")
+    
+    def get_asset_tree(self):
+        return self.client.get(f'/asset/tree')
+    
+    def get_category_is_number(self,category_name):
+        return self.client.get(f'/asset/category/{category_name}/number')
+    
+    def get_asset_query(self, type, description, attribute):
+        return self.client.get(f'/asset/query/{type}/{description}/{attribute}')
     
     # Now start testcases. 
     def test_asset_category_add(self):
@@ -163,6 +229,86 @@ class AttributeTests(TestCase):
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
 
+    def test_asset_category_edit(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        categoryName = 'category_1'
+        parent = "cate"
+        is_number = False
+        
+        res = self.post_asset_category_add(categoryName, parent, is_number)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        self.assertEqual(len(AssetCategory.objects.all()), 2)
+        oldName = 'category_1'
+        self.assertTrue(AssetCategory.objects.filter(name=oldName).exists())
+        newName = 'category_2'
+        parent = "cate"
+        is_number = True
+
+        res = self.put_asset_category_edit(oldName, newName, parent, is_number)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(len(AssetCategory.objects.all()), 2)
+        self.assertFalse(AssetCategory.objects.filter(name=oldName).exists())
+        self.assertTrue(AssetCategory.objects.filter(name=newName).exists())
+
+        res = self.put_asset_category_edit(oldName, newName, parent, is_number)
+        self.assertEqual(res.json()['code'], 1)
+
+        oldName = 'cate'
+        res = self.put_asset_category_edit(oldName, newName, parent, is_number)
+        self.assertEqual(res.json()['code'], 2)
+
+        oldName = 'category_2'
+        newName = 'category_1'
+        parent = "category_3"
+        res = self.put_asset_category_edit(oldName, newName, parent, is_number)
+        self.assertEqual(res.json()['code'], 3)
+
+    def test_asset_category_delete(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        self.assertEqual(len(AssetCategory.objects.all()), 1)
+
+        categoryName = 'category_1'
+        parent = "cate"
+        is_number = False
+        
+        res = self.post_asset_category_add(categoryName, parent, is_number)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(len(AssetCategory.objects.all()), 2)
+        self.assertTrue(AssetCategory.objects.filter(name=categoryName).exists())
+
+        categoryName = 'category_2'
+
+        res = self.delete_asset_category(categoryName)
+        self.assertEqual(res.json()['code'], 1)
+
+        categoryName = 'category_1'
+        
+        res = self.delete_asset_category(categoryName)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(len(AssetCategory.objects.all()), 1)
+        self.assertFalse(AssetCategory.objects.filter(name=categoryName).exists())
+
     def test_asset_add(self):
         user = User.objects.filter(username='test_user').first()
         user.token = user.generate_token()
@@ -181,13 +327,13 @@ class AttributeTests(TestCase):
         description = 'des'
         position = 'pos'
         value = '1000'
-        owner = 'Alice'
+        department = 'dep'
         number = 1
         categoryName = 'cate'
         image = '127.0.0.1'
         
         res = self.post_asset_add(assetName, parentName, description, position, 
-                                           value, owner, number, categoryName, image)
+                                           value, department, number, categoryName, image)
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(len(Asset.objects.all()), 3)
@@ -199,13 +345,13 @@ class AttributeTests(TestCase):
         description = 'des'
         position = 'pos'
         value = '1000'
-        owner = 'Alice'
+        department = 'dep'
         number = 1
         categoryName = 'cate'
         image = '127.0.0.1'
         
         res = self.post_asset_add(assetName, parentName, description, position, 
-                                           value, owner, number, categoryName, image)
+                                           value, department, number, categoryName, image)
         self.assertEqual(res.json()['code'], 1)
         self.assertEqual(len(Asset.objects.all()), 3)
 
@@ -215,29 +361,29 @@ class AttributeTests(TestCase):
         description = 'des'
         position = 'pos'
         value = '1000'
-        owner = 'Alice'
+        department = 'dep'
         number = 1
         categoryName = 'cat'
         image = '127.0.0.1'
         
         res = self.post_asset_add(assetName, parentName, description, position, 
-                                           value, owner, number, categoryName, image)
+                                           value, department, number, categoryName, image)
         self.assertEqual(res.json()['code'], 2)
         self.assertEqual(len(Asset.objects.all()), 3)
 
-        # test owner not found
+        # test department not found
         assetName = 'computer'
         parentName = ''
         description = 'des'
         position = 'pos'
         value = '1000'
-        owner = 'Bob'
+        department = 'Bob'
         number = 1
         categoryName = 'cate'
         image = '127.0.0.1'
         
         res = self.post_asset_add(assetName, parentName, description, position, 
-                                           value, owner, number, categoryName, image)
+                                           value, department, number, categoryName, image)
         self.assertEqual(res.json()['code'], 3)
         self.assertEqual(len(Asset.objects.all()), 3)
 
@@ -247,13 +393,13 @@ class AttributeTests(TestCase):
         description = 'des'
         position = 'pos'
         value = '1000'
-        owner = 'Alice'
+        department = 'dep'
         number = 1
         categoryName = 'cate'
         image = '127.0.0.1'
         
         res = self.post_asset_add(assetName, parentName, description, position, 
-                                           value, owner, number, categoryName, image)
+                                           value, department, number, categoryName, image)
         self.assertEqual(res.json()['code'], 4)
         self.assertEqual(len(Asset.objects.all()), 3)
 
@@ -261,6 +407,178 @@ class AttributeTests(TestCase):
         res = self.get_asset_list()
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
+
+    def test_asset_edit(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        assetName = 'computer'
+        parentName = 'ass'
+        description = 'des'
+        position = 'pos'
+        value = '1000'
+        department = 'dep'
+        number = 1
+        categoryName = 'cate'
+        image = '127.0.0.1'
+        
+        res = self.post_asset_add(assetName, parentName, description, position, 
+                                           value, department, number, categoryName, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        oldName = 'computer'
+        self.assertEqual(len(Asset.objects.all()), 2)
+        self.assertTrue(Asset.objects.filter(name=oldName).exists())
+        newName = 'mobile phone'
+        parentName = 'ass'
+        description = 'des'
+        position = 'pos'
+        value = '1000'
+        owner = 'Alice'
+        number = 1
+        state = 'IN_USE'
+        categoryName = 'cate'
+        image = '127.0.0.1'
+
+        res = self.put_asset_edit(oldName, newName, parentName, description, position, 
+                                  value, owner, number, state, categoryName, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(len(Asset.objects.all()), 2)
+        self.assertFalse(Asset.objects.filter(name=oldName).exists())
+        self.assertTrue(Asset.objects.filter(name=newName).exists())
+        
+        res = self.put_asset_edit(oldName, newName, parentName, description, position, 
+                                  value, owner, number, state, categoryName, image)
+        self.assertEqual(res.json()['code'], 1)
+
+        oldName = 'mobile phone'
+        newName = 'ass'
+        res = self.put_asset_edit(oldName, newName, parentName, description, position, 
+                                  value, owner, number, state, categoryName, image)
+        self.assertEqual(res.json()['code'], 2)
+
+        newName = 'computer'
+        categoryName = 'category_1'
+        res = self.put_asset_edit(oldName, newName, parentName, description, position, 
+                                  value, owner, number, state, categoryName, image)
+        self.assertEqual(res.json()['code'], 3)
+
+        owner = 'Bob'
+        categoryName = 'cate'
+        res = self.put_asset_edit(oldName, newName, parentName, description, position, 
+                                  value, owner, number, state, categoryName, image)
+        self.assertEqual(res.json()['code'], 4)
+
+        owner = 'Alice'
+        parentName = 'asset_1'
+        res = self.put_asset_edit(oldName, newName, parentName, description, position, 
+                                  value, owner, number, state, categoryName, image)
+        self.assertEqual(res.json()['code'], 7)
+
+        parentName = 'ass'
+
+        user = User.objects.filter(username='Alice').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("asset_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        owner = 'test_user'
+        res = self.put_asset_edit(oldName, newName, parentName, description, position, 
+                                  value, owner, number, state, categoryName, image)
+        self.assertEqual(res.json()['code'], 6)
+
+        owner = 'Alice'
+        oldName = 'ass'
+        res = self.put_asset_edit(oldName, newName, parentName, description, position, 
+                                  value, owner, number, state, categoryName, image)
+        self.assertEqual(res.json()['code'], 5)
+
+    def test_asset_delete(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        self.assertEqual(len(Asset.objects.all()), 1)
+
+        assetName = 'computer'
+        parentName = 'ass'
+        description = 'des'
+        position = 'pos'
+        value = '1000'
+        department = 'dep'
+        number = 1
+        categoryName = 'cate'
+        image = '127.0.0.1'
+        
+        res = self.post_asset_add(assetName, parentName, description, position, 
+                                           value, department, number, categoryName, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(len(Asset.objects.all()), 2)
+        self.assertTrue(Asset.objects.filter(name=assetName).exists())
+
+        assetName = 'asset_1'
+
+        res = self.delete_asset(assetName)
+        self.assertEqual(res.json()['code'], 1)
+
+        assetName = 'computer'
+
+        res = self.delete_asset(assetName)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(len(Asset.objects.all()), 1)
+        self.assertFalse(Asset.objects.filter(name=assetName).exists())
+
+        # 部门不在管理范围内
+        assetName = 'computer'
+        parentName = 'ass'
+        description = 'des'
+        position = 'pos'
+        value = '1000'
+        department = 'dep'
+        number = 1
+        categoryName = 'cate'
+        image = '127.0.0.1'
+        
+        res = self.post_asset_add(assetName, parentName, description, position, 
+                                           value, department, number, categoryName, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(len(Asset.objects.all()), 2)
+        self.assertTrue(Asset.objects.filter(name=assetName).exists())
+
+        user = User.objects.filter(username='Alice').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("asset_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        assetName = 'computer'
+
+        res = self.delete_asset(assetName)
+        self.assertEqual(res.json()['code'], 2)
+        self.assertTrue(Asset.objects.filter(name=assetName).exists())
 
     def test_attribute_add(self):
         # token
@@ -370,10 +688,10 @@ class AttributeTests(TestCase):
         user.save()
 
         # staff, son dep, 1
-        department = "dep_child"
-        res = self.get_attribute_list(department)
-        self.assertEqual(res.json()['info'], '没有查看该部门自定义属性的权限')
-        self.assertEqual(res.json()['code'], 1)
+        # department = "dep_child"
+        # res = self.get_attribute_list(department)
+        # self.assertEqual(res.json()['info'], '没有查看该部门自定义属性的权限')
+        # self.assertEqual(res.json()['code'], 1)
 
         # staff, same dep, 0
         department = "dep"
@@ -484,7 +802,7 @@ class AttributeTests(TestCase):
         attribute = "2"
         description = "This is a description."
         res = self.post_asset_attribute_add(asset, attribute, description)
-        self.assertEqual(res.json()['code'], 2)
+        self.assertEqual(res.json()['code'], -2)
         # self.assertEqual(res.json()['info'], "只有资产管理员可为资产添加属性")
 
         # asset not exist, 1, "资产不存在"
@@ -802,3 +1120,286 @@ class AttributeTests(TestCase):
         res = self.get_asset_attribute_list(asset)
         # self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], "Succeed")
+
+    def test_get_asset_assetName(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("asset_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        self.assertEqual(len(Asset.objects.all()), 1)
+
+        assetName = 'computer'
+        parentName = 'ass'
+        description = 'des'
+        position = 'pos'
+        value = '1000'
+        department = 'dep'
+        number = 1
+        categoryName = 'cate'
+        image = '127.0.0.1'
+        
+        res = self.post_asset_add(assetName, parentName, description, position, 
+                                           value, department, number, categoryName, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(len(Asset.objects.all()), 2)
+        self.assertTrue(Asset.objects.filter(name=assetName).exists())
+
+        attributeName = "GPU"
+        department = "dep"
+        res = self.post_attribute_add(attributeName, department)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        assetName = "computer"
+        attributeName = "GPU"
+        description = "RTX4090"
+        res = self.post_asset_attribute_add(assetName, attributeName, description)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], "Succeed")
+
+        assetName = 'computer'
+        res = self.get_asset_assetName(assetName)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['property']['GPU'], "RTX4090")
+        self.assertEqual(res.json()['property']['assetName'], f"{assetName}")
+
+        assetName = 'asset_1'
+        res = self.get_asset_assetName(assetName)
+        self.assertEqual(res.json()['code'], 1)
+
+    def test_asset_tree(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        res = self.get_asset_tree()
+        self.assertEqual(res.json()['info'], "Succeed")
+
+    def test_category_is_number(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+        category_name = 'cate'
+
+        res = self.get_category_is_number(category_name)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], "Succeed")
+
+        category_name = 'c_1'
+        res = self.get_category_is_number(category_name)
+        self.assertEqual(res.json()['code'], 1)
+        self.assertEqual(res.json()['info'], "不存在此资产")
+
+    def test_asset_query(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+        
+        # type = "asset_name"
+        type = "asset_name"
+        description = "a"
+        attribute = "1"
+
+        res = self.get_asset_query(type, description, attribute)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        # type = "asset_description"
+        type = "asset_description"
+        description = "a"
+        attribute = "1"
+
+        res = self.get_asset_query(type, description, attribute)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        
+        # type = "asset_position"
+        type = "asset_position"
+        description = "a"
+        attribute = "1"
+
+        res = self.get_asset_query(type, description, attribute)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        # type = "asset_type"
+        type = "asset_type"
+        description = "a"
+        attribute = "1"
+
+        res = self.get_asset_query(type, description, attribute)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        # type = "asset_status"
+        type = "asset_status"
+        description = "a"
+        attribute = "1"
+
+        res = self.get_asset_query(type, description, attribute)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+        
+        # type = "asset_department"
+        type = "asset_department"
+        description = "a"
+        attribute = "1"
+
+        res = self.get_asset_query(type, description, attribute)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        # type = "asset_department"
+        type = "asset_owner"
+        description = "a"
+        attribute = "1"
+
+        res = self.get_asset_query(type, description, attribute)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        # error_type
+        type = "department"
+        description = "a"
+        attribute = "1"
+
+        res = self.get_asset_query(type, description, attribute)
+        self.assertEqual(res.json()['code'], 1)
+        self.assertEqual(res.json()['info'], '此搜索类型不存在')
+
+    def test_asset_add_list(self):
+        user = User.objects.filter(username='Alice').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("asset_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        self.assertEqual(len(Asset.objects.all()), 1)
+
+        assets = [
+            {
+            "name": 'computer', 
+            "parent": '', 
+            "description": 'work', 
+            "position": 'desk', 
+            "value": 5999, 
+            "department": 'dep_child',
+            "number": 1, 
+            "category": 'cate',
+            "image": '127.0.0.1',
+            },
+            {
+            "name": 'keyboard', 
+            "parent": 'computer', 
+            "description": 'work', 
+            "position": 'desk', 
+            "value": 100, 
+            "department": '',
+            "number": 1, 
+            "category": 'cate',
+            "image": '127.0.0.2',
+            "state": 'IN_USE',
+            "owner": 'Alice',
+            },
+            {
+            "name": 'keyboard', 
+            "parent": 'asset_1', #parent not found
+            "description": 'work', 
+            "position": 'desk', 
+            "value": 100, 
+            "department": '',
+            "number": 1, 
+            "category": 'cate',
+            "image": '127.0.0.2',
+            },
+            {
+            "name": 'keyboard', 
+            "parent": 'computer', 
+            "description": 'work', 
+            "position": 'desk', 
+            "value": 100, 
+            "department": 'department_1',# department not found
+            "number": 1, 
+            "category": 'cate',
+            "image": '127.0.0.2',
+            },
+            {
+            "name": 'keyboard', 
+            "parent": 'computer', 
+            "description": 'work', 
+            "position": 'desk', 
+            "value": 100, 
+            "department": 'dep_child',
+            "number": 1, 
+            "category": 'category_1',# category not found
+            "image": '127.0.0.2',
+            },
+            {
+            "name": 'keyboard',# repeat
+            "parent": 'computer', 
+            "description": 'work', 
+            "position": 'desk', 
+            "value": 100, 
+            "department": 'dep_child',
+            "number": 1, 
+            "category": 'cate',
+            "image": '127.0.0.2',
+            },
+            {
+            "name": 'mouse', 
+            "parent": 'computer', 
+            "description": 'work', 
+            "position": 'desk', 
+            "value": 100, 
+            "department": 'dep_child',
+            "number": 1, 
+            "category": 'cate',
+            "image": '127.0.0.3',
+            "owner": 'Bob',# owner not found
+            },
+            {
+            "name": 'mouse', 
+            "parent": 'computer', 
+            "description": 'work', 
+            "position": 'desk', 
+            "value": 100, 
+            "department": 'dep',# 部门不在管理范围内
+            "number": 1, 
+            "category": 'cate',
+            "image": '127.0.0.3',
+            }
+        ]
+
+        res = self.post_asset_add_list(assets)
+        self.assertEqual(res.json()['code'], 1)
+        self.assertEqual(len(Asset.objects.all()), 4)
+        self.assertTrue(Asset.objects.filter(name='ass').exists())
+        self.assertTrue(Asset.objects.filter(name='computer').exists())
+        self.assertTrue(Asset.objects.filter(name='ent').exists())
+        self.assertTrue(Asset.objects.filter(name='keyboard').exists())

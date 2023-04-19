@@ -42,7 +42,9 @@ class AssetCategory(MPTTModel):
             "is_number": self.is_number,
             "sub-categories": children_list,
         }
-
+    
+    class Meta:
+        unique_together = ['entity', 'name']
 
 class Asset(MPTTModel):
     '''资产'''
@@ -57,6 +59,7 @@ class Asset(MPTTModel):
     category = models.ForeignKey(AssetCategory, on_delete=models.CASCADE)
     parent = TreeForeignKey('self', blank=True, null=True, on_delete=models.CASCADE)
     entity = models.ForeignKey(Entity, on_delete=models.CASCADE)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE)
     image_url = models.CharField(max_length=300)
     @classmethod
     def root(cls):
@@ -80,8 +83,22 @@ class Asset(MPTTModel):
             "number": self.number,
             "state": self.state,
             "entity": self.entity.name,
+            "department": self.department.name,
             "image": self.image_url,
         }
+    
+    def sub_tree(self):
+        children_list = []
+        children = self.get_children()
+        for child in children:
+            children_list.append(child.sub_tree())
+        
+        return {
+            "assetName": self.name,
+            "sub-assets": children_list,
+        }
+    class Meta:
+        unique_together = ['entity', 'name']
 
 
 class Attribute(models.Model):
@@ -98,6 +115,9 @@ class Attribute(models.Model):
             "entity": self.entity.name,
             "department": self.department.name,
         }
+    
+    class Meta:
+        unique_together = ['entity', 'name']
 
 class AssetAttribute(models.Model):
     id = models.BigAutoField(primary_key=True)
