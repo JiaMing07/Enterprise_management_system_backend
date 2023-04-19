@@ -677,6 +677,13 @@ def asset_assetName(req: HttpRequest, assetName: str):
     else:
         return BAD_METHOD
 
+def subtree_department(department: Department):
+    children_list = [department.id]
+    children = department.get_children()
+    for child in children:
+        children_list += subtree_department(child)
+    return children_list
+
 @CheckRequire
 def asset_tree(req: HttpRequest):
     if req.method == 'GET':
@@ -685,12 +692,6 @@ def asset_tree(req: HttpRequest):
         entity = user.entity
         department = user.department
         asset = Asset.objects.filter(entity=entity)
-        def subtree_department(department):
-            children_list = [department.id]
-            children = department.get_children()
-            for child in children:
-                children_list += subtree_department(child)
-            return children_list
         department_tree = subtree_department(department)
         assets = asset.filter(department__id__in=department_tree)
         assets_list = []
@@ -754,6 +755,8 @@ def asset_query(req: HttpRequest, type: str, description: str, attribute:str):
         else:
             return request_failed(1, "此搜索类型不存在", status_code=403)
         assets = assets.filter(entity=entity).exclude(name=entity.name).order_by('id')
+        department_tree = subtree_department(user.department)
+        assets = assets.filter(department__id__in=department_tree)
         return_data = {
             "assets": [
                 return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
