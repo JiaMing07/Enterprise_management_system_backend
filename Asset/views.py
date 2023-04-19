@@ -257,6 +257,96 @@ def attribute_delete(req: HttpRequest):
         return BAD_METHOD
     
 @CheckRequire    
+def attribute_edit(req: HttpRequest):
+    
+    if req.method == 'PUT':
+        name = json.loads(req.body.decode("utf-8")).get('name')
+        new_name = json.loads(req.body.decode("utf-8")).get('new_name')
+        department_name = json.loads(req.body.decode("utf-8")).get('department')
+        new_depart_name = json.loads(req.body.decode("utf-8")).get('new_depart')
+
+        checklength(new_name, 0, 50, "attribute_name")
+
+        CheckToken(req)
+        token = req.COOKIES['token'] 
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        user = User.objects.get(username=decoded['username'])
+
+        department = Department.objects.filter(entity=user.entity, name=department_name).first()
+        attribute = Attribute.objects.filter(entity=user.entity, department=department, name=name).first()
+
+        # whether exist
+        if department is None:
+            return request_failed(1, "该企业不存在该部门", status_code=403)
+        if attribute is None:
+            return request_failed(1, "该部门不存在该自定义属性", status_code=403)
+        
+        # whether edit name:
+        if new_name is not None:
+
+            # whether same name
+            new_attribute = Attribute.objects.filter(entity=user.entity, department=department, name=new_name).first()
+            
+            if new_depart_name is not None:
+                new_depart = Department.objects.filter(entity=user.entity, name=new_depart_name).first()
+                new_attribute = Attribute.objects.filter(entity=user.entity, department=new_depart, name=new_name).first()
+            
+            if new_attribute is not None and new_depart_name is not None:
+                return request_failed(3, "新部门已存在该属性", status_code=403)
+            
+            if new_attribute is not None and new_depart_name is None:
+                return request_failed(3, "当前部门已存在该属性", status_code=403)
+
+            # entity_super can edit all deps in entity
+            if user.entity_super:
+                attribute.name = new_name
+                
+            # asset_super can see son depart
+            elif user.asset_super:
+                ancestor_list = department.get_ancestors()
+
+                if department != user.department and user.department not in ancestor_list:
+                    return request_failed(2, "没有修改该部门自定义属性名称的权限", status_code=403)
+                
+                attribute.name = new_name
+
+            # others can see own depart
+            else:
+                return request_failed(2, "没有修改该部门自定义属性名称的权限", status_code=403)
+            
+        # whether edit department
+        if new_depart_name is not None:
+
+            # whether same name
+            new_depart = Department.objects.filter(entity=user.entity, name=new_depart_name).first()
+            new_attribute = Attribute.objects.filter(entity=user.entity, department=new_depart, name=attribute.name).first()
+            if new_attribute is not None:
+                return request_failed(3, "新部门已存在该属性", status_code=403)
+
+            # entity_super can edit all deps in entity
+            if user.entity_super:
+                attribute.department = new_depart
+                
+            # asset_super can see son depart
+            elif user.asset_super:
+                children_list = user.department.get_children()
+
+                if department != user.department and department not in children_list:
+                    return request_failed(2, "没有修改该自定义属性部门的权限", status_code=403)
+                
+                attribute.department = new_depart
+
+            # others can see own depart
+            else:
+                return request_failed(2, "没有修改该自定义属性部门的权限", status_code=403)
+        
+        attribute.save()
+        return request_success()
+
+    else:
+        return BAD_METHOD
+    
+@CheckRequire    
 def asset_attribute(req: HttpRequest):
 
     if req.method == 'POST':
@@ -276,13 +366,13 @@ def asset_attribute(req: HttpRequest):
         if user.token != token:
             return request_failed(-6, "用户不在线", status_code=403)
 
-        # whether check asset_super
-        if not user.asset_super:
-            return request_failed(2, "只有资产管理员可为资产添加属性", status_code=403)
+        # whether
+        if not user.asset_super and not user.entity_super:
+            return request_failed(2, "没有为资产添加属性的权限", status_code=403)
         
         # get asset and attribute
         asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
-        attribute = Attribute.objects.filter(name=attribute_name, entity=user.entity, department=user.department).first()
+        attribute = Attribute.objects.filter(name=attribute_name, entity=user.entity).first()
 
         # filter whether exist
         if asset is None:
@@ -295,6 +385,90 @@ def asset_attribute(req: HttpRequest):
             new_pair = AssetAttribute(asset=asset, attribute=attribute, description=description)
             new_pair.save()
             return request_success()
+
+    if req.method == 'DELETE':
+        body = json.loads(req.body.decode("utf-8"))
+        asset_name, attribute_name = get_args(body, ['asset', 'attribute'], ['string','string'])
+        checklength(asset_name, 0, 50, "asset")
+        checklength(attribute_name, 0, 50, "attribute")
+        
+        # check token and get entity
+        CheckToken(req)
+        token = req.COOKIES['token'] 
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        user = User.objects.get(username=decoded['username'])
+
+        if user.token != token:
+            return request_failed(-6, "用户不在线", status_code=403)
+
+        # whether
+        if not user.asset_super and not user.entity_super:
+            return request_failed(2, "没有为资产添加属性的权限", status_code=403)
+        
+        # get asset and attribute
+        asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
+        attribute = Attribute.objects.filter(name=attribute_name, entity=user.entity, department=user.department).first()
+
+        # filter whether exist
+        if asset is None:
+            return request_failed(1, "资产不存在", status_code=403)
+        if attribute is None:
+            return request_failed(1, "自定义属性不存在", status_code=403)
+        
+         # save
+        old_pair = AssetAttribute.objects.filter(asset=asset, attribute=attribute)
+        if old_pair is None:
+            return request_failed(1, "资产没有该属性", status_code=403)
+        
+        old_pair.delete()
+        return request_success()
+
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
+def asset_attribute_list(req: HttpRequest, assetName: any):
+    
+    if req.method == 'GET':
+        
+        idx = require({"asset": assetName}, "asset", "string", err_msg="Bad param [asset]", err_code=-1)
+        checklength(assetName, 0, 50, "asset_name")
+        
+        CheckToken(req)
+        token = req.COOKIES['token'] 
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        user = User.objects.get(username=decoded['username'])
+
+        asset = Asset.objects.get(entity=user.entity, name=assetName)
+
+        if asset is None:
+            return request_failed(1, "企业不存在该资产", status_code=403)
+
+        # whether check different authentication
+        # # asset_super can see son depart
+        # if user.asset_super:
+        #     children_list = user.department.get_children()
+        #     if get_department != user.department and get_department not in children_list:
+        #         return request_failed(1, "没有查看该部门自定义属性的权限", status_code=403)
+
+        # # others can see own depart
+        # if not user.asset_super and not user.entity_super:
+        #     if get_department != user.department:
+        #         return request_failed(1, "没有查看该部门自定义属性的权限", status_code=403)
+        
+        # get list
+        asset_attributes = AssetAttribute.objects.filter(asset=asset)
+        aa_json = []
+        for one in asset_attributes:
+            dict_ = {}
+            dict_['key'] = one.attribute.name
+            dict_['value'] = one.description
+            aa_json.append(dict_)
+
+        return_data = {
+            "attributes": aa_json,
+        }
+        return request_success(return_data)
 
     else:
         return BAD_METHOD
