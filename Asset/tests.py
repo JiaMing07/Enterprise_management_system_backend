@@ -1039,3 +1039,13 @@ class AttributeTests(TestCase):
         res = self.get_asset_query(type, description, attribute)
         self.assertEqual(res.json()['code'], 1)
         self.assertEqual(res.json()['info'], '此搜索类型不存在')
+
+    # def test_asset_add_list(self):
+    #     user = User.objects.filter(username='test_user').first()
+    #     user.token = user.generate_token()
+    #     user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+    #     user.save()
+    #     Token = user.token
+    #     c = cookies.SimpleCookie()
+    #     c['token'] = Token
+    #     self.client.cookies = c

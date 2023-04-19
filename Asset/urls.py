@@ -8,6 +8,7 @@ urlpatterns = [
     path('list', views.asset_list),
     path('tree', views.asset_tree),
     path('add', views.asset_add),
+    path('add/list', views.asset_add_list),
     path('query/<type>/<description>/<attribute>', views.asset_query),
     path('delete', views.asset_delete),
     path('attribute/add', views.attribute_add),
