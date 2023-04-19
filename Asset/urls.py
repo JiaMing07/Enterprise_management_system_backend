@@ -20,4 +20,5 @@ urlpatterns = [
     path('attribute', views.asset_attribute),
     path('<assetName>', views.asset_assetName),
     path('category/<category_name>/number', views.asset_category_number),
+    path('attribute/<assetName>', views.asset_attribute_list)
 ]
