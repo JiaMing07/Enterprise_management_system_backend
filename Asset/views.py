@@ -321,40 +321,40 @@ def asset_add_list(req:HttpRequest):
                 else:
                     department = Department.objects.filter(entity=entity, name=department).first()
                     if department is None:
-                        err_msg = err_msg +'第' +str(idx) +"条资产录入失败，挂账部门不存在" + '；'
+                        err_msg = err_msg +'第' +str(idx + 1) +"条资产录入失败，挂账部门不存在" + '；'
             else:
                 parent = Asset.objects.filter(entity=entity, name=parentName).first()
                 if parent is None:
-                    err_msg = err_msg +'第' +str(idx) +"条资产录入失败，父资产不存在" + '；'
+                    err_msg = err_msg +'第' +str(idx + 1) +"条资产录入失败，父资产不存在" + '；'
                     continue
                 if department == "":
                     department = parent.department
                 else:
                     department = Department.objects.filter(entity=entity, name=department).first()
                     if department is None:
-                        err_msg = err_msg +'第' +str(idx) +"条资产录入失败，挂账部门不存在" + '；'
+                        err_msg = err_msg +'第' +str(idx + 1) +"条资产录入失败，挂账部门不存在" + '；'
                         continue
             category = AssetCategory.objects.filter(name=categoryName, entity=entity).first()
             if category is None:
-                err_msg = err_msg +'第' +str(idx) +"条资产录入失败，资产类型不存在" + '；'
+                err_msg = err_msg +'第' +str(idx + 1) +"条资产录入失败，资产类型不存在" + '；'
                 continue
             asset = Asset.objects.filter(entity=entity, name=name).first()
             if asset:
-                err_msg = err_msg +'第' +str(idx) +"条资产录入失败，该资产已存在" + '；'
+                err_msg = err_msg +'第' +str(idx + 1) +"条资产录入失败，该资产已存在" + '；'
                 continue
             if owner == "":
                 owner = User.objects.filter(entity=entity, department=department, asset_super=True).first()
                 if owner is None:
-                    err_msg = err_msg +'第' +str(idx) +"条资产录入失败，部门不存在资产管理员" + '；'
+                    err_msg = err_msg +'第' +str(idx + 1) +"条资产录入失败，部门不存在资产管理员" + '；'
                     continue
             else:
                 owner = User.objects.filter(entity=entity, department=department, username=owner).first()
                 if owner is None:
-                    err_msg = err_msg +'第' +str(idx) +"条资产录入失败，挂账人不存在" + '；'
+                    err_msg = err_msg +'第' +str(idx + 1) +"条资产录入失败，挂账人不存在" + '；'
                     continue
             ancestor_list = department.get_ancestors(include_self=True)
             if user.department not in ancestor_list:
-                err_msg = err_msg +'第' +str(idx) +"条资产录入失败，部门不在管理范围内" + '；'
+                err_msg = err_msg +'第' +str(idx + 1) +"条资产录入失败，部门不在管理范围内" + '；'
                 continue
             asset = Asset(name=name, description=description, position=position, value=value, owner=owner.username, number=number,
                         category=category, entity=entity, department=department, parent=parent, image_url=image_url,state=state)
