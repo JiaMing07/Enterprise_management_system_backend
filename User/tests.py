@@ -211,7 +211,7 @@ class UserTests(TestCase):
         
         res = self.post_user_login_normal(username, password)
 
-        self.assertEqual(res.json()['code'], 1)
+        self.assertEqual(res.json()['code'], 0)
 
         res = self.get_user_login_normal(username, password)
 

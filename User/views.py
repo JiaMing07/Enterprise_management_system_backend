@@ -56,18 +56,18 @@ def login_normal(req: HttpRequest):
             md5.update(password.encode('utf-8'))
             password = md5.hexdigest()
             if user.check_password(password):
-                if user.token == '':
-                    user.token = user.generate_token()
-                    user.save()
-                    return request_success(data={'token': user.token,
-                                                'system_super':user.system_super, 
-                                                'entity_super': user.entity_super,
-                                                'asset_super': user.asset_super,
-                                                'department': user.department.name,
-                                                'entity': user.entity.name,
-                                                'active': user.active})
-                else:
-                    return request_failed(1, "用户已登录", status_code=403)
+                # if user.token == '':
+                user.token = user.generate_token()
+                user.save()
+                return request_success(data={'token': user.token,
+                                            'system_super':user.system_super, 
+                                            'entity_super': user.entity_super,
+                                            'asset_super': user.asset_super,
+                                            'department': user.department.name,
+                                            'entity': user.entity.name,
+                                            'active': user.active})
+                # else:
+                #     return request_failed(1, "用户已登录", status_code=403)
             else:
                 return request_failed(2, "密码不正确", status_code=401)
     else:

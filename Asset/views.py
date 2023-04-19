@@ -157,7 +157,6 @@ def asset_list(req: HttpRequest):
 
 @CheckRequire
 def asset_add(req: HttpRequest):
-    body = json.loads(req.body.decode("utf-8"))
     if req.method == 'POST':
         CheckAuthority(req, ["entity_super", "asset_super"])
         body = json.loads(req.body.decode("utf-8"))
@@ -286,6 +285,86 @@ def asset_edit(req: HttpRequest):
         return BAD_METHOD
     
 @CheckRequire
+def asset_add_list(req:HttpRequest):
+    if req.method == 'POST':
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        body = json.loads(req.body.decode("utf-8"))
+        assets_new = body['assets']
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        err_msg=""
+        print(assets_new)
+        for idx, asset_single in enumerate(assets_new):
+            print("yes")
+            name, parentName, description, position, value, department, number, categoryName, image_url = get_args(
+            asset_single, ["name", "parent", "description", "position", "value", "department", "number", "category", "image"], 
+            ["string", "string", "string", "string", "int", "string", "int", "string", "string"])
+            state = asset_single.get('state', 'IDLE')
+            owner = asset_single.get('owner', "")
+            checklength(name, 0, 50, "assetName")
+            checklength(parentName, -1, 50, "parentName")
+            checklength(department, -1, 30, "department")
+            checklength(categoryName, 0, 50, "categoryName")
+            checklength(description, 0, 300, "description")
+            checklength(position, 0, 300, "position")
+            checklength(image_url, -1, 300, "imageURL")
+            if parentName == "":
+                parentName = entity.name
+                parent = Asset.objects.filter(name=entity.name).first()
+                if parent is None:
+                    parent = Asset(name=entity.name, owner=user.username, 
+                                category=AssetCategory.root(), entity=entity, department=Department.objects.filter(entity=entity, name=entity.name).first(), parent=Asset.root())
+                    parent.save()
+                if department == "":
+                    department = user.department
+                else:
+                    department = Department.objects.filter(entity=entity, name=department).first()
+                    if department is None:
+                        err_msg = err_msg +'第' +str(idx) +"条资产录入失败，挂账部门不存在" + '；'
+            else:
+                parent = Asset.objects.filter(entity=entity, name=parentName).first()
+                if parent is None:
+                    err_msg = err_msg +'第' +str(idx) +"条资产录入失败，父资产不存在" + '；'
+                    continue
+                if department == "":
+                    department = parent.department
+                else:
+                    department = Department.objects.filter(entity=entity, name=department).first()
+                    if department is None:
+                        err_msg = err_msg +'第' +str(idx) +"条资产录入失败，挂账部门不存在" + '；'
+                        continue
+            category = AssetCategory.objects.filter(name=categoryName, entity=entity).first()
+            if category is None:
+                err_msg = err_msg +'第' +str(idx) +"条资产录入失败，资产类型不存在" + '；'
+                continue
+            asset = Asset.objects.filter(entity=entity, name=name).first()
+            if asset:
+                err_msg = err_msg +'第' +str(idx) +"条资产录入失败，该资产已存在" + '；'
+                continue
+            if owner == "":
+                owner = User.objects.filter(entity=entity, department=department, asset_super=True).first()
+                if owner is None:
+                    err_msg = err_msg +'第' +str(idx) +"条资产录入失败，部门不存在资产管理员" + '；'
+                    continue
+            else:
+                owner = User.objects.filter(entity=entity, department=department, username=owner).first()
+                if owner is None:
+                    err_msg = err_msg +'第' +str(idx) +"条资产录入失败，挂账人不存在" + '；'
+                    continue
+            ancestor_list = department.get_ancestors(include_self=True)
+            if user.department not in ancestor_list:
+                err_msg = err_msg +'第' +str(idx) +"条资产录入失败，部门不在管理范围内" + '；'
+                continue
+            asset = Asset(name=name, description=description, position=position, value=value, owner=owner.username, number=number,
+                        category=category, entity=entity, department=department, parent=parent, image_url=image_url,state=state)
+            asset.save()
+        if len(err_msg)>0:
+            return request_failed(1, err_msg[:-1], status_code=403)
+        return request_success()
+    return BAD_METHOD
+    
+@CheckRequire
 def asset_delete(req: HttpRequest):
     if req.method == 'DELETE':
         CheckAuthority(req, ["entity_super", "asset_super"])
@@ -338,7 +417,7 @@ def attribute_add(req: HttpRequest):
             return request_failed(2, "只有资产管理员可添加属性", status_code=403)
             
         # check format
-        checklength(name, 0, 50, "atrribute_name")
+        checklength(name, 0, 50, "attribute_name")
 
         # filter whether exist
         attri = Attribute.objects.filter(name=name).first()
@@ -420,6 +499,96 @@ def attribute_delete(req: HttpRequest):
         return BAD_METHOD
     
 @CheckRequire    
+def attribute_edit(req: HttpRequest):
+    
+    if req.method == 'PUT':
+        name = json.loads(req.body.decode("utf-8")).get('name')
+        new_name = json.loads(req.body.decode("utf-8")).get('new_name')
+        department_name = json.loads(req.body.decode("utf-8")).get('department')
+        new_depart_name = json.loads(req.body.decode("utf-8")).get('new_depart')
+
+        checklength(new_name, 0, 50, "attribute_name")
+
+        CheckToken(req)
+        token = req.COOKIES['token'] 
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        user = User.objects.get(username=decoded['username'])
+
+        department = Department.objects.filter(entity=user.entity, name=department_name).first()
+        attribute = Attribute.objects.filter(entity=user.entity, department=department, name=name).first()
+
+        # whether exist
+        if department is None:
+            return request_failed(1, "该企业不存在该部门", status_code=403)
+        if attribute is None:
+            return request_failed(1, "该部门不存在该自定义属性", status_code=403)
+        
+        # whether edit name:
+        if new_name is not None:
+
+            # whether same name
+            new_attribute = Attribute.objects.filter(entity=user.entity, department=department, name=new_name).first()
+            
+            if new_depart_name is not None:
+                new_depart = Department.objects.filter(entity=user.entity, name=new_depart_name).first()
+                new_attribute = Attribute.objects.filter(entity=user.entity, department=new_depart, name=new_name).first()
+            
+            if new_attribute is not None and new_depart_name is not None:
+                return request_failed(3, "新部门已存在该属性", status_code=403)
+            
+            if new_attribute is not None and new_depart_name is None:
+                return request_failed(3, "当前部门已存在该属性", status_code=403)
+
+            # entity_super can edit all deps in entity
+            if user.entity_super:
+                attribute.name = new_name
+                
+            # asset_super can see son depart
+            elif user.asset_super:
+                ancestor_list = department.get_ancestors()
+
+                if department != user.department and user.department not in ancestor_list:
+                    return request_failed(2, "没有修改该部门自定义属性名称的权限", status_code=403)
+                
+                attribute.name = new_name
+
+            # others can see own depart
+            else:
+                return request_failed(2, "没有修改该部门自定义属性名称的权限", status_code=403)
+            
+        # whether edit department
+        if new_depart_name is not None:
+
+            # whether same name
+            new_depart = Department.objects.filter(entity=user.entity, name=new_depart_name).first()
+            new_attribute = Attribute.objects.filter(entity=user.entity, department=new_depart, name=attribute.name).first()
+            if new_attribute is not None:
+                return request_failed(3, "新部门已存在该属性", status_code=403)
+
+            # entity_super can edit all deps in entity
+            if user.entity_super:
+                attribute.department = new_depart
+                
+            # asset_super can see son depart
+            elif user.asset_super:
+                children_list = user.department.get_children()
+
+                if department != user.department and department not in children_list:
+                    return request_failed(2, "没有修改该自定义属性部门的权限", status_code=403)
+                
+                attribute.department = new_depart
+
+            # others can see own depart
+            else:
+                return request_failed(2, "没有修改该自定义属性部门的权限", status_code=403)
+        
+        attribute.save()
+        return request_success()
+
+    else:
+        return BAD_METHOD
+    
+@CheckRequire    
 def asset_attribute(req: HttpRequest):
 
     if req.method == 'POST':
@@ -431,21 +600,14 @@ def asset_attribute(req: HttpRequest):
         checklength(description, 0, 300, "description")
 
         # check token and get entity
-        CheckToken(req)
+        CheckAuthority(req, ["entity_super", "asset_super"])
         token = req.COOKIES['token'] 
         decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         user = User.objects.get(username=decoded['username'])
-    
-        if user.token != token:
-            return request_failed(-6, "用户不在线", status_code=403)
 
-        # whether check asset_super
-        if not user.asset_super:
-            return request_failed(2, "只有资产管理员可为资产添加属性", status_code=403)
-        
         # get asset and attribute
         asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
-        attribute = Attribute.objects.filter(name=attribute_name, entity=user.entity, department=user.department).first()
+        attribute = Attribute.objects.filter(name=attribute_name, entity=user.entity).first()
 
         # filter whether exist
         if asset is None:
@@ -458,6 +620,36 @@ def asset_attribute(req: HttpRequest):
             new_pair = AssetAttribute(asset=asset, attribute=attribute, description=description)
             new_pair.save()
             return request_success()
+
+    elif req.method == 'DELETE':
+        body = json.loads(req.body.decode("utf-8"))
+        asset_name, attribute_name = get_args(body, ['asset', 'attribute'], ['string','string'])
+        checklength(asset_name, 0, 50, "asset")
+        checklength(attribute_name, 0, 50, "attribute")
+        
+        # check token and get entity
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        token = req.COOKIES['token'] 
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        user = User.objects.get(username=decoded['username'])
+        
+        # get asset and attribute
+        asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
+        attribute = Attribute.objects.filter(name=attribute_name, entity=user.entity, department=user.department).first()
+
+        # filter whether exist
+        if asset is None:
+            return request_failed(1, "资产不存在", status_code=403)
+        if attribute is None:
+            return request_failed(1, "自定义属性不存在", status_code=403)
+        
+         # save
+        old_pair = AssetAttribute.objects.filter(asset=asset, attribute=attribute).first()
+        if old_pair is None:
+            return request_failed(1, "资产没有该属性", status_code=403)
+        
+        old_pair.delete()
+        return request_success()
 
     else:
         return BAD_METHOD
@@ -528,5 +720,46 @@ def asset_category_number(req: HttpRequest, category_name: str):
         return request_success({
             "is_number": is_number
         })
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
+def asset_query(req: HttpRequest, type: str, description: str, attribute:str):
+    if req.method == 'GET':
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        attribute=attribute[:-1]
+        description = description[:-1]
+        if type == "asset_name":
+            assets = Asset.objects.filter(name__icontains=description)
+        elif type == "asset_description":
+            assets = Asset.objects.filter(description__icontains=description)
+        elif type == "asset_position":
+            assets = Asset.objects.filter(position__icontains=description)
+        elif type == "asset_type":
+            assets = Asset.objects.filter(category__name__icontains=description)
+        elif type == "asset_attribute":
+            attribute_assets = AssetAttribute.objects.filter(description__icontains=description, attribute__name__icontains=attribute)
+            asset = []
+            for ass in attribute_assets:
+                asset.append(ass.asset.id)
+            assets = Asset.objects.filter(id__in=asset)
+        elif type == "asset_status":
+            assets = Asset.objects.filter(state__icontains=description)
+        elif type == "asset_department":
+            assets = Asset.objects.filter(department__name__icontains=description)
+        elif type == "asset_owner":
+            assets = Asset.objects.filter(owner__icontains=description)
+        else:
+            return request_failed(1, "此搜索类型不存在", status_code=403)
+        assets = assets.filter(entity=entity).exclude(name=entity.name).order_by('id')
+        return_data = {
+            "assets": [
+                return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
+                                                 "position", "value", "user", "number", "state", "department", "image"])
+            for asset in assets],
+        }
+        return request_success(return_data)
     else:
         return BAD_METHOD
