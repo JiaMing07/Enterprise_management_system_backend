@@ -422,6 +422,46 @@ def asset_attribute(req: HttpRequest):
         
         old_pair.delete()
         return request_success()
+    
+    elif req.method == 'GET':
+
+        body = json.loads(req.body.decode("utf-8"))
+        asset_name= get_args(body, ['asset'], ['string'])
+        
+        CheckToken(req)
+        token = req.COOKIES['token'] 
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        user = User.objects.get(username=decoded['username'])
+
+        asset = Asset.objects.get(entity=user.entity, name=asset_name)
+        if asset is None:
+            return request_failed(1, "企业不存在该资产", status_code=403)
+
+        # whether check different authentication
+        # # asset_super can see son depart
+        # if user.asset_super:
+        #     children_list = user.department.get_children()
+        #     if get_department != user.department and get_department not in children_list:
+        #         return request_failed(1, "没有查看该部门自定义属性的权限", status_code=403)
+
+        # # others can see own depart
+        # if not user.asset_super and not user.entity_super:
+        #     if get_department != user.department:
+        #         return request_failed(1, "没有查看该部门自定义属性的权限", status_code=403)
+        
+        # get list
+        asset_attributes = AssetAttribute.objects.filter(asset=asset)
+        aa_json = []
+        for one in asset_attributes:
+            dict_ = {}
+            dict_['key'] = one.attribute.name
+            dict_['value'] = one.description
+            aa_json.append(dict_)
+
+        return_data = {
+            "attributes": aa_json,
+        }
+        return request_success(return_data)
 
     else:
         return BAD_METHOD
