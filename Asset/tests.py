@@ -113,6 +113,9 @@ class AttributeTests(TestCase):
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post("/asset/attribute", data=payload, content_type="application/json")
     
+    def get_asset_attribute_list(self, assetName):
+        return self.client.get(f"/asset/attribute/{assetName}")
+    
     # Now start testcases. 
     def test_asset_category_add(self):
         user = User.objects.filter(username='test_user').first()
@@ -730,3 +733,72 @@ class AttributeTests(TestCase):
         res = self.put_attribute_edit(name, new_name, department, new_depart_name)
         self.assertEqual(res.json()['info'], "Succeed")
         self.assertEqual(res.json()['code'], 0)
+
+    def test_get_asset_attribute_list(self):
+
+        # token
+        user = User.objects.filter(username='test_attribute').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("asset_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        # add 1, dep
+        name = "attri_1"
+        department = "dep"
+        res = self.post_attribute_add(name, department)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        # add 2, dep
+        name = "attri_2"
+        department = "dep"
+        res = self.post_attribute_add(name, department)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        # add 3, dep_child
+        name = "attri_3"
+        department = "dep_child"
+        res = self.post_attribute_add(name, department)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        # success, 0
+        asset = "ass"
+        attribute = "attri_1"
+        description = "This is a description."
+        res = self.post_asset_attribute_add(asset, attribute, description)
+        # self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], "Succeed")
+
+        # success, 0
+        asset = "ass"
+        attribute = "attri_2"
+        description = "This is a description 2."
+        res = self.post_asset_attribute_add(asset, attribute, description)
+        # self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], "Succeed")
+
+        # success, 0
+        asset = "ass"
+        attribute = "attri_3"
+        description = "This is a description 3."
+        res = self.post_asset_attribute_add(asset, attribute, description)
+        # self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], "Succeed")
+
+        # 1, "企业不存在该资产"
+        # asset = "bss"
+        # res = self.get_asset_attribute_list(asset)
+        # # self.assertEqual(res.json()['code'], 1)
+        # self.assertEqual(res.json()['info'], "企业不存在该资产")
+
+        # 0, succeed
+        asset = "ass"
+        res = self.get_asset_attribute_list(asset)
+        # self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], "Succeed")

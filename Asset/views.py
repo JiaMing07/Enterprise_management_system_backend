@@ -372,7 +372,7 @@ def asset_attribute(req: HttpRequest):
         
         # get asset and attribute
         asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
-        attribute = Attribute.objects.filter(name=attribute_name, entity=user.entity, department=user.department).first()
+        attribute = Attribute.objects.filter(name=attribute_name, entity=user.entity).first()
 
         # filter whether exist
         if asset is None:
@@ -386,7 +386,7 @@ def asset_attribute(req: HttpRequest):
             new_pair.save()
             return request_success()
 
-    elif req.method == 'DELETE':
+    if req.method == 'DELETE':
         body = json.loads(req.body.decode("utf-8"))
         asset_name, attribute_name = get_args(body, ['asset', 'attribute'], ['string','string'])
         checklength(asset_name, 0, 50, "asset")
@@ -422,18 +422,25 @@ def asset_attribute(req: HttpRequest):
         
         old_pair.delete()
         return request_success()
-    
-    elif req.method == 'GET':
 
-        body = json.loads(req.body.decode("utf-8"))
-        asset_name= get_args(body, ['asset'], ['string'])
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
+def asset_attribute_list(req: HttpRequest, assetName: any):
+    
+    if req.method == 'GET':
+        
+        idx = require({"asset": assetName}, "asset", "string", err_msg="Bad param [asset]", err_code=-1)
+        checklength(assetName, 0, 50, "asset_name")
         
         CheckToken(req)
         token = req.COOKIES['token'] 
         decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         user = User.objects.get(username=decoded['username'])
 
-        asset = Asset.objects.get(entity=user.entity, name=asset_name)
+        asset = Asset.objects.get(entity=user.entity, name=assetName)
+
         if asset is None:
             return request_failed(1, "企业不存在该资产", status_code=403)
 
