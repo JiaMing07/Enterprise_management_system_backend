@@ -182,6 +182,9 @@ class AttributeTests(TestCase):
     def get_asset_query(self, type, description, attribute):
         return self.client.get(f'/asset/query/{type}/{description}/{attribute}')
     
+    def get_asset_user_query(self):
+        return self.client.get(f'/asset/user')
+    
     # Now start testcases. 
     def test_asset_category_add(self):
         user = User.objects.filter(username='test_user').first()
@@ -1403,3 +1406,17 @@ class AttributeTests(TestCase):
         self.assertTrue(Asset.objects.filter(name='computer').exists())
         self.assertTrue(Asset.objects.filter(name='ent').exists())
         self.assertTrue(Asset.objects.filter(name='keyboard').exists())
+
+    def test_asset_user_query(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        res = self.get_asset_user_query()
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)

@@ -662,9 +662,7 @@ def asset_attribute_list(req: HttpRequest, assetName: any):
         idx = require({"asset": assetName}, "asset", "string", err_msg="Bad param [asset]", err_code=-1)
         checklength(assetName, 0, 50, "asset_name")
         
-        CheckToken(req)
-        token = req.COOKIES['token'] 
-        decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        token, decoded = CheckToken(req)
         user = User.objects.get(username=decoded['username'])
 
         asset = Asset.objects.get(entity=user.entity, name=assetName)
@@ -813,3 +811,18 @@ def asset_query(req: HttpRequest, type: str, description: str, attribute:str):
         return request_success(return_data)
     else:
         return BAD_METHOD
+
+@CheckRequire
+def user_query(req: HttpRequest):
+    if req.method=='GET':
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        assets = Asset.objects.filter(entity=user.entity, owner=user.username)
+        return_data = {
+            "assets": [
+                return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
+                                                 "position", "value", "user", "number", "state", "department", "image"])
+            for asset in assets],
+        }
+        return request_success(return_data)
+    return BAD_METHOD
