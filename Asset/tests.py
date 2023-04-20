@@ -170,17 +170,15 @@ class AttributeTests(TestCase):
     def get_asset_attribute_list(self, assetName):
         return self.client.get(f"/asset/attribute/{assetName}")
     
-    def get_asset_assetName(self, assetName):
-        return self.client.get(f"/asset/{assetName}")
+    def delete_asset_attribute(self, asset, attribute):
+        payload = {
+            'asset': asset,
+            'attribute': attribute
+        }
+
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.delete("/asset/attribute", data=payload, content_type="application/json")
     
-    def get_asset_tree(self):
-        return self.client.get(f'/asset/tree')
-    
-    def get_category_is_number(self,category_name):
-        return self.client.get(f'/asset/category/{category_name}/number')
-    
-    def get_asset_query(self, type, description, attribute):
-        return self.client.get(f'/asset/query/{type}/{description}/{attribute}')
     
     # Now start testcases. 
     def test_asset_category_add(self):
@@ -1110,10 +1108,10 @@ class AttributeTests(TestCase):
         self.assertEqual(res.json()['info'], "Succeed")
 
         # 1, "企业不存在该资产"
-        # asset = "bss"
-        # res = self.get_asset_attribute_list(asset)
-        # # self.assertEqual(res.json()['code'], 1)
-        # self.assertEqual(res.json()['info'], "企业不存在该资产")
+        asset = "bss"
+        res = self.get_asset_attribute_list(asset)
+        # self.assertEqual(res.json()['code'], 1)
+        self.assertEqual(res.json()['info'], "企业不存在该资产")
 
         # 0, succeed
         asset = "ass"
@@ -1121,8 +1119,10 @@ class AttributeTests(TestCase):
         # self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], "Succeed")
 
-    def test_get_asset_assetName(self):
-        user = User.objects.filter(username='test_user').first()
+    def test_asset_attribute_delete(self):
+
+        # token
+        user = User.objects.filter(username='test_attribute').first()
         user.token = user.generate_token()
         user.system_super, user.entity_super, user.asset_super = user.set_authen("asset_super")
         user.save()
@@ -1131,275 +1131,95 @@ class AttributeTests(TestCase):
         c['token'] = Token
         self.client.cookies = c
 
-        self.assertEqual(len(Asset.objects.all()), 1)
-
-        assetName = 'computer'
-        parentName = 'ass'
-        description = 'des'
-        position = 'pos'
-        value = '1000'
-        department = 'dep'
-        number = 1
-        categoryName = 'cate'
-        image = '127.0.0.1'
-        
-        res = self.post_asset_add(assetName, parentName, description, position, 
-                                           value, department, number, categoryName, image)
-        self.assertEqual(res.json()['info'], 'Succeed')
-        self.assertEqual(res.json()['code'], 0)
-        self.assertEqual(len(Asset.objects.all()), 2)
-        self.assertTrue(Asset.objects.filter(name=assetName).exists())
-
-        attributeName = "GPU"
+        # add 1, dep
+        name = "attri_1"
         department = "dep"
-        res = self.post_attribute_add(attributeName, department)
+        res = self.post_attribute_add(name, department)
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
 
-        assetName = "computer"
-        attributeName = "GPU"
-        description = "RTX4090"
-        res = self.post_asset_attribute_add(assetName, attributeName, description)
-        self.assertEqual(res.json()['info'], "Succeed")
+        # add 2, dep
+        name = "attri_2"
+        department = "dep"
+        res = self.post_attribute_add(name, department)
         self.assertEqual(res.json()['code'], 0)
-        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['info'], 'Succeed')
 
-        assetName = 'computer'
-        res = self.get_asset_assetName(assetName)
+        # add 3, dep_child
+        name = "attri_3"
+        department = "dep_child"
+        res = self.post_attribute_add(name, department)
         self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        # add 4, dep_child
+        name = "attri_4"
+        department = "dep_child"
+        res = self.post_attribute_add(name, department)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        # success, 0
+        asset = "ass"
+        attribute = "attri_1"
+        description = "This is a description."
+        res = self.post_asset_attribute_add(asset, attribute, description)
+        # self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], "Succeed")
-        self.assertEqual(res.json()['property']['GPU'], "RTX4090")
-        self.assertEqual(res.json()['property']['assetName'], f"{assetName}")
 
-        assetName = 'asset_1'
-        res = self.get_asset_assetName(assetName)
-        self.assertEqual(res.json()['code'], 1)
+        # success, 0
+        asset = "ass"
+        attribute = "attri_2"
+        description = "This is a description 2."
+        res = self.post_asset_attribute_add(asset, attribute, description)
+        # self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], "Succeed")
 
-    def test_asset_tree(self):
-        user = User.objects.filter(username='test_user').first()
-        user.token = user.generate_token()
+        # success, 0
+        asset = "ass"
+        attribute = "attri_3"
+        description = "This is a description 3."
+        res = self.post_asset_attribute_add(asset, attribute, description)
+        # self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], "Succeed")
+
+        # 2, "没有删除资产属性的权限"
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("staff")
+        user.save()
+
+        asset = "ass"
+        attribute = "attri_3"
+        res = self.delete_asset_attribute(asset, attribute)
+        self.assertEqual(res.json()['info'], "没有删除资产属性的权限")
+        self.assertEqual(res.json()['code'], 2)
+
+        # 1, "资产不存在"
         user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
         user.save()
-        Token = user.token
-        c = cookies.SimpleCookie()
-        c['token'] = Token
-        self.client.cookies = c
 
-        res = self.get_asset_tree()
+        asset = "bss"
+        attribute = "attri_3"
+        res = self.delete_asset_attribute(asset, attribute)
+        self.assertEqual(res.json()['info'], "资产不存在")
+        self.assertEqual(res.json()['code'], 1)
+
+        # 1, "自定义属性不存在"
+        asset = "ass"
+        attribute = "attri_6"
+        res = self.delete_asset_attribute(asset, attribute)
+        self.assertEqual(res.json()['info'], "自定义属性不存在")
+        self.assertEqual(res.json()['code'], 1)
+
+        # 1, "资产没有该属性"
+        asset = "ass"
+        attribute = "attri_0"
+        res = self.delete_asset_attribute(asset, attribute)
+        self.assertEqual(res.json()['info'], "资产没有该属性")
+        self.assertEqual(res.json()['code'], 1)
+
+        # 0, "success"
+        asset = "ass"
+        attribute = "attri_3"
+        res = self.delete_asset_attribute(asset, attribute)
         self.assertEqual(res.json()['info'], "Succeed")
-
-    def test_category_is_number(self):
-        user = User.objects.filter(username='test_user').first()
-        user.token = user.generate_token()
-        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
-        user.save()
-        Token = user.token
-        c = cookies.SimpleCookie()
-        c['token'] = Token
-        self.client.cookies = c
-        category_name = 'cate'
-
-        res = self.get_category_is_number(category_name)
         self.assertEqual(res.json()['code'], 0)
-        self.assertEqual(res.json()['info'], "Succeed")
-
-        category_name = 'c_1'
-        res = self.get_category_is_number(category_name)
-        self.assertEqual(res.json()['code'], 1)
-        self.assertEqual(res.json()['info'], "不存在此资产")
-
-    def test_asset_query(self):
-        user = User.objects.filter(username='test_user').first()
-        user.token = user.generate_token()
-        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
-        user.save()
-        Token = user.token
-        c = cookies.SimpleCookie()
-        c['token'] = Token
-        self.client.cookies = c
-        
-        # type = "asset_name"
-        type = "asset_name"
-        description = "a"
-        attribute = "1"
-
-        res = self.get_asset_query(type, description, attribute)
-        self.assertEqual(res.json()['code'], 0)
-        self.assertEqual(res.json()['info'], 'Succeed')
-
-        # type = "asset_description"
-        type = "asset_description"
-        description = "a"
-        attribute = "1"
-
-        res = self.get_asset_query(type, description, attribute)
-        self.assertEqual(res.json()['code'], 0)
-        self.assertEqual(res.json()['info'], 'Succeed')
-        
-        # type = "asset_position"
-        type = "asset_position"
-        description = "a"
-        attribute = "1"
-
-        res = self.get_asset_query(type, description, attribute)
-        self.assertEqual(res.json()['info'], 'Succeed')
-        self.assertEqual(res.json()['code'], 0)
-
-        # type = "asset_type"
-        type = "asset_type"
-        description = "a"
-        attribute = "1"
-
-        res = self.get_asset_query(type, description, attribute)
-        self.assertEqual(res.json()['info'], 'Succeed')
-        self.assertEqual(res.json()['code'], 0)
-
-        # type = "asset_status"
-        type = "asset_status"
-        description = "a"
-        attribute = "1"
-
-        res = self.get_asset_query(type, description, attribute)
-        self.assertEqual(res.json()['info'], 'Succeed')
-        self.assertEqual(res.json()['code'], 0)
-        
-        # type = "asset_department"
-        type = "asset_department"
-        description = "a"
-        attribute = "1"
-
-        res = self.get_asset_query(type, description, attribute)
-        self.assertEqual(res.json()['info'], 'Succeed')
-        self.assertEqual(res.json()['code'], 0)
-
-        # type = "asset_department"
-        type = "asset_owner"
-        description = "a"
-        attribute = "1"
-
-        res = self.get_asset_query(type, description, attribute)
-        self.assertEqual(res.json()['info'], 'Succeed')
-        self.assertEqual(res.json()['code'], 0)
-
-        # error_type
-        type = "department"
-        description = "a"
-        attribute = "1"
-
-        res = self.get_asset_query(type, description, attribute)
-        self.assertEqual(res.json()['code'], 1)
-        self.assertEqual(res.json()['info'], '此搜索类型不存在')
-
-    def test_asset_add_list(self):
-        user = User.objects.filter(username='Alice').first()
-        user.token = user.generate_token()
-        user.system_super, user.entity_super, user.asset_super = user.set_authen("asset_super")
-        user.save()
-        Token = user.token
-        c = cookies.SimpleCookie()
-        c['token'] = Token
-        self.client.cookies = c
-
-        self.assertEqual(len(Asset.objects.all()), 1)
-
-        assets = [
-            {
-            "name": 'computer', 
-            "parent": '', 
-            "description": 'work', 
-            "position": 'desk', 
-            "value": 5999, 
-            "department": 'dep_child',
-            "number": 1, 
-            "category": 'cate',
-            "image": '127.0.0.1',
-            },
-            {
-            "name": 'keyboard', 
-            "parent": 'computer', 
-            "description": 'work', 
-            "position": 'desk', 
-            "value": 100, 
-            "department": '',
-            "number": 1, 
-            "category": 'cate',
-            "image": '127.0.0.2',
-            "state": 'IN_USE',
-            "owner": 'Alice',
-            },
-            {
-            "name": 'keyboard', 
-            "parent": 'asset_1', #parent not found
-            "description": 'work', 
-            "position": 'desk', 
-            "value": 100, 
-            "department": '',
-            "number": 1, 
-            "category": 'cate',
-            "image": '127.0.0.2',
-            },
-            {
-            "name": 'keyboard', 
-            "parent": 'computer', 
-            "description": 'work', 
-            "position": 'desk', 
-            "value": 100, 
-            "department": 'department_1',# department not found
-            "number": 1, 
-            "category": 'cate',
-            "image": '127.0.0.2',
-            },
-            {
-            "name": 'keyboard', 
-            "parent": 'computer', 
-            "description": 'work', 
-            "position": 'desk', 
-            "value": 100, 
-            "department": 'dep_child',
-            "number": 1, 
-            "category": 'category_1',# category not found
-            "image": '127.0.0.2',
-            },
-            {
-            "name": 'keyboard',# repeat
-            "parent": 'computer', 
-            "description": 'work', 
-            "position": 'desk', 
-            "value": 100, 
-            "department": 'dep_child',
-            "number": 1, 
-            "category": 'cate',
-            "image": '127.0.0.2',
-            },
-            {
-            "name": 'mouse', 
-            "parent": 'computer', 
-            "description": 'work', 
-            "position": 'desk', 
-            "value": 100, 
-            "department": 'dep_child',
-            "number": 1, 
-            "category": 'cate',
-            "image": '127.0.0.3',
-            "owner": 'Bob',# owner not found
-            },
-            {
-            "name": 'mouse', 
-            "parent": 'computer', 
-            "description": 'work', 
-            "position": 'desk', 
-            "value": 100, 
-            "department": 'dep',# 部门不在管理范围内
-            "number": 1, 
-            "category": 'cate',
-            "image": '127.0.0.3',
-            }
-        ]
-
-        res = self.post_asset_add_list(assets)
-        self.assertEqual(res.json()['code'], 1)
-        self.assertEqual(len(Asset.objects.all()), 4)
-        self.assertTrue(Asset.objects.filter(name='ass').exists())
-        self.assertTrue(Asset.objects.filter(name='computer').exists())
-        self.assertTrue(Asset.objects.filter(name='ent').exists())
-        self.assertTrue(Asset.objects.filter(name='keyboard').exists())

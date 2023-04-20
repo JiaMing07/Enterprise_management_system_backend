@@ -628,14 +628,21 @@ def asset_attribute(req: HttpRequest):
         checklength(attribute_name, 0, 50, "attribute")
         
         # check token and get entity
-        CheckAuthority(req, ["entity_super", "asset_super"])
+        # CheckAuthority(req, ["entity_super", "asset_super"])
         token = req.COOKIES['token'] 
         decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         user = User.objects.get(username=decoded['username'])
+
+        if user.token != token:
+            return request_failed(-6, "用户不在线", status_code=403)
+
+        # whether
+        if not user.asset_super and not user.entity_super:
+            return request_failed(2, "没有删除资产属性的权限", status_code=403)
         
         # get asset and attribute
         asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
-        attribute = Attribute.objects.filter(name=attribute_name, entity=user.entity, department=user.department).first()
+        attribute = Attribute.objects.filter(name=attribute_name, entity=user.entity).first()
 
         # filter whether exist
         if asset is None:
@@ -667,8 +674,8 @@ def asset_attribute_list(req: HttpRequest, assetName: any):
         decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         user = User.objects.get(username=decoded['username'])
 
-        asset = Asset.objects.get(entity=user.entity, name=assetName)
-
+        asset = Asset.objects.filter(entity=user.entity, name=assetName).first()
+        
         if asset is None:
             return request_failed(1, "企业不存在该资产", status_code=403)
 
