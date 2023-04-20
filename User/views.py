@@ -11,7 +11,7 @@ from utils.utils_getbody import get_args
 from utils.utils_checklength import checklength
 from utils.utils_checkauthority import CheckAuthority, CheckToken
 from eam_backend.settings import SECRET_KEY
-from  utils.utils_startup import init_department, init_entity, add_menu, add_users,admin_user, add_category
+from  utils.utils_startup import init_department, init_entity, add_menu, add_users,admin_user, add_category, add_asset
 import jwt
 from django.db.utils import IntegrityError, OperationalError
 
@@ -35,6 +35,7 @@ def startup(req: HttpRequest):
         admin_user()
         add_users()
         add_category()
+        add_asset()
         # add_menu()
     except (OperationalError, IntegrityError):
         pass
@@ -55,18 +56,18 @@ def login_normal(req: HttpRequest):
             md5.update(password.encode('utf-8'))
             password = md5.hexdigest()
             if user.check_password(password):
-                if user.token == '':
-                    user.token = user.generate_token()
-                    user.save()
-                    return request_success(data={'token': user.token,
-                                                'system_super':user.system_super, 
-                                                'entity_super': user.entity_super,
-                                                'asset_super': user.asset_super,
-                                                'department': user.department.name,
-                                                'entity': user.entity.name,
-                                                'active': user.active})
-                else:
-                    return request_failed(1, "用户已登录", status_code=403)
+                # if user.token == '':
+                user.token = user.generate_token()
+                user.save()
+                return request_success(data={'token': user.token,
+                                            'system_super':user.system_super, 
+                                            'entity_super': user.entity_super,
+                                            'asset_super': user.asset_super,
+                                            'department': user.department.name,
+                                            'entity': user.entity.name,
+                                            'active': user.active})
+                # else:
+                #     return request_failed(1, "用户已登录", status_code=403)
             else:
                 return request_failed(2, "密码不正确", status_code=401)
     else:
@@ -355,11 +356,16 @@ def user_menu(req: HttpRequest):
             for menu in menus:
                 menu.delete()
         else:
+            print(first)
+            print(second)
+            print(Menu.objects.all())
+            print( Menu.objects.filter(first=first))
             menus_entity = Menu.objects.filter(entity=entity).filter(first=first).filter(second=second)
             menus_base = Menu.objects.filter(entity=entity_base).filter(first=first).filter(second=second)
             if menus_base:
                 return request_failed(4, "不可删除初始二级菜单", status_code=403)
             menu = menus_entity
+            print(menu)
             if len(menu) == 0:
                 return request_failed(2, "二级菜单不存在", status_code=403)
             menu = menu[0]

@@ -30,7 +30,7 @@ def CompareAuthority(req: HttpRequest, authority):
     if user is None:
         return "不存在对应的用户"
     if user.token != token:
-        return "用户不在线"
+        return "用户已在其他地方登录，请退出后重新登陆"
     have_authority = False
     for au in authority:
         if user.check_authen() == au:

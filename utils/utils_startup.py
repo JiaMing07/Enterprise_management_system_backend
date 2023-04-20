@@ -86,13 +86,22 @@ def add_category():
     from Department.models import Entity
     from Asset.models import AssetCategory
 
-    entity=Entity.objects.filter(name="entity_1").first()
+    entity=Entity.objects.filter(name="admin_entity").first()
     if not AssetCategory.objects.filter(name="category_base").exists():
         category_1 = AssetCategory(name="category_base",entity=entity, is_number=False)
         category_1.save()
+    entity=Entity.objects.filter(name="entity_1").first()
     if not AssetCategory.objects.filter(name="entity_1").exists():
         category_2 = AssetCategory(name="entity_1", parent=AssetCategory.objects.filter(name="category_base").first(), entity=entity, is_number=True)
         category_2.save()
     if not AssetCategory.objects.filter(name="category_1_en1").exists():
         category_3 = AssetCategory(name="category_1_en1",parent=AssetCategory.objects.filter(name="entity_1").first(), entity=Entity.objects.filter(name="entity_1").first(), is_number=False)
         category_3.save()
+
+def add_asset():
+    from Department.models import Entity, Department
+    from Asset.models import AssetCategory, Asset
+    entity=Entity.objects.filter(name="admin_entity").first()
+    if not Asset.objects.filter(name="asset_base").exists():
+        category_1 = Asset(name="asset_base",entity=entity, category=AssetCategory.objects.filter(name="category_base").first(), department=Department.objects.filter(name="admin_department").first())
+        category_1.save()
