@@ -628,7 +628,7 @@ def asset_attribute(req: HttpRequest):
         checklength(attribute_name, 0, 50, "attribute")
         
         # check token and get entity
-        CheckAuthority(req, ["entity_super", "asset_super"])
+        # CheckAuthority(req, ["entity_super", "asset_super"])
         token = req.COOKIES['token'] 
         decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         user = User.objects.get(username=decoded['username'])
