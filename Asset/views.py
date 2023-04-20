@@ -403,11 +403,11 @@ def asset_attribute(req: HttpRequest):
 
         # whether
         if not user.asset_super and not user.entity_super:
-            return request_failed(2, "没有为资产添加属性的权限", status_code=403)
+            return request_failed(2, "没有删除资产属性的权限", status_code=403)
         
         # get asset and attribute
         asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
-        attribute = Attribute.objects.filter(name=attribute_name, entity=user.entity, department=user.department).first()
+        attribute = Attribute.objects.filter(name=attribute_name, entity=user.entity).first()
 
         # filter whether exist
         if asset is None:
@@ -416,7 +416,7 @@ def asset_attribute(req: HttpRequest):
             return request_failed(1, "自定义属性不存在", status_code=403)
         
          # save
-        old_pair = AssetAttribute.objects.filter(asset=asset, attribute=attribute)
+        old_pair = AssetAttribute.objects.filter(asset=asset, attribute=attribute).first()
         if old_pair is None:
             return request_failed(1, "资产没有该属性", status_code=403)
         
@@ -439,8 +439,8 @@ def asset_attribute_list(req: HttpRequest, assetName: any):
         decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         user = User.objects.get(username=decoded['username'])
 
-        asset = Asset.objects.get(entity=user.entity, name=assetName)
-
+        asset = Asset.objects.filter(entity=user.entity, name=assetName).first()
+        
         if asset is None:
             return request_failed(1, "企业不存在该资产", status_code=403)
 

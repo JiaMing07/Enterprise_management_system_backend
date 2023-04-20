@@ -116,6 +116,16 @@ class AttributeTests(TestCase):
     def get_asset_attribute_list(self, assetName):
         return self.client.get(f"/asset/attribute/{assetName}")
     
+    def delete_asset_attribute(self, asset, attribute):
+        payload = {
+            'asset': asset,
+            'attribute': attribute
+        }
+
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.delete("/asset/attribute", data=payload, content_type="application/json")
+    
+    
     # Now start testcases. 
     def test_asset_category_add(self):
         user = User.objects.filter(username='test_user').first()
@@ -792,13 +802,118 @@ class AttributeTests(TestCase):
         self.assertEqual(res.json()['info'], "Succeed")
 
         # 1, "企业不存在该资产"
-        # asset = "bss"
-        # res = self.get_asset_attribute_list(asset)
-        # # self.assertEqual(res.json()['code'], 1)
-        # self.assertEqual(res.json()['info'], "企业不存在该资产")
+        asset = "bss"
+        res = self.get_asset_attribute_list(asset)
+        # self.assertEqual(res.json()['code'], 1)
+        self.assertEqual(res.json()['info'], "企业不存在该资产")
 
         # 0, succeed
         asset = "ass"
         res = self.get_asset_attribute_list(asset)
         # self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], "Succeed")
+
+    def test_asset_attribute_delete(self):
+
+        # token
+        user = User.objects.filter(username='test_attribute').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("asset_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        # add 1, dep
+        name = "attri_1"
+        department = "dep"
+        res = self.post_attribute_add(name, department)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        # add 2, dep
+        name = "attri_2"
+        department = "dep"
+        res = self.post_attribute_add(name, department)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        # add 3, dep_child
+        name = "attri_3"
+        department = "dep_child"
+        res = self.post_attribute_add(name, department)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        # add 4, dep_child
+        name = "attri_4"
+        department = "dep_child"
+        res = self.post_attribute_add(name, department)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        # success, 0
+        asset = "ass"
+        attribute = "attri_1"
+        description = "This is a description."
+        res = self.post_asset_attribute_add(asset, attribute, description)
+        # self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], "Succeed")
+
+        # success, 0
+        asset = "ass"
+        attribute = "attri_2"
+        description = "This is a description 2."
+        res = self.post_asset_attribute_add(asset, attribute, description)
+        # self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], "Succeed")
+
+        # success, 0
+        asset = "ass"
+        attribute = "attri_3"
+        description = "This is a description 3."
+        res = self.post_asset_attribute_add(asset, attribute, description)
+        # self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], "Succeed")
+
+        # 2, "没有删除资产属性的权限"
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("staff")
+        user.save()
+
+        asset = "ass"
+        attribute = "attri_3"
+        res = self.delete_asset_attribute(asset, attribute)
+        self.assertEqual(res.json()['info'], "没有删除资产属性的权限")
+        self.assertEqual(res.json()['code'], 2)
+
+        # 1, "资产不存在"
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+
+        asset = "bss"
+        attribute = "attri_3"
+        res = self.delete_asset_attribute(asset, attribute)
+        self.assertEqual(res.json()['info'], "资产不存在")
+        self.assertEqual(res.json()['code'], 1)
+
+        # 1, "自定义属性不存在"
+        asset = "ass"
+        attribute = "attri_6"
+        res = self.delete_asset_attribute(asset, attribute)
+        self.assertEqual(res.json()['info'], "自定义属性不存在")
+        self.assertEqual(res.json()['code'], 1)
+
+        # 1, "资产没有该属性"
+        asset = "ass"
+        attribute = "attri_0"
+        res = self.delete_asset_attribute(asset, attribute)
+        self.assertEqual(res.json()['info'], "资产没有该属性")
+        self.assertEqual(res.json()['code'], 1)
+
+        # 0, "success"
+        asset = "ass"
+        attribute = "attri_3"
+        res = self.delete_asset_attribute(asset, attribute)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
