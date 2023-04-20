@@ -179,6 +179,8 @@ class AttributeTests(TestCase):
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.delete("/asset/attribute", data=payload, content_type="application/json")
     
+    def get_asset_assetSuper(self):
+        return self.client.get("/asset/assetSuper")
     
     # Now start testcases. 
     def test_asset_category_add(self):
@@ -1221,5 +1223,19 @@ class AttributeTests(TestCase):
         asset = "ass"
         attribute = "attri_3"
         res = self.delete_asset_attribute(asset, attribute)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
+
+    def test_asset_assetSuper(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("asset_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        res = self.get_asset_assetSuper()
         self.assertEqual(res.json()['info'], "Succeed")
         self.assertEqual(res.json()['code'], 0)

@@ -820,3 +820,28 @@ def asset_query(req: HttpRequest, type: str, description: str, attribute:str):
         return request_success(return_data)
     else:
         return BAD_METHOD
+    
+@CheckRequire
+def asset_assetSuper(req: HttpRequest):
+    if req.method == 'GET':
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+
+        assetSupers = []
+        departments = Department.objects.filter(entity=entity)
+        for department in departments:
+            assetSuper_list = []
+            users_assetSuper = User.objects.filter(entity=entity, department=department, asset_super=True)
+            for user_assetSuper in users_assetSuper:
+                assetSuper_list.append(user_assetSuper.username)
+            assetSupers.append({
+                "department": department.name,
+                "assetSuper_list": assetSuper_list,
+            })
+        return request_success({
+            "assetSupers": assetSupers,
+        })
+    else:
+        return BAD_METHOD
