@@ -1425,3 +1425,117 @@ class AttributeTests(TestCase):
         res = self.get_asset_query(type, description, attribute)
         self.assertEqual(res.json()['code'], 1)
         self.assertEqual(res.json()['info'], '此搜索类型不存在')
+
+    def test_asset_add_list(self):
+        user = User.objects.filter(username='Alice').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("asset_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        self.assertEqual(len(Asset.objects.all()), 1)
+
+        assets = [
+            {
+            "name": 'computer', 
+            "parent": '', 
+            "description": 'work', 
+            "position": 'desk', 
+            "value": 5999, 
+            "department": 'dep_child',
+            "number": 1, 
+            "category": 'cate',
+            "image": '127.0.0.1',
+            },
+            {
+            "name": 'keyboard', 
+            "parent": 'computer', 
+            "description": 'work', 
+            "position": 'desk', 
+            "value": 100, 
+            "department": '',
+            "number": 1, 
+            "category": 'cate',
+            "image": '127.0.0.2',
+            "state": 'IN_USE',
+            "owner": 'Alice',
+            },
+            {
+            "name": 'keyboard', 
+            "parent": 'asset_1', #parent not found
+            "description": 'work', 
+            "position": 'desk', 
+            "value": 100, 
+            "department": '',
+            "number": 1, 
+            "category": 'cate',
+            "image": '127.0.0.2',
+            },
+            {
+            "name": 'keyboard', 
+            "parent": 'computer', 
+            "description": 'work', 
+            "position": 'desk', 
+            "value": 100, 
+            "department": 'department_1',# department not found
+            "number": 1, 
+            "category": 'cate',
+            "image": '127.0.0.2',
+            },
+            {
+            "name": 'keyboard', 
+            "parent": 'computer', 
+            "description": 'work', 
+            "position": 'desk', 
+            "value": 100, 
+            "department": 'dep_child',
+            "number": 1, 
+            "category": 'category_1',# category not found
+            "image": '127.0.0.2',
+            },
+            {
+            "name": 'keyboard',# repeat
+            "parent": 'computer', 
+            "description": 'work', 
+            "position": 'desk', 
+            "value": 100, 
+            "department": 'dep_child',
+            "number": 1, 
+            "category": 'cate',
+            "image": '127.0.0.2',
+            },
+            {
+            "name": 'mouse', 
+            "parent": 'computer', 
+            "description": 'work', 
+            "position": 'desk', 
+            "value": 100, 
+            "department": 'dep_child',
+            "number": 1, 
+            "category": 'cate',
+            "image": '127.0.0.3',
+            "owner": 'Bob',# owner not found
+            },
+            {
+            "name": 'mouse', 
+            "parent": 'computer', 
+            "description": 'work', 
+            "position": 'desk', 
+            "value": 100, 
+            "department": 'dep',# 部门不在管理范围内
+            "number": 1, 
+            "category": 'cate',
+            "image": '127.0.0.3',
+            }
+        ]
+
+        res = self.post_asset_add_list(assets)
+        self.assertEqual(res.json()['code'], 1)
+        self.assertEqual(len(Asset.objects.all()), 4)
+        self.assertTrue(Asset.objects.filter(name='ass').exists())
+        self.assertTrue(Asset.objects.filter(name='computer').exists())
+        self.assertTrue(Asset.objects.filter(name='ent').exists())
+        self.assertTrue(Asset.objects.filter(name='keyboard').exists())
