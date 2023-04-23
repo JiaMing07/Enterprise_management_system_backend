@@ -194,7 +194,7 @@ class UserTests(TestCase):
         return self.client.delete("/user/menu", data=payload, content_type="application/json")
     
     def get_user_department_list(self):
-        return self.client.get("user/department/list")
+        return self.client.get("/user/department/list")
 
     # Now start testcases. 
 

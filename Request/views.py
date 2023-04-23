@@ -31,9 +31,7 @@ def requests_return(req: HttpRequest):
         token, decoded = CheckToken(req)
         user = User.objects.filter(username=decoded['username']).first()
         body = json.loads(req.body.decode("utf-8"))
-        print(body)
         assets_list = get_args(body, ["assets"], ["list"])[0]
-        print(assets_list)
         err_msg = ""
         for idx, asset_name in enumerate(assets_list):
             asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
