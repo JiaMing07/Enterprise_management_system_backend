@@ -49,7 +49,8 @@ INSTALLED_APPS = [
     'Asset',
     'Department',
     'User',
-    'mptt'
+    'mptt',
+    'Request'
 ]
 
 MIDDLEWARE = [
