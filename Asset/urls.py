@@ -19,7 +19,8 @@ urlpatterns = [
     path('attribute/edit', views.attribute_edit),
     path('attribute/delete', views.attribute_delete),
     path('attribute', views.asset_attribute),
-    path('<assetName>', views.asset_assetName),
     path('category/<category_name>/number', views.asset_category_number),
     path('attribute/<assetName>', views.asset_attribute_list),
+    path('assetSuper', views.asset_assetSuper),
+    path('<assetName>', views.asset_assetName),
 ]
