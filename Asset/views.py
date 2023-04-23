@@ -840,3 +840,31 @@ def user_query(req: HttpRequest):
         }
         return request_success(return_data)
     return BAD_METHOD
+
+@CheckRequire
+def asset_delete(req: HttpRequest):
+    if req.method == 'DELETE':
+        CheckAuthority(req, ["entity_super"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+
+        body = json.loads(req.body.decode("utf-8"))
+        assetName = body.get('assetName')
+        checklength(assetName, 0, 50, "assetName")
+
+        asset = Asset.objects.filter(entity=entity, name=assetName).first()
+        if asset is None:
+            return request_failed(1, "asset not found", status_code=404)
+        
+        department = asset.department
+        ancestor_list = department.get_ancestors(include_self=True)
+        if user.department not in ancestor_list:
+            return request_failed(2, "部门不在管理范围内", status_code=403)
+        
+        if asset.state != 'RETIRED':
+            return request_failed(3,"不能删除未清退的资产", status_code=403)
+        asset.delete()
+        return request_success()
+    else:
+        return BAD_METHOD
