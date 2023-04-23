@@ -31,9 +31,10 @@ class NormalRequests(models.Model):
             type_str = "维修"
         return {
             "id": self.id,
-            "initiator": self.initiator,
-            "asset": self.asset,
-            "type": self.type,
+            "initiator": self.initiator.username,
+            "asset": self.asset.name,
+            "type_id": self.type,
+            "type":type_str,
             "result": self.result,
             "request_time": self.request_time,
             "review_time": self.review_time

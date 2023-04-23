@@ -61,8 +61,11 @@ def waiting_list(req: HttpRequest):
         token, decoded = CheckToken(req)
         user = User.objects.filter(username=decoded['username']).first()
         department_list = subtree_department(user.department)
-        requests_list = NormalRequests.objects.filter(asset__department__id__in=department_list)
+        requests_list = NormalRequests.objects.filter(asset__department__id__in=department_list).filter(result=0)
+        waitinglist = []
+        for request in requests_list:
+            waitinglist.append(return_field(request.serialize(), ["initiator", "asset", "type", "request_time"]))
         return request_success({
-            "waiting": [return_field(request, [""]) for request in requests_list]
+            "waiting": waitinglist
         })
     return BAD_METHOD

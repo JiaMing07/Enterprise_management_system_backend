@@ -33,5 +33,15 @@ class AttributeTests(TestCase):
         category = AssetCategory.objects.create(name='cate', entity=ent)
         
         Asset.objects.create(name='ass', entity=ent, owner="test_user", category=category, department=dep)
+        Asset.objects.create(name='asset_1', entity=ent, owner='George', category=category, department=dep_child)
         Attribute.objects.create(id=1, name="attri_0", entity=ent, department=dep_ent)
-        
+
+    def post_request_return(self, asset_list):
+        payload = {
+            "assets": asset_list
+        }    
+        return self.client.post("/request/return", data=payload)
+    
+    def get_request_waiting(self):
+        return self.client.get("request/waiting")
+    # start test
