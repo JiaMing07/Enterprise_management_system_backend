@@ -145,6 +145,7 @@ def asset_list(req: HttpRequest):
         user = User.objects.filter(username=decoded['username']).first()
         entity = user.entity
         assets = Asset.objects.filter(entity=entity).exclude(name=entity.name).order_by('id')
+        assets = assets.filter(state='IDLE')
         return_data = {
             "assets": [
                 return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
@@ -365,7 +366,7 @@ def asset_add_list(req:HttpRequest):
     return BAD_METHOD
     
 @CheckRequire
-def asset_delete(req: HttpRequest):
+def asset_retire(req: HttpRequest):
     if req.method == 'DELETE':
         CheckAuthority(req, ["entity_super", "asset_super"])
         token, decoded = CheckToken(req)
@@ -385,7 +386,13 @@ def asset_delete(req: HttpRequest):
         if user.department not in ancestor_list:
             return request_failed(2, "部门不在管理范围内", status_code=403)
         
-        asset.delete()
+        asset.state = "RETIRED"
+        asset.value = 0
+        children_list = asset.get_children()
+        for child in children_list:
+            child.parent = Asset.objects.filter(name = asset.entity.name).first()
+            child.save()
+        asset.save()
         return request_success()
     else:
         return BAD_METHOD
@@ -745,7 +752,7 @@ def asset_tree(req: HttpRequest):
         department = user.department
         asset = Asset.objects.filter(entity=entity)
         department_tree = subtree_department(department)
-        assets = asset.filter(department__id__in=department_tree)
+        assets = asset.filter(department__id__in=department_tree).filter(state='IDLE')
         assets_list = []
         for ass in assets:
             if ass.parent == None:
@@ -824,7 +831,7 @@ def user_query(req: HttpRequest):
     if req.method=='GET':
         token, decoded = CheckToken(req)
         user = User.objects.filter(username=decoded['username']).first()
-        assets = Asset.objects.filter(entity=user.entity, owner=user.username)
+        assets = Asset.objects.filter(entity=user.entity, owner=user.username).exclude(name=user.entity.name)
         return_data = {
             "assets": [
                 return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
