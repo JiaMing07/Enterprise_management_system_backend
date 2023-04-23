@@ -34,6 +34,7 @@ class AttributeTests(TestCase):
         
         Asset.objects.create(name='ass', entity=ent, owner="test_user", category=category, department=dep, state='IDLE')
         Asset.objects.create(name='asset_1', entity=ent, owner='George', category=category, department=dep_child)
+        Asset.objects.create(name='asset_2', entity=ent, owner='George', category=category, department=dep_child)
         Attribute.objects.create(id=1, name="attri_0", entity=ent, department=dep_ent)
 
     def create_token(self, name, authority):
@@ -56,6 +57,13 @@ class AttributeTests(TestCase):
     
     def get_request_waiting(self):
         return self.client.get("/requests/waiting")
+    
+    def post_request_repair(self, asset_list):
+        payload = {
+            "assets": asset_list,
+        }    
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.post("/requests/repair", data=payload, content_type="application/json")
     # start test
 
     def test_request_return(self):
