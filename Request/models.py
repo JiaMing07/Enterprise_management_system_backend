@@ -56,11 +56,12 @@ class TransferRequests(models.Model):
     def serialize(self):
         return {
             "id": self.id,
-            "initiator": self.initiator,
-            "participant": self.participant,
+            "initiator": self.initiator.username,
+            "participant": self.participant.username,
             "position": self.position,
-            "asset": self.asset,
-            "type": self.type,
+            "asset": self.asset.name,
+            "type_id": self.type,
+            "type": "转移",
             "result": self.result,
             "request_time": self.request_time,
             "review_time": self.review_time

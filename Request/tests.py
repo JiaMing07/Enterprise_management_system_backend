@@ -35,6 +35,7 @@ class AttributeTests(TestCase):
         Asset.objects.create(name='ass', entity=ent, owner="test_user", category=category, department=dep, state='IDLE')
         Asset.objects.create(name='asset_1', entity=ent, owner='George', category=category, department=dep_child)
         Asset.objects.create(name='asset_2', entity=ent, owner='George', category=category, department=dep_child)
+        Asset.objects.create(name='asset_3', entity=ent, owner='George', category=category, department=dep_child)
         Attribute.objects.create(id=1, name="attri_0", entity=ent, department=dep_ent)
 
     def create_token(self, name, authority):
@@ -64,18 +65,27 @@ class AttributeTests(TestCase):
         }    
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post("/requests/repair", data=payload, content_type="application/json")
+    
+    def post_request_transfer(self, asset_list, to, position):
+        payload = {
+            "assets": asset_list,
+            "to": to,
+            "position": position
+        }    
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.post("/requests/transfer", data=payload, content_type="application/json")
     # start test
 
     def test_request_return(self):
         user = self.create_token('test_user', 'staff')
         asset_list = ["as"]
         res = self.post_request_return(asset_list)
-        self.assertEqual(res.json()['info'], "第1条想要退库的资产不存在")
+        self.assertEqual(res.json()['info'], "第1条想要退库的资产 as 不存在")
         self.assertEqual(res.json()['code'], 1)
 
         asset_list = ["ass"]
         res = self.post_request_return(asset_list)
-        self.assertEqual(res.json()['info'], "第1条想要退库的资产不在使用中")
+        self.assertEqual(res.json()['info'], "第1条想要退库的资产 ass 不在使用中")
         self.assertEqual(res.json()['code'], 1)
 
         assets = Asset.objects.all()
@@ -90,7 +100,29 @@ class AttributeTests(TestCase):
 
         asset_list = ["ass", "asset_1"]
         res = self.post_request_return(asset_list)
-        self.assertEqual(res.json()['info'], "第1条想要退库的资产已提交退库申请")
+        self.assertEqual(res.json()['info'], "第1条想要退库的资产 ass 已提交退库申请")
+        self.assertEqual(res.json()['code'], 1)
+
+        asset_list = ["asset_2"]
+        res = self.post_request_repair(asset_list)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
+
+        asset_list = ["asset_2"]
+        res = self.post_request_return(asset_list)
+        self.assertEqual(res.json()['info'], "第1条想要退库的资产 asset_2 已提交维修申请")
+        self.assertEqual(res.json()['code'], 1)
+
+        asset_list = ["asset_3"]
+        to = ["dep_child", "Alice"]
+        position = "position_1"
+        res = self.post_request_transfer(asset_list, to, position)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
+
+        asset_list = ["asset_3"]
+        res = self.post_request_return(asset_list)
+        self.assertEqual(res.json()['info'], "第1条想要退库的资产 asset_3 已提交转移申请")
         self.assertEqual(res.json()['code'], 1)
         
     def test_request_waiting(self):
@@ -99,3 +131,52 @@ class AttributeTests(TestCase):
         res = self.get_request_waiting()
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
+
+    def test_request_repair(self):
+        user = self.create_token('test_user', 'staff')
+        asset_list = ["as"]
+        res = self.post_request_repair(asset_list)
+        self.assertEqual(res.json()['info'], "第1条想要维修的资产 as 不存在")
+        self.assertEqual(res.json()['code'], 1)
+
+        asset_list = ["ass"]
+        res = self.post_request_repair(asset_list)
+        self.assertEqual(res.json()['info'], "第1条想要维修的资产 ass 不在使用中（只有在员工手中的资产才可被维修）")
+        self.assertEqual(res.json()['code'], 1)
+
+        assets = Asset.objects.all()
+        for ass in assets:
+            ass.state = "IN_USE"
+            ass.save()
+        
+        asset_list = ["ass"]
+        res = self.post_request_return(asset_list)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
+
+        asset_list = ["ass", "asset_1"]
+        res = self.post_request_repair(asset_list)
+        self.assertEqual(res.json()['info'], "第1条想要维修的资产 ass 已提交退库申请")
+        self.assertEqual(res.json()['code'], 1)
+
+        asset_list = ["asset_2"]
+        res = self.post_request_repair(asset_list)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
+
+        asset_list = ["asset_2"]
+        res = self.post_request_repair(asset_list)
+        self.assertEqual(res.json()['info'], "第1条想要维修的资产 asset_2 已提交维修申请")
+        self.assertEqual(res.json()['code'], 1)
+
+        asset_list = ["asset_3"]
+        to = ["dep_child", "Alice"]
+        position = "position_1"
+        res = self.post_request_transfer(asset_list, to, position)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
+
+        asset_list = ["asset_3"]
+        res = self.post_request_repair(asset_list)
+        self.assertEqual(res.json()['info'], "第1条想要维修的资产 asset_3 已提交转移申请")
+        self.assertEqual(res.json()['code'], 1)
