@@ -132,3 +132,17 @@ class AssetAttribute(models.Model):
             "attribute": self.attribute.name,
             "description": self.description,
         }
+    
+class Label(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    name = models.CharField(max_length=50)
+    asset_name = models.BooleanField(default=True)
+    entity = models.BooleanField(default=True)
+    category = models.BooleanField(default=True)
+    department = models.BooleanField(default=True)
+    attribute = models.BooleanField(default=True)
+    number = models.BooleanField(default=True)
+    position = models.BooleanField(default=True)
+    description = models.BooleanField(default=True)
+    QRcode = models.BooleanField(default=True)
+    value = models.BooleanField(default=True) 

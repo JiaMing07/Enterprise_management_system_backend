@@ -11,7 +11,7 @@ from utils.utils_checkauthority import CheckAuthority, CheckToken
 
 from User.models import User, Menu
 from Department.models import Department, Entity
-from Asset.models import Attribute, Asset, AssetAttribute, AssetCategory
+from Asset.models import Attribute, Asset, AssetAttribute, AssetCategory, Label
 
 from eam_backend.settings import SECRET_KEY
 import jwt
@@ -891,5 +891,59 @@ def asset_delete(req: HttpRequest):
             return request_failed(3,"不能删除未清退的资产", status_code=403)
         asset.delete()
         return request_success()
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
+def asset_label(req: HttpRequest):
+
+    if req.method == 'POST':
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+
+        name = json.loads(req.body.decode("utf-8")).get('name')
+        labels = json.loads(req.body.decode("utf-8")).get('labels')
+        asset_name = False
+        entity = False
+        category = False
+        department = False
+        attribute = False
+        number = False
+        position = False
+        description = False
+        QRcode = False
+        value = False
+
+        if "资产名称" in labels:
+            asset_name = True
+        if "归属公司" in labels:
+            entity = True
+        if "资产类型" in labels:
+            category = True
+        if "资产挂账部门" in labels:
+            department = True
+        if "资产自定义属性" in labels:
+            attribute = True
+        if "资产数量" in labels:
+            number = True
+        if "资产位置" in labels:
+            position = True
+        if "资产描述" in labels:
+            description = True
+        if "资产二维码" in labels:
+            QRcode = True
+        if "资产价值" in labels:
+            value = True
+
+        label = Label(name=name, asset_name=asset_name, description=description, position=position, value=value, number=number,
+                      category=category, entity=entity, department=department, attribute=attribute, QRcode=QRcode)
+        label.save()
+        return request_success()
+    
+    elif req.method == 'GET':
+        pass
+
     else:
         return BAD_METHOD
