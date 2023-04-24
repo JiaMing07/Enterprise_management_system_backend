@@ -7,7 +7,7 @@ from http import cookies
 
 from User.models import User, Menu
 from Department.models import Department, Entity
-from Asset.models import Attribute, Asset, AssetAttribute, AssetCategory
+from Asset.models import Attribute, Asset, AssetAttribute, AssetCategory, Label
 
 from http import cookies
 import hashlib
@@ -48,6 +48,59 @@ class AttributeTests(TestCase):
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post("/asset/attribute/add", data=payload, content_type="application/json")
     
+    def post_asset_category_add(self, name, parent, is_number):
+        payload = {
+            'name': name,
+            'parent': parent,
+            'is_number': is_number,
+        }
+
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.post("/asset/category/add", data=payload, content_type="application/json")
+    
+    def post_asset_add(self, name, parent, description, position, value, department, number, category, image):
+        payload = {
+            "name": name, 
+            "parent": parent, 
+            "description": description, 
+            "position": position, 
+            "value": value, 
+            "department": department,
+            "number": number, 
+            "category": category,
+            "image": image,
+        }
+
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.post("/asset/add", data=payload, content_type="application/json")
+    
+    def post_asset_add_list(self, assets):
+        payload = {
+            "assets": assets,
+        }
+
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.post("/asset/add/list", data=payload, content_type="application/json")
+    
+    def post_asset_attribute_add(self, asset, attribute, description):
+        payload = {
+            'asset': asset,
+            'attribute': attribute,
+            'description': description
+        }
+
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.post("/asset/attribute", data=payload, content_type="application/json")
+    
+    def post_asset_label(self, name, labels):
+        payload = {
+            'name': name,
+            'labels': labels
+        }
+
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.post("/asset/label", data=payload, content_type="application/json")
+    
     # Utility functions    
     def put_attribute_edit(self, name, newName, department, newDepartment):
         payload = {
@@ -75,16 +128,6 @@ class AttributeTests(TestCase):
     def get_asset_category_list(self):
         return self.client.get(f"/asset/category/list")
     
-    def post_asset_category_add(self, name, parent, is_number):
-        payload = {
-            'name': name,
-            'parent': parent,
-            'is_number': is_number,
-        }
-
-        payload = {k: v for k, v in payload.items() if v is not None}
-        return self.client.post("/asset/category/add", data=payload, content_type="application/json")
-    
     def put_asset_category_edit(self, oldName, name, parent, is_number):
         payload = {
             'oldName': oldName,
@@ -106,30 +149,6 @@ class AttributeTests(TestCase):
     
     def get_asset_list(self):
         return self.client.get(f"/asset/list")
-    
-    def post_asset_add(self, name, parent, description, position, value, department, number, category, image):
-        payload = {
-            "name": name, 
-            "parent": parent, 
-            "description": description, 
-            "position": position, 
-            "value": value, 
-            "department": department,
-            "number": number, 
-            "category": category,
-            "image": image,
-        }
-
-        payload = {k: v for k, v in payload.items() if v is not None}
-        return self.client.post("/asset/add", data=payload, content_type="application/json")
-    
-    def post_asset_add_list(self, assets):
-        payload = {
-            "assets": assets,
-        }
-
-        payload = {k: v for k, v in payload.items() if v is not None}
-        return self.client.post("/asset/add/list", data=payload, content_type="application/json")
     
     def put_asset_edit(self, oldName, name, parent, description, position, value, owner, number, state, category, image):
         payload = {
@@ -156,16 +175,6 @@ class AttributeTests(TestCase):
 
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.delete("/asset/retire", data=payload, content_type="application/json")
-    
-    def post_asset_attribute_add(self, asset, attribute, description):
-        payload = {
-            'asset': asset,
-            'attribute': attribute,
-            'description': description
-        }
-
-        payload = {k: v for k, v in payload.items() if v is not None}
-        return self.client.post("/asset/attribute", data=payload, content_type="application/json")
     
     def get_asset_attribute_list(self, assetName):
         return self.client.get(f"/asset/attribute/{assetName}")
@@ -1573,3 +1582,49 @@ class AttributeTests(TestCase):
         self.assertTrue(Asset.objects.filter(name='computer').exists())
         self.assertTrue(Asset.objects.filter(name='ent').exists())
         self.assertTrue(Asset.objects.filter(name='keyboard').exists())
+
+    def test_asset_label_post(self):
+        user = User.objects.filter(username='Alice').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("staff")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        # authentication
+        name = "model_1"
+        labels = ["资产名称"]
+        res = self.post_asset_label(name, labels)
+        # self.assertEqual(res.json()['code'], 1)
+        self.assertEqual(res.json()['info'], '没有操作权限')
+
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("asset_super")
+        user.save()
+
+        name = "model_1"
+        labels = ["资产名称"]
+        res = self.post_asset_label(name, labels)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        # same name, 2
+        name = "model_1"
+        labels = ["资产名称", "归属公司"]
+        res = self.post_asset_label(name, labels)
+        self.assertEqual(res.json()['code'], 2)
+        self.assertEqual(res.json()['info'], '重名')
+
+        name = "model_2"
+        labels = ["资产名称", "归属公司"]
+        res = self.post_asset_label(name, labels)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        name = "model_3"
+        labels = ["资产名称", "归属公司","资产类型", "资产挂账部门", "资产自定义属性", 
+                  "资产数量", "资产位置", "资产描述", "资产二维码", "资产价值"]
+        res = self.post_asset_label(name, labels)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')

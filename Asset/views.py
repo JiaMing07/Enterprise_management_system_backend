@@ -295,9 +295,9 @@ def asset_add_list(req:HttpRequest):
         user = User.objects.filter(username=decoded['username']).first()
         entity = user.entity
         err_msg=""
-        print(assets_new)
+        # print(assets_new)
         for idx, asset_single in enumerate(assets_new):
-            print("yes")
+            # print("yes")
             name, parentName, description, position, value, department, number, categoryName, image_url = get_args(
             asset_single, ["name", "parent", "description", "position", "value", "department", "number", "category", "image"], 
             ["string", "string", "string", "string", "int", "string", "int", "string", "string"])
@@ -898,6 +898,7 @@ def asset_delete(req: HttpRequest):
 def asset_label(req: HttpRequest):
 
     if req.method == 'POST':
+        
         CheckAuthority(req, ["entity_super", "asset_super"])
         token, decoded = CheckToken(req)
         user = User.objects.filter(username=decoded['username']).first()
@@ -915,6 +916,10 @@ def asset_label(req: HttpRequest):
         description = False
         QRcode = False
         value = False
+
+        old_label = Label.objects.filter(name=name).first()
+        if old_label is not None:
+            return request_failed(2,"重名", status_code=403)
 
         if "资产名称" in labels:
             asset_name = True
@@ -946,4 +951,5 @@ def asset_label(req: HttpRequest):
         pass
 
     else:
+        print("hewewewewewwewewew")
         return BAD_METHOD
