@@ -915,3 +915,28 @@ def asset_idle(req: HttpRequest):
         }
         return request_success(return_data)
     return BAD_METHOD
+
+@CheckRequire
+def asset_allocate(req: HttpRequest):
+    if req.method == 'PUT':
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        body = json.loads(req.body.decode("utf-8"))
+        asset_list, department, asset_super = get_args(body, ["name", "department", "asset_super"], ["list", "string", "string"])
+        checklength(department, 0, 30, "department")
+        checklength(asset_super, 0, 50, "asset_super")
+        asset_super = User.objects.filter(username=asset_super).first()
+        department = Department.objects.filter(entity=user.entity, name=department).first()
+        err_msg = ""
+        for idx, ass in enumerate(asset_list):
+            asset = Asset.objects.filter(entity=user.entity, name=ass).first()
+            if asset is None:
+                err_msg += f"第{idx+1}条资产 {ass} 不存在；"
+            asset.owner = asset_super.username
+            asset.department = department
+            asset.save()
+        if len(err_msg) > 0:
+            return request_failed(1, err_msg[:-1], status_code=404)
+        return request_success()
+    return BAD_METHOD
