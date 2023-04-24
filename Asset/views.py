@@ -11,7 +11,7 @@ from utils.utils_checkauthority import CheckAuthority, CheckToken
 
 from User.models import User, Menu
 from Department.models import Department, Entity
-from Asset.models import Attribute, Asset, AssetAttribute, AssetCategory
+from Asset.models import Attribute, Asset, AssetAttribute, AssetCategory, Label
 
 from eam_backend.settings import SECRET_KEY
 import jwt
@@ -145,6 +145,7 @@ def asset_list(req: HttpRequest):
         user = User.objects.filter(username=decoded['username']).first()
         entity = user.entity
         assets = Asset.objects.filter(entity=entity).exclude(name=entity.name).order_by('id')
+        assets = assets.filter(state='IDLE')
         return_data = {
             "assets": [
                 return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
@@ -294,9 +295,9 @@ def asset_add_list(req:HttpRequest):
         user = User.objects.filter(username=decoded['username']).first()
         entity = user.entity
         err_msg=""
-        print(assets_new)
+        # print(assets_new)
         for idx, asset_single in enumerate(assets_new):
-            print("yes")
+            # print("yes")
             name, parentName, description, position, value, department, number, categoryName, image_url = get_args(
             asset_single, ["name", "parent", "description", "position", "value", "department", "number", "category", "image"], 
             ["string", "string", "string", "string", "int", "string", "int", "string", "string"])
@@ -365,7 +366,7 @@ def asset_add_list(req:HttpRequest):
     return BAD_METHOD
     
 @CheckRequire
-def asset_delete(req: HttpRequest):
+def asset_retire(req: HttpRequest):
     if req.method == 'DELETE':
         CheckAuthority(req, ["entity_super", "asset_super"])
         token, decoded = CheckToken(req)
@@ -385,7 +386,13 @@ def asset_delete(req: HttpRequest):
         if user.department not in ancestor_list:
             return request_failed(2, "部门不在管理范围内", status_code=403)
         
-        asset.delete()
+        asset.state = "RETIRED"
+        asset.value = 0
+        children_list = asset.get_children()
+        for child in children_list:
+            child.parent = Asset.objects.filter(name = asset.entity.name).first()
+            child.save()
+        asset.save()
         return request_success()
     else:
         return BAD_METHOD
@@ -669,9 +676,7 @@ def asset_attribute_list(req: HttpRequest, assetName: any):
         idx = require({"asset": assetName}, "asset", "string", err_msg="Bad param [asset]", err_code=-1)
         checklength(assetName, 0, 50, "asset_name")
         
-        CheckToken(req)
-        token = req.COOKIES['token'] 
-        decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        token, decoded = CheckToken(req)
         user = User.objects.get(username=decoded['username'])
 
         asset = Asset.objects.filter(entity=user.entity, name=assetName).first()
@@ -747,7 +752,7 @@ def asset_tree(req: HttpRequest):
         department = user.department
         asset = Asset.objects.filter(entity=entity)
         department_tree = subtree_department(department)
-        assets = asset.filter(department__id__in=department_tree)
+        assets = asset.filter(department__id__in=department_tree).filter(state='IDLE')
         assets_list = []
         for ass in assets:
             if ass.parent == None:
@@ -818,5 +823,172 @@ def asset_query(req: HttpRequest, type: str, description: str, attribute:str):
             for asset in assets],
         }
         return request_success(return_data)
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
+def asset_assetSuper(req: HttpRequest):
+    if req.method == 'GET':
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+
+        assetSupers = []
+        departments = Department.objects.filter(entity=entity)
+        for department in departments:
+            assetSuper_list = []
+            users_assetSuper = User.objects.filter(entity=entity, department=department, asset_super=True)
+            for user_assetSuper in users_assetSuper:
+                assetSuper_list.append(user_assetSuper.username)
+            assetSupers.append({
+                "department": department.name,
+                "assetSuper_list": assetSuper_list,
+            })
+        return request_success({
+            "assetSupers": assetSupers,
+        })
+    else:
+        return BAD_METHOD
+
+@CheckRequire
+def user_query(req: HttpRequest):
+    if req.method=='GET':
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        assets = Asset.objects.filter(entity=user.entity, owner=user.username).exclude(name=user.entity.name)
+        return_data = {
+            "assets": [
+                return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
+                                                 "position", "value", "user", "number", "state", "department", "image"])
+            for asset in assets],
+        }
+        return request_success(return_data)
+    return BAD_METHOD
+
+@CheckRequire
+def asset_delete(req: HttpRequest):
+    if req.method == 'DELETE':
+        CheckAuthority(req, ["entity_super"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+
+        body = json.loads(req.body.decode("utf-8"))
+        assetName = body.get('assetName')
+        checklength(assetName, 0, 50, "assetName")
+
+        asset = Asset.objects.filter(entity=entity, name=assetName).first()
+        if asset is None:
+            return request_failed(1, "asset not found", status_code=404)
+        
+        department = asset.department
+        ancestor_list = department.get_ancestors(include_self=True)
+        if user.department not in ancestor_list:
+            return request_failed(2, "部门不在管理范围内", status_code=403)
+        
+        if asset.state != 'RETIRED':
+            return request_failed(3,"不能删除未清退的资产", status_code=403)
+        asset.delete()
+        return request_success()
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
+def asset_label(req: HttpRequest):
+
+    if req.method == 'POST':
+        
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+
+        name = json.loads(req.body.decode("utf-8")).get('name')
+        labels = json.loads(req.body.decode("utf-8")).get('labels')
+        asset_name = False
+        entity = False
+        category = False
+        department = False
+        attribute = False
+        number = False
+        position = False
+        description = False
+        QRcode = False
+        value = False
+
+        old_label = Label.objects.filter(name=name).first()
+        if old_label is not None:
+            return request_failed(2,"重名", status_code=403)
+
+        if "资产名称" in labels:
+            asset_name = True
+        if "归属公司" in labels:
+            entity = True
+        if "资产类型" in labels:
+            category = True
+        if "资产挂账部门" in labels:
+            department = True
+        if "资产自定义属性" in labels:
+            attribute = True
+        if "资产数量" in labels:
+            number = True
+        if "资产位置" in labels:
+            position = True
+        if "资产描述" in labels:
+            description = True
+        if "资产二维码" in labels:
+            QRcode = True
+        if "资产价值" in labels:
+            value = True
+
+        label = Label(name=name, asset_name=asset_name, description=description, 
+                      position=position, value=value, number=number,
+                      category=category, entity=entity, department=department, 
+                      attribute=attribute, QRcode=QRcode, depart=user.department)
+        label.save()
+        return request_success()
+    
+    elif req.method == 'GET':
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        depart = user.department
+
+        labels = Label.objects.filter(depart=depart)
+
+        labels_json = []
+        for one in labels:
+            dict_ = {}
+            dict_['name'] = one.name
+
+            label_list = []
+            if one.asset_name:
+                label_list.append("资产名称")
+            if one.entity:
+                label_list.append("归属公司")
+            if one.category:
+                label_list.append("资产类型")
+            if one.department:
+                label_list.append("资产挂账部门")
+            if one.attribute:
+                label_list.append("资产自定义属性")
+            if one.number:
+                label_list.append("资产数量")
+            if one.position:
+                label_list.append("资产位置")
+            if one.description:
+                label_list.append("资产描述")
+            if one.QRcode:
+                label_list.append("资产二维码")
+            if one.value:
+                label_list.append("资产价值")
+            
+            dict_['label'] = label_list
+            labels_json.append(dict_)
+
+        return_data = {
+            "labels": labels_json,
+        }
+        return request_success(return_data)
+
     else:
         return BAD_METHOD

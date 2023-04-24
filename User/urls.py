@@ -11,4 +11,5 @@ urlpatterns = [
     path('edit', views.user_edit),
     path('menu', views.user_menu),
     path('<userName>', views.user_userName),
+    path('department/list', views.department_user_list)
 ]

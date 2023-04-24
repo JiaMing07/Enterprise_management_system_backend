@@ -10,15 +10,18 @@ urlpatterns = [
     path('tree', views.asset_tree),
     path('add', views.asset_add),
     path('edit', views.asset_edit),
+    path('label', views.asset_label),   # place it to here and it can be right
+    path('user', views.user_query),
     path('add/list', views.asset_add_list),
     path('query/<type>/<description>/<attribute>', views.asset_query),
-    path('delete', views.asset_delete),
+    path('retire', views.asset_retire),
     path('attribute/add', views.attribute_add),
     path('attribute/<department>/list', views.attribute_list),
     path('attribute/edit', views.attribute_edit),
     path('attribute/delete', views.attribute_delete),
     path('attribute', views.asset_attribute),
-    path('<assetName>', views.asset_assetName),
     path('category/<category_name>/number', views.asset_category_number),
-    path('attribute/<assetName>', views.asset_attribute_list)
+    path('attribute/<assetName>', views.asset_attribute_list),
+    path('assetSuper', views.asset_assetSuper),
+    path('<assetName>', views.asset_assetName),
 ]

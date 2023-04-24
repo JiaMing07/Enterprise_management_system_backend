@@ -193,6 +193,9 @@ class UserTests(TestCase):
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.delete("/user/menu", data=payload, content_type="application/json")
     
+    def get_user_department_list(self):
+        return self.client.get("/user/department/list")
+
     # Now start testcases. 
 
     # Repeat the login
@@ -808,3 +811,17 @@ class UserTests(TestCase):
         second = ''
         res = self.delete_user_menu(first, second)
         self.assertEqual(res.json()['code'], 0)
+
+    def test_user_department_list(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        res = self.get_user_department_list()
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], "Succeed")
