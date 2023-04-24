@@ -6,5 +6,6 @@ urlpatterns = [
     path('return', views.requests_return),
     path('repair', views.requests_repair),
     path('transfer', views.request_transfer),
-    path('require', views.requests_require)
+    path('require', views.requests_require),
+    path('user', views.requests_user),
 ]

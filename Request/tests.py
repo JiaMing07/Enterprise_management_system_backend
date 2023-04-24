@@ -59,6 +59,9 @@ class AttributeTests(TestCase):
     def get_request_waiting(self):
         return self.client.get("/requests/waiting")
     
+    def get_request_user(self):
+        return self.client.get("/requests/user")
+    
     def post_request_repair(self, asset_list):
         payload = {
             "assets": asset_list,
@@ -74,6 +77,13 @@ class AttributeTests(TestCase):
         }    
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post("/requests/transfer", data=payload, content_type="application/json")
+    
+    def post_request_require(self, asset_list):
+        payload = {
+            "assets": asset_list,
+        }    
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.post("/requests/require", data=payload, content_type="application/json")
     # start test
 
     def test_request_return(self):
@@ -241,3 +251,42 @@ class AttributeTests(TestCase):
         res = self.post_request_transfer(asset_list, to, position)
         self.assertEqual(res.json()['info'], "第1条想要转移的资产 asset_3 已提交转移申请")
         self.assertEqual(res.json()['code'], 1)
+
+    def test_request_require(self):
+        user = self.create_token('test_user', 'staff')
+        asset_list = ["as"]
+        res = self.post_request_require(asset_list)
+        self.assertEqual(res.json()['info'], "第1条想要申领的资产 as 不存在")
+        self.assertEqual(res.json()['code'], 1)
+
+        asset = Asset.objects.filter(name="asset_1").first()
+        asset.state = 'IN_USE'
+        asset.save()
+        asset_list = ["asset_1"]
+        res = self.post_request_require(asset_list)
+        self.assertEqual(res.json()['info'], "第1条想要申领的资产 asset_1 不在闲置中")
+        self.assertEqual(res.json()['code'], 1)
+
+        assets = Asset.objects.all()
+        for ass in assets:
+            ass.state = "IDLE"
+            ass.save()
+
+        user = self.create_token('Alice', 'staff')
+        
+        asset_list = ["asset_1"]
+        res = self.post_request_require(asset_list)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
+
+        asset_list = ["ass", "asset_1"]
+        res = self.post_request_require(asset_list)
+        self.assertEqual(res.json()['info'], "第1条想要申领的资产 ass 不在可申领的范围内；第2条想要申领的资产 asset_1 已提交申领申请")
+        self.assertEqual(res.json()['code'], 1)
+
+    def test_request_waiting(self):
+        user = self.create_token('test_user', 'staff')
+
+        res = self.get_request_user()
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)

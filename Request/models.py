@@ -29,6 +29,14 @@ class NormalRequests(models.Model):
             type_str = "退库"
         elif self.type == 3:
             type_str = "维修"
+        messages = f"{self.initiator.username}{type_str}资产"
+        status = ""
+        if self.result == 0:
+            status = "待审批"
+        elif self.result == 1:
+            status = "审批通过"
+        elif self.result == 2:
+            status = "审批未通过"
         return {
             "id": self.id,
             "initiator": self.initiator.username,
@@ -37,7 +45,9 @@ class NormalRequests(models.Model):
             "type":type_str,
             "result": self.result,
             "request_time": self.request_time,
-            "review_time": self.review_time
+            "review_time": self.review_time,
+            "messages": messages,
+            "status": status
         }
     
 
@@ -54,6 +64,14 @@ class TransferRequests(models.Model):
     review_time = models.FloatField(default=utils_time.get_timestamp)
 
     def serialize(self):
+        messages = f"{self.initiator.name}转移资产到{self.participant.username}，转移到位置：{self.position}"
+        status = ""
+        if self.result == 0:
+            status = "待审批"
+        elif self.result == 1:
+            status = "审批通过"
+        elif self.result == 2:
+            status = "审批未通过"
         return {
             "id": self.id,
             "initiator": self.initiator.username,
@@ -64,5 +82,7 @@ class TransferRequests(models.Model):
             "type": "转移",
             "result": self.result,
             "request_time": self.request_time,
-            "review_time": self.review_time
+            "review_time": self.review_time,
+            "messages": messages,
+            "status": status
         }
