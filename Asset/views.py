@@ -145,7 +145,8 @@ def asset_list(req: HttpRequest):
         user = User.objects.filter(username=decoded['username']).first()
         entity = user.entity
         assets = Asset.objects.filter(entity=entity).exclude(name=entity.name).order_by('id')
-        assets = assets.filter(state='IDLE')
+        department_tree = subtree_department(user.department)
+        assets = assets.filter(department__id__in=department_tree)
         return_data = {
             "assets": [
                 return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
@@ -839,12 +840,13 @@ def asset_assetSuper(req: HttpRequest):
         for department in departments:
             assetSuper_list = []
             users_assetSuper = User.objects.filter(entity=entity, department=department, asset_super=True)
-            for user_assetSuper in users_assetSuper:
-                assetSuper_list.append(user_assetSuper.username)
-            assetSupers.append({
-                "department": department.name,
-                "assetSuper_list": assetSuper_list,
-            })
+            if len(users_assetSuper) > 0:
+                for user_assetSuper in users_assetSuper:
+                    assetSuper_list.append(user_assetSuper.username)
+                assetSupers.append({
+                    "department": department.name,
+                    "assetSuper_list": assetSuper_list,
+                })
         return request_success({
             "assetSupers": assetSupers,
         })
@@ -894,3 +896,22 @@ def asset_delete(req: HttpRequest):
         return request_success()
     else:
         return BAD_METHOD
+
+@CheckRequire
+def asset_idle(req: HttpRequest):
+    if req.method == 'GET':
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        assets = Asset.objects.filter(entity=entity).exclude(name=entity.name).order_by('id')
+        department_tree = subtree_department(user.department)
+        assets = assets.filter(department__id__in=department_tree)
+        assets = assets.filter(state='IDLE')
+        return_data = {
+            "assets": [
+                return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
+                                                 "position", "value", "user", "number", "state", "department", "image"])
+            for asset in assets],
+        }
+        return request_success(return_data)
+    return BAD_METHOD

@@ -118,6 +118,9 @@ class AttributeTests(TestCase):
     def get_asset_list(self):
         return self.client.get(f"/asset/list")
     
+    def get_asset_idle(self):
+        return self.client.get(f"/asset/idle")
+    
     def post_asset_add(self, name, parent, description, position, value, department, number, category, image):
         payload = {
             "name": name, 
@@ -1666,5 +1669,12 @@ class AttributeTests(TestCase):
         self.assertEqual(res.json()['code'], 0)
 
         res = self.delete_asset(assetName)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+    
+    def test_asset_idle(self):
+        user = self.create_token('test_user', 'asset_super')
+        
+        res = self.get_asset_idle()
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
