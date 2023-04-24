@@ -868,6 +868,7 @@ def user_query(req: HttpRequest):
 
 @CheckRequire
 def asset_delete(req: HttpRequest):
+    print(req.method)
     if req.method == 'DELETE':
         CheckAuthority(req, ["entity_super"])
         token, decoded = CheckToken(req)

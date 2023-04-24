@@ -11,6 +11,7 @@ urlpatterns = [
     path('add', views.asset_add),
     path('edit', views.asset_edit),
     path('user', views.user_query),
+    path('delete', views.asset_delete),
     path('add/list', views.asset_add_list),
     path('query/<type>/<description>/<attribute>', views.asset_query),
     path('retire', views.asset_retire),
