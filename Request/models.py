@@ -30,6 +30,7 @@ class NormalRequests(models.Model):
         elif self.type == 3:
             type_str = "维修"
         messages = f"{self.initiator.username}{type_str}资产"
+        print(messages)
         status = ""
         if self.result == 0:
             status = "待审批"
@@ -64,7 +65,7 @@ class TransferRequests(models.Model):
     review_time = models.FloatField(default=utils_time.get_timestamp)
 
     def serialize(self):
-        messages = f"{self.initiator.name}转移资产到{self.participant.username}，转移到位置：{self.position}"
+        messages = f"{self.initiator.username}转移资产到{self.participant.username}，转移到位置：{self.position}"
         status = ""
         if self.result == 0:
             status = "待审批"
