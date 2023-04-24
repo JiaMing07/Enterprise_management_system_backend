@@ -157,3 +157,43 @@ def request_transfer(req:HttpRequest):
             return request_failed(1, err_msg[:-1], status_code=403)
         return request_success()
     return BAD_METHOD
+
+@CheckRequire
+def requests_require(req: HttpRequest):
+    '''
+    申领资产
+    '''
+    if req.method == 'POST':
+        CheckAuthority(req, ["staff"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        body = json.loads(req.body.decode("utf-8"))
+        assets_list = get_args(body, ["assets"], ["list"])[0]
+        err_msg = ""
+        for idx, asset_name in enumerate(assets_list):
+            asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
+            if asset is None:
+                err_msg += f'第{idx+1}条想要申领的资产 {asset_name} 不存在；'
+                continue
+            if asset.state != 'IDLE':
+                err_msg += f'第{idx+1}条想要申领的资产 {asset_name} 不在闲置中；'
+                continue
+            department_list = subtree_department(user.department)
+            flag = False
+            for d in department_list:
+                if d == asset.department:
+                    flag = True
+                    break
+            if flag == False:
+                err_msg += f'第{idx+1}条想要申领的资产 {asset_name} 不在可申领的范围内；'
+                continue
+            request = NormalRequests.objects.filter(initiator=user, asset=asset, type=1, result=0).first()
+            if request is not None:
+                err_msg += f'第{idx+1}条想要申领的资产 {asset_name} 已提交申领申请；'
+                continue
+            request = NormalRequests(initiator=user, asset=asset, type=1, result=0, request_time=get_timestamp(),review_time=0.0)
+            request.save()
+        if len(err_msg) > 0:
+            return request_failed(1, err_msg[:-1], status_code=403)
+        return request_success()
+    return BAD_METHOD
