@@ -227,6 +227,9 @@ class AttributeTests(TestCase):
     def get_asset_user_query(self):
         return self.client.get(f'/asset/user')
     
+    def get_asset_label(self):
+        return self.client.get(f'/asset/label')
+    
     # Now start testcases. 
     def test_asset_category_add(self):
         user = User.objects.filter(username='test_user').first()
@@ -1626,5 +1629,38 @@ class AttributeTests(TestCase):
         labels = ["资产名称", "归属公司","资产类型", "资产挂账部门", "资产自定义属性", 
                   "资产数量", "资产位置", "资产描述", "资产二维码", "资产价值"]
         res = self.post_asset_label(name, labels)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+    def test_asset_label_get(self):
+        user = User.objects.filter(username='Alice').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("asset_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        name = "model_1"
+        labels = ["资产名称"]
+        res = self.post_asset_label(name, labels)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        name = "model_2"
+        labels = ["资产名称", "归属公司"]
+        res = self.post_asset_label(name, labels)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        name = "model_3"
+        labels = ["资产名称", "归属公司","资产类型", "资产挂账部门", "资产自定义属性", 
+                  "资产数量", "资产位置", "资产描述", "资产二维码", "资产价值"]
+        res = self.post_asset_label(name, labels)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        res = self.get_asset_label()
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')

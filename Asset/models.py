@@ -136,6 +136,7 @@ class AssetAttribute(models.Model):
 class Label(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=50)
+    depart = models.ForeignKey(Department, on_delete=models.CASCADE)
     asset_name = models.BooleanField(default=True)
     entity = models.BooleanField(default=True)
     category = models.BooleanField(default=True)

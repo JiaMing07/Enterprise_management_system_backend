@@ -902,7 +902,6 @@ def asset_label(req: HttpRequest):
         CheckAuthority(req, ["entity_super", "asset_super"])
         token, decoded = CheckToken(req)
         user = User.objects.filter(username=decoded['username']).first()
-        entity = user.entity
 
         name = json.loads(req.body.decode("utf-8")).get('name')
         labels = json.loads(req.body.decode("utf-8")).get('labels')
@@ -942,14 +941,54 @@ def asset_label(req: HttpRequest):
         if "资产价值" in labels:
             value = True
 
-        label = Label(name=name, asset_name=asset_name, description=description, position=position, value=value, number=number,
-                      category=category, entity=entity, department=department, attribute=attribute, QRcode=QRcode)
+        label = Label(name=name, asset_name=asset_name, description=description, 
+                      position=position, value=value, number=number,
+                      category=category, entity=entity, department=department, 
+                      attribute=attribute, QRcode=QRcode, depart=user.department)
         label.save()
         return request_success()
     
     elif req.method == 'GET':
-        pass
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        depart = user.department
+
+        labels = Label.objects.filter(depart=depart)
+
+        labels_json = []
+        for one in labels:
+            dict_ = {}
+            dict_['name'] = one.name
+
+            label_list = []
+            if one.asset_name:
+                label_list.append("资产名称")
+            if one.entity:
+                label_list.append("归属公司")
+            if one.category:
+                label_list.append("资产类型")
+            if one.department:
+                label_list.append("资产挂账部门")
+            if one.attribute:
+                label_list.append("资产自定义属性")
+            if one.number:
+                label_list.append("资产数量")
+            if one.position:
+                label_list.append("资产位置")
+            if one.description:
+                label_list.append("资产描述")
+            if one.QRcode:
+                label_list.append("资产二维码")
+            if one.value:
+                label_list.append("资产价值")
+            
+            dict_['label'] = label_list
+            labels_json.append(dict_)
+
+        return_data = {
+            "labels": labels_json,
+        }
+        return request_success(return_data)
 
     else:
-        print("hewewewewewwewewew")
         return BAD_METHOD
