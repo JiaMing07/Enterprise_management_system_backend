@@ -196,7 +196,6 @@ class AttributeTests(TestCase):
         }
 
         payload = {k: v for k, v in payload.items() if v is not None}
-        print(payload)
         return self.client.delete("/asset/delete", data=payload, content_type="application/json")
 
     def get_asset_attribute_list(self, assetName):
@@ -614,13 +613,13 @@ class AttributeTests(TestCase):
         self.assertEqual(len(Asset.objects.all()), 2)
         self.assertTrue(Asset.objects.filter(name=assetName).exists())
 
-        assetName = 'asset_1'
+        assetName = ['asset_1']
 
         res = self.delete_asset_retire(assetName)
-        print(res.json()['info'])
         self.assertEqual(res.json()['code'], 1)
+        self.assertEqual(res.json()['info'], 'asset asset_1 not found')
 
-        assetName = 'computer'
+        assetName = ['computer']
 
         res = self.delete_asset_retire(assetName)
         self.assertEqual(res.json()['info'], 'Succeed')
@@ -629,7 +628,7 @@ class AttributeTests(TestCase):
         # self.assertTrue(Asset.objects.filter(name=assetName).exists())
 
         # 部门不在管理范围内
-        assetName = 'computer1'
+        assetName = ['computer1']
         parentName = 'ass'
         description = 'des'
         position = 'pos'
@@ -655,10 +654,11 @@ class AttributeTests(TestCase):
         c['token'] = Token
         self.client.cookies = c
 
-        assetName = 'computer'
+        assetName = ['computer']
 
         res = self.delete_asset_retire(assetName)
-        self.assertEqual(res.json()['code'], 2)
+        self.assertEqual(res.json()['code'], 1)
+        self.assertEqual(res.json()['info'], "资产 computer 的部门不在管理范围内")
         # self.assertTrue(Asset.objects.filter(name=assetName).exists())
 
     def test_attribute_add(self):
@@ -1645,11 +1645,12 @@ class AttributeTests(TestCase):
         res = self.delete_asset(assetName)
         self.assertEqual(res.json()['code'], 1)
 
-        assetName = 'computer'
+        assetName = ['computer']
 
         res = self.delete_asset_retire(assetName)
         self.assertEqual(res.json()['code'], 0)
 
+        assetName = 'computer'
         res = self.delete_asset(assetName)
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
@@ -1686,7 +1687,7 @@ class AttributeTests(TestCase):
         self.assertEqual(res.json()['code'], 3)
         self.assertEqual(res.json()['info'], '不能删除未清退的资产')
 
-        res = self.delete_asset_retire(assetName)
+        res = self.delete_asset_retire([assetName])
         self.assertEqual(res.json()['code'], 0)
 
         res = self.delete_asset(assetName)
