@@ -928,17 +928,22 @@ def asset_allocate(req: HttpRequest):
         checklength(asset_super, 0, 50, "asset_super")
         asset_super = User.objects.filter(username=asset_super).first()
         department = Department.objects.filter(entity=user.entity, name=department).first()
+        department_list = subtree_department(user.department)
         err_msg = ""
         for idx, ass in enumerate(asset_list):
             asset = Asset.objects.filter(entity=user.entity, name=ass).first()
             if asset is None:
                 err_msg += f"第{idx+1}条资产 {ass} 不存在；"
+                continue
             if asset.state != 'IDLE':
-                err_msg += f"第{idx+1}条资产不在闲置中，无法调拨；"
+                err_msg += f"第{idx+1}条资产 {ass} 不在闲置中，无法调拨；"
+                continue
+            if asset.department.id not in department_list:
+                err_msg += f"第{idx+1}条资产 {ass} 不在管辖范围内，无法调拨；"
             asset.owner = asset_super.username
-            asset.department = department
+            asset.department = asset_super.department
             asset.save()
         if len(err_msg) > 0:
-            return request_failed(1, err_msg[:-1], status_code=404)
+            return request_failed(1, err_msg[:-1], status_code=403)
         return request_success()
     return BAD_METHOD

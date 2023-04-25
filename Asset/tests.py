@@ -241,6 +241,15 @@ class AttributeTests(TestCase):
     def get_asset_user_query(self):
         return self.client.get(f'/asset/user')
     
+    def put_asset_allocate(self, assets, department, asset_super):
+        payload = {
+            "name": assets,
+            "department": department,
+            "asset_super": asset_super
+        }
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.put("/asset/allocate", data=payload, content_type="application/json")
+    
     # Now start testcases. 
     def test_asset_category_add(self):
         user = User.objects.filter(username='test_user').first()
@@ -1678,3 +1687,44 @@ class AttributeTests(TestCase):
         res = self.get_asset_idle()
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
+
+    def test_asset_allocate(self):
+        ent = Entity.objects.filter(name='ent').first()
+        category = AssetCategory.objects.filter(name='cate').first()
+        dep = Department.objects.filter(name='dep').first()
+        dep_child = Department.objects.filter(name='dep_child').first()
+        Asset.objects.create(name='asset_1', entity=ent, owner='test_user', category=category, department=dep)
+        Asset.objects.create(name='asset_2', entity=ent, owner='Alice', category=category, department=dep_child)
+        user = self.create_token('Alice', 'asset_super')
+
+        assets = ["as"]
+        department = "dep"
+        asset_super = "test_user"
+
+        res = self.put_asset_allocate(assets, department, asset_super)
+        self.assertEqual(res.json()['info'], "第1条资产 as 不存在")
+        self.assertEqual(res.json()['code'], 1)
+
+        # ass 不在管辖范围内，asset_2 不在闲置中
+        asset = Asset.objects.filter(name='asset_2').first()
+        asset.state = 'IN_USE'
+        asset.save()
+        assets = ["ass", "asset_2"]
+        department = "dep"
+        asset_super = "test_user"
+
+        res = self.put_asset_allocate(assets, department, asset_super)
+        self.assertEqual(res.json()['info'], "第1条资产 ass 不在管辖范围内，无法调拨；第2条资产 asset_2 不在闲置中，无法调拨")
+        self.assertEqual(res.json()['code'], 1)
+
+        user = self.create_token('test_user', 'asset_super')
+        asset = Asset.objects.filter(name='asset_1').first()
+        asset.state = 'IDLE'
+        asset.save()
+        assets = ["asset_1"]
+        department = "dep_child"
+        asset_super = "Alice"
+
+        res = self.put_asset_allocate(assets, department, asset_super)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
