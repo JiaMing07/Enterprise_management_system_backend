@@ -10,6 +10,7 @@ urlpatterns = [
     path('tree', views.asset_tree),
     path('add', views.asset_add),
     path('edit', views.asset_edit),
+    path('label', views.asset_label),   # place it to here and it can be right
     path('user', views.user_query),
     path('delete', views.asset_delete),
     path('idle', views.asset_idle),
