@@ -933,6 +933,8 @@ def asset_allocate(req: HttpRequest):
             asset = Asset.objects.filter(entity=user.entity, name=ass).first()
             if asset is None:
                 err_msg += f"第{idx+1}条资产 {ass} 不存在；"
+            if asset.state != 'IDLE':
+                err_msg += f"第{idx+1}条资产不在闲置中，无法调拨；"
             asset.owner = asset_super.username
             asset.department = department
             asset.save()
