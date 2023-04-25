@@ -296,9 +296,7 @@ def asset_add_list(req:HttpRequest):
         user = User.objects.filter(username=decoded['username']).first()
         entity = user.entity
         err_msg=""
-        # print(assets_new)
         for idx, asset_single in enumerate(assets_new):
-            # print("yes")
             name, parentName, description, position, value, department, number, categoryName, image_url = get_args(
             asset_single, ["name", "parent", "description", "position", "value", "department", "number", "category", "image"], 
             ["string", "string", "string", "string", "int", "string", "int", "string", "string"])
