@@ -298,6 +298,69 @@ def requests_approve(req: HttpRequest):
     return BAD_METHOD
 
 @CheckRequire
+def requests_delete(req: HttpRequest):
+    if req.method == 'POST':
+        CheckAuthority(req, ["staff"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+
+        body = json.loads(req.body.decode("utf-8"))
+        assets_list = get_args(body, ["assetName"], ["list"])[0]
+        type_list = get_args(body, ["type"], ["list"])[0]
+
+        # user delete requests
+        # just delete
+
+        normal_list = NormalRequests.objects.filter(initiator=user)
+        transfer_list = TransferRequests.objects.filter(initiator=user)
+
+        err_msg = ""
+        for idx, (asset_name, type) in enumerate(zip(assets_list, type_list)):
+            asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
+            
+            if type == "1":   # 申领
+                request = NormalRequests.objects.filter(initiator=user, asset=asset, type=1, result=0).first()
+                if request not in normal_list:
+                    err_msg += f'第{idx+1}条想要申领的资产 {asset_name} 不在申请list中; '
+                else:
+                    request.result = 3
+                    request.delete()
+
+            elif type == "2": # 退库
+                request = NormalRequests.objects.filter(initiator=user, asset=asset, type=2, result=0).first()
+                if request not in normal_list:
+                    err_msg += f'第{idx+1}条想要退库的资产 {asset_name} 不在申请list中; '
+                else:
+                    request.result = 3
+                    request.delete()
+
+            elif type == "3": # 维修
+                request = NormalRequests.objects.filter(initiator=user, asset=asset, type=3, result=0).first()
+                if request not in normal_list:
+                    err_msg += f'第{idx+1}条想要维修的资产 {asset_name} 不在申请list中; '
+                else:
+                    request.result = 3
+                    request.delete()
+
+            elif type == "4": # 转移
+                request = TransferRequests.objects.filter(initiator=user, asset=asset, type=4, result=0).first()
+                if request not in transfer_list:
+                    err_msg += f'第{idx+1}条想要转移的资产 {asset_name} 不在申请list中; '
+                else:
+                    request.result = 3
+                    request.delete()
+
+            else:
+                err_msg += f'第{idx+1}条想要处理的资产 {asset_name} 申请不符合要求; '
+
+        if len(err_msg) > 0:
+            return request_failed(1, err_msg[:-1], status_code=403)
+        
+        return request_success()
+    
+    return BAD_METHOD
+
+@CheckRequire
 def requests_disapprove(req: HttpRequest):
     if req.method == 'POST':
         CheckAuthority(req, ["asset_super", "entity_super"])
@@ -361,65 +424,6 @@ def requests_disapprove(req: HttpRequest):
 
             else:
                 print("nonono")
-                err_msg += f'第{idx+1}条想要处理的资产 {asset_name} 申请不符合要求; '
-
-        if len(err_msg) > 0:
-            return request_failed(1, err_msg[:-1], status_code=403)
-        
-        return request_success()
-    
-    return BAD_METHOD
-
-@CheckRequire
-def requests_delete(req: HttpRequest):
-    if req.method == 'POST':
-        CheckAuthority(req, ["staff"])
-        token, decoded = CheckToken(req)
-        user = User.objects.filter(username=decoded['username']).first()
-
-        body = json.loads(req.body.decode("utf-8"))
-        assets_list = get_args(body, ["assetName"], ["list"])[0]
-        type_list = get_args(body, ["type"], ["list"])[0]
-
-        # user delete requests
-        # just delete
-
-        normal_list = NormalRequests.objects.filter(initiator=user)
-        transfer_list = TransferRequests.objects.filter(initiator=user)
-
-        err_msg = ""
-        for idx, (asset_name, type) in enumerate(zip(assets_list, type_list)):
-            asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
-            
-            if type == "1":   # 申领
-                request = NormalRequests.objects.filter(initiator=user, asset=asset, type=1, result=0).first()
-                if request not in normal_list:
-                    err_msg += f'第{idx+1}条想要申领的资产 {asset_name} 不在申请list中; '
-                else:
-                    request.delete()
-
-            elif type == "2": # 退库
-                request = NormalRequests.objects.filter(initiator=user, asset=asset, type=2, result=0).first()
-                if request not in normal_list:
-                    err_msg += f'第{idx+1}条想要退库的资产 {asset_name} 不在申请list中; '
-                else:
-                    request.delete()
-
-            elif type == "3": # 维修
-                request = NormalRequests.objects.filter(initiator=user, asset=asset, type=3, result=0).first()
-                if request not in normal_list:
-                    err_msg += f'第{idx+1}条想要维修的资产 {asset_name} 不在申请list中; '
-                else:
-                    request.delete()
-
-            elif type == "4": # 转移
-                request = TransferRequests.objects.filter(initiator=user, asset=asset, type=4, result=0).first()
-                if request not in transfer_list:
-                    err_msg += f'第{idx+1}条想要转移的资产 {asset_name} 不在申请list中; '
-                else:
-                    request.delete()
-
-            else:
                 err_msg += f'第{idx+1}条想要处理的资产 {asset_name} 申请不符合要求; '
 
         if len(err_msg) > 0:
