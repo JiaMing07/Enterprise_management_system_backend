@@ -244,7 +244,7 @@ def requests_approve(req: HttpRequest):
             #     err_msg += f'第{idx+1}条想要维修的资产 {asset_name} 不存在；'
             #     continue
             if type == "1":   # 申领
-                request = NormalRequests.objects.filter(initiator=user, asset=asset, type=1, result=0).first()
+                request = NormalRequests.objects.filter(asset=asset, type=1, result=0).first()
                 if request not in normal_list:
                     err_msg += f'第{idx+1}条想要申领的资产 {asset_name} 不在申请list中; '
                 else:
@@ -254,7 +254,7 @@ def requests_approve(req: HttpRequest):
                     request.save()
 
             elif type == "2": # 退库
-                request = NormalRequests.objects.filter(initiator=user, asset=asset, type=2, result=0).first()
+                request = NormalRequests.objects.filter(asset=asset, type=2, result=0).first()
                 if request not in normal_list:
                     err_msg += f'第{idx+1}条想要退库的资产 {asset_name} 不在申请list中; '
                 else:
@@ -264,7 +264,7 @@ def requests_approve(req: HttpRequest):
                     request.save()
 
             elif type == "3": # 维修
-                request = NormalRequests.objects.filter(initiator=user, asset=asset, type=3, result=0).first()
+                request = NormalRequests.objects.filter(asset=asset, type=3, result=0).first()
                 if request not in normal_list:
                     err_msg += f'第{idx+1}条想要维修的资产 {asset_name} 不在申请list中; '
                 else:
@@ -274,7 +274,7 @@ def requests_approve(req: HttpRequest):
                     request.save()
 
             elif type == "4": # 转移
-                request = TransferRequests.objects.filter(initiator=user, asset=asset, type=4, result=0).first()
+                request = TransferRequests.objects.filter(asset=asset, type=4, result=0).first()
                 if request not in transfer_list:
                     err_msg += f'第{idx+1}条想要转移的资产 {asset_name} 不在申请list中; '
                 else:
@@ -324,7 +324,7 @@ def requests_disapprove(req: HttpRequest):
             #     err_msg += f'第{idx+1}条想要维修的资产 {asset_name} 不存在；'
             #     continue
             if type == "1":   # 申领
-                request = NormalRequests.objects.filter(initiator=user, asset=asset, type=1, result=0).first()
+                request = NormalRequests.objects.filter(asset=asset, type=1, result=0).first()
                 if request not in normal_list:
                     err_msg += f'第{idx+1}条想要申领的资产 {asset_name} 不在申请list中; '
                 else:
@@ -333,7 +333,7 @@ def requests_disapprove(req: HttpRequest):
                     request.save()
 
             elif type == "2": # 退库
-                request = NormalRequests.objects.filter(initiator=user, asset=asset, type=2, result=0).first()
+                request = NormalRequests.objects.filter(asset=asset, type=2, result=0).first()
                 if request not in normal_list:
                     err_msg += f'第{idx+1}条想要退库的资产 {asset_name} 不在申请list中; '
                 else:
@@ -342,7 +342,7 @@ def requests_disapprove(req: HttpRequest):
                     request.save()
 
             elif type == "3": # 维修
-                request = NormalRequests.objects.filter(initiator=user, asset=asset, type=3, result=0).first()
+                request = NormalRequests.objects.filter(asset=asset, type=3, result=0).first()
                 if request not in normal_list:
                     err_msg += f'第{idx+1}条想要维修的资产 {asset_name} 不在申请list中; '
                 else:
@@ -351,7 +351,7 @@ def requests_disapprove(req: HttpRequest):
                     request.save()
 
             elif type == "4": # 转移
-                request = TransferRequests.objects.filter(initiator=user, asset=asset, type=4, result=0).first()
+                request = TransferRequests.objects.filter(asset=asset, type=4, result=0).first()
                 if request not in transfer_list:
                     err_msg += f'第{idx+1}条想要转移的资产 {asset_name} 不在申请list中; '
                 else:
