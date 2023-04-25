@@ -9,5 +9,6 @@ urlpatterns = [
     path('require', views.requests_require),
     path('user', views.requests_user),
     path('approve', views.requests_approve),
-    path('disapprove', views.requests_disapprove)
+    path('disapprove', views.requests_disapprove),
+    path('delete', views.requests_delete)
 ]
