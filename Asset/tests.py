@@ -38,7 +38,18 @@ class AttributeTests(TestCase):
         Asset.objects.create(name='ass', entity=ent, owner=user.username, category=category, department=dep)
         Attribute.objects.create(id=1, name="attri_0", entity=ent, department=dep_ent)
         
-    # Utility functions    
+    # Utility functions  
+    def create_token(self, name, authority):
+        user = User.objects.filter(username=name).first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen(authority)
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+        return user
+      
     def post_attribute_add(self, name, department):
         payload = {
             'name': name,
@@ -150,6 +161,9 @@ class AttributeTests(TestCase):
     def get_asset_list(self):
         return self.client.get(f"/asset/list")
     
+    def get_asset_idle(self):
+        return self.client.get(f"/asset/idle")
+    
     def put_asset_edit(self, oldName, name, parent, description, position, value, owner, number, state, category, image):
         payload = {
             'oldName': oldName,
@@ -168,7 +182,7 @@ class AttributeTests(TestCase):
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.put("/asset/edit", data=payload, content_type="application/json")
     
-    def delete_asset(self, assetName):
+    def delete_asset_retire(self, assetName):
         payload = {
             'assetName': assetName,
         }
@@ -176,6 +190,14 @@ class AttributeTests(TestCase):
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.delete("/asset/retire", data=payload, content_type="application/json")
     
+    def delete_asset(self, assetName):
+        payload = {
+            'assetName': assetName,
+        }
+
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.delete("/asset/delete", data=payload, content_type="application/json")
+
     def get_asset_attribute_list(self, assetName):
         return self.client.get(f"/asset/attribute/{assetName}")
     
@@ -226,6 +248,15 @@ class AttributeTests(TestCase):
     
     def get_asset_user_query(self):
         return self.client.get(f'/asset/user')
+    
+    def put_asset_allocate(self, assets, department, asset_super):
+        payload = {
+            "name": assets,
+            "department": department,
+            "asset_super": asset_super
+        }
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.put("/asset/allocate", data=payload, content_type="application/json")
     
     def get_asset_label(self):
         return self.client.get(f'/asset/label')
@@ -582,22 +613,22 @@ class AttributeTests(TestCase):
         self.assertEqual(len(Asset.objects.all()), 2)
         self.assertTrue(Asset.objects.filter(name=assetName).exists())
 
-        assetName = 'asset_1'
+        assetName = ['asset_1']
 
-        res = self.delete_asset(assetName)
-        print(res.json()['info'])
+        res = self.delete_asset_retire(assetName)
         self.assertEqual(res.json()['code'], 1)
+        self.assertEqual(res.json()['info'], 'asset asset_1 not found')
 
-        assetName = 'computer'
+        assetName = ['computer']
 
-        res = self.delete_asset(assetName)
+        res = self.delete_asset_retire(assetName)
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
         # self.assertEqual(len(Asset.objects.all()), 2)
         # self.assertTrue(Asset.objects.filter(name=assetName).exists())
 
         # 部门不在管理范围内
-        assetName = 'computer1'
+        assetName = ['computer1']
         parentName = 'ass'
         description = 'des'
         position = 'pos'
@@ -623,10 +654,11 @@ class AttributeTests(TestCase):
         c['token'] = Token
         self.client.cookies = c
 
-        assetName = 'computer'
+        assetName = ['computer']
 
-        res = self.delete_asset(assetName)
-        self.assertEqual(res.json()['code'], 2)
+        res = self.delete_asset_retire(assetName)
+        self.assertEqual(res.json()['code'], 1)
+        self.assertEqual(res.json()['info'], "资产 computer 的部门不在管理范围内")
         # self.assertTrue(Asset.objects.filter(name=assetName).exists())
 
     def test_attribute_add(self):
@@ -1585,6 +1617,130 @@ class AttributeTests(TestCase):
         self.assertTrue(Asset.objects.filter(name='computer').exists())
         self.assertTrue(Asset.objects.filter(name='ent').exists())
         self.assertTrue(Asset.objects.filter(name='keyboard').exists())
+    
+    def test_asset_delete(self):
+        self.create_token('test_user', 'entity_super')
+
+        self.assertEqual(len(Asset.objects.all()), 1)
+
+        assetName = 'computer'
+        parentName = 'ass'
+        description = 'des'
+        position = 'pos'
+        value = '1000'
+        department = 'dep'
+        number = 1
+        categoryName = 'cate'
+        image = '127.0.0.1'
+        
+        res = self.post_asset_add(assetName, parentName, description, position, 
+                                           value, department, number, categoryName, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(len(Asset.objects.all()), 2)
+        self.assertTrue(Asset.objects.filter(name=assetName).exists())
+
+        assetName = 'asset_1'
+
+        res = self.delete_asset(assetName)
+        self.assertEqual(res.json()['code'], 1)
+
+        assetName = ['computer']
+
+        res = self.delete_asset_retire(assetName)
+        self.assertEqual(res.json()['code'], 0)
+
+        assetName = 'computer'
+        res = self.delete_asset(assetName)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(len(Asset.objects.all()), 1)
+        self.assertFalse(Asset.objects.filter(name=assetName).exists())
+
+        # 部门不在管理范围内
+        assetName = 'computer'
+        parentName = 'ass'
+        description = 'des'
+        position = 'pos'
+        value = '1000'
+        department = 'dep'
+        number = 1
+        categoryName = 'cate'
+        image = '127.0.0.1'
+        
+        res = self.post_asset_add(assetName, parentName, description, position, 
+                                           value, department, number, categoryName, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(len(Asset.objects.all()), 2)
+        self.assertTrue(Asset.objects.filter(name=assetName).exists())
+
+        self.create_token('Alice', 'entity_super')
+        assetName = 'computer'
+
+        res = self.delete_asset(assetName)
+        self.assertEqual(res.json()['code'], 2)
+        self.assertTrue(Asset.objects.filter(name=assetName).exists())
+
+        self.create_token('test_user', 'entity_super')
+        res = self.delete_asset(assetName)
+        self.assertEqual(res.json()['code'], 3)
+        self.assertEqual(res.json()['info'], '不能删除未清退的资产')
+
+        res = self.delete_asset_retire([assetName])
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.delete_asset(assetName)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+    
+    def test_asset_idle(self):
+        user = self.create_token('test_user', 'asset_super')
+        
+        res = self.get_asset_idle()
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+    def test_asset_allocate(self):
+        ent = Entity.objects.filter(name='ent').first()
+        category = AssetCategory.objects.filter(name='cate').first()
+        dep = Department.objects.filter(name='dep').first()
+        dep_child = Department.objects.filter(name='dep_child').first()
+        Asset.objects.create(name='asset_1', entity=ent, owner='test_user', category=category, department=dep)
+        Asset.objects.create(name='asset_2', entity=ent, owner='Alice', category=category, department=dep_child)
+        user = self.create_token('Alice', 'asset_super')
+
+        assets = ["as"]
+        department = "dep"
+        asset_super = "test_user"
+
+        res = self.put_asset_allocate(assets, department, asset_super)
+        self.assertEqual(res.json()['info'], "第1条资产 as 不存在")
+        self.assertEqual(res.json()['code'], 1)
+
+        # ass 不在管辖范围内，asset_2 不在闲置中
+        asset = Asset.objects.filter(name='asset_2').first()
+        asset.state = 'IN_USE'
+        asset.save()
+        assets = ["ass", "asset_2"]
+        department = "dep"
+        asset_super = "test_user"
+
+        res = self.put_asset_allocate(assets, department, asset_super)
+        self.assertEqual(res.json()['info'], "第1条资产 ass 不在管辖范围内，无法调拨；第2条资产 asset_2 不在闲置中，无法调拨")
+        self.assertEqual(res.json()['code'], 1)
+
+        user = self.create_token('test_user', 'asset_super')
+        asset = Asset.objects.filter(name='asset_1').first()
+        asset.state = 'IDLE'
+        asset.save()
+        assets = ["asset_1"]
+        department = "dep_child"
+        asset_super = "Alice"
+
+        res = self.put_asset_allocate(assets, department, asset_super)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
 
     def test_asset_label_post(self):
         user = User.objects.filter(username='Alice').first()

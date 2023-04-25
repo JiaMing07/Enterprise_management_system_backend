@@ -1,4 +1,5 @@
 import hashlib
+from .utils_time import get_timestamp
 
 def init_entity():
     from Department.models import Entity
@@ -105,3 +106,41 @@ def add_asset():
     if not Asset.objects.filter(name="asset_base").exists():
         category_1 = Asset(name="asset_base",entity=entity, category=AssetCategory.objects.filter(name="category_base").first(), department=Department.objects.filter(name="admin_department").first())
         category_1.save()
+
+def add_request():
+    from User.models import User
+    from Department.models import Entity, Department
+    from Asset.models import AssetCategory, Asset
+    from Request.models import NormalRequests, TransferRequests
+    entity=Entity.objects.filter(name="entity_1").first()
+    department = Department.objects.filter(name='department_1', entity=entity).first()
+    if not User.objects.filter(username="David").exists():
+        password='123'
+        md5 = hashlib.md5()
+        md5.update(password.encode('utf-8'))
+        password = md5.hexdigest()
+        user_1 = User(username='David', password=password, department=department, entity=entity)
+        user_1.save()
+    user_1 = User.objects.filter(username='David').first()
+    if not Asset.objects.filter(name="test_request_asset_1").exists():
+        asset_1 = Asset(name="test_request_asset_1",entity=entity, category=AssetCategory.objects.filter(name="category_base").first(), department=department)
+        asset_1.save()
+        request_1 = NormalRequests(initiator=user_1, asset=asset_1, type=1, result=0, request_time=get_timestamp(),review_time=0.0)
+        request_1.save()
+    if not Asset.objects.filter(name="test_request_asset_2").exists():
+        asset_2 = Asset(name="test_request_asset_2",entity=entity, category=AssetCategory.objects.filter(name="category_base").first(), department=department)
+        asset_2.save()
+        request_2 = NormalRequests(initiator=user_1, asset=asset_2, type=2, result=0, request_time=get_timestamp(),review_time=0.0)
+        request_2.save()
+    if not Asset.objects.filter(name="test_request_asset_3").exists():
+        asset_3 = Asset(name="test_request_asset_3",entity=entity, category=AssetCategory.objects.filter(name="category_base").first(), department=department)
+        asset_3.save()
+        request_3 = NormalRequests(initiator=user_1, asset=asset_3, type=3, result=0, request_time=get_timestamp(),review_time=0.0)
+        request_3.save()
+    if not Asset.objects.filter(name="test_request_asset_4").exists():
+        asset_4 = Asset(name="test_request_asset_4",entity=entity, category=AssetCategory.objects.filter(name="category_base").first(), department=department)
+        asset_4.save()
+        participant = User.objects.filter(username="Alice").first()
+        pos = "pos1"
+        request_4 = TransferRequests(initiator=user_1, participant=participant, asset=asset_4, type=4, result=0, request_time=get_timestamp(),review_time=0.0, position=pos)
+        request_4.save()
