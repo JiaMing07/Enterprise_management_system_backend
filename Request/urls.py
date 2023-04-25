@@ -8,4 +8,5 @@ urlpatterns = [
     path('transfer', views.request_transfer),
     path('require', views.requests_require),
     path('user', views.requests_user),
+    path('approve', views.requests_approve)
 ]
