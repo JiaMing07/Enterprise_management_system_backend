@@ -324,7 +324,7 @@ def user_menu(req: HttpRequest):
         authority = user.check_authen()
         menus_entity = Menu.objects.filter(entity = user.entity).filter(second="")
         menus_base = Menu.objects.filter(entity = Entity.objects.filter(name='admin_entity').first()).filter(second="")
-        menu_list = menus_entity | menus_base
+        menus_list = menus_entity | menus_base
         if authority == 'entity_super':
             menu_list = Menu.objects.filter(entity_show=True)
         elif authority == 'asset_super':
@@ -387,4 +387,15 @@ def department_user_list(req: HttpRequest):
         return request_success({
             "users_list": users_list
         })
+    return BAD_METHOD
+
+@CheckRequire
+def menu_list(req: HttpRequest):
+    if req.method == 'GET':
+        CheckAuthority(req, ["entity_super"])
+        menu_list = Menu.objects.all()
+        return_data = {
+            "menu": [menu.serialize() for menu in menu_list]
+        }
+        return request_success(return_data)
     return BAD_METHOD
