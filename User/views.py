@@ -357,8 +357,8 @@ def user_menu(req: HttpRequest):
             for menu in menus:
                 menu.delete()
         else:
-            menus_entity = Menu.objects.filter(entity=entity).filter(first=first).filter(second=second)
-            menus_base = Menu.objects.filter(entity=entity_base).filter(first=first).filter(second=second)
+            menus_entity = Menu.objects.filter(entity=entity).filter(first=first, second=second)
+            menus_base = Menu.objects.filter(entity=entity_base).filter(first=first, second=second)
             if menus_base:
                 return request_failed(4, "不可删除初始二级菜单", status_code=403)
             menu = menus_entity
@@ -393,7 +393,9 @@ def department_user_list(req: HttpRequest):
 def menu_list(req: HttpRequest):
     if req.method == 'GET':
         CheckAuthority(req, ["entity_super"])
-        menu_list = Menu.objects.all()
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        menu_list = Menu.objects.filter(entity=user.entity)
         return_data = {
             "menu": [menu.serialize() for menu in menu_list]
         }
