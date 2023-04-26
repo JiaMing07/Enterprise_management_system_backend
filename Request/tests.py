@@ -62,6 +62,9 @@ class AttributeTests(TestCase):
     def get_request_user(self):
         return self.client.get("/requests/user")
     
+    def get_request_list(self):
+        return self.client.get("/requests/list")
+    
     def post_request_repair(self, asset_list):
         payload = {
             "assets": asset_list,
@@ -216,7 +219,7 @@ class AttributeTests(TestCase):
         self.assertEqual(res.json()['info'], "第1条想要维修的资产 asset_3 已提交转移申请")
         self.assertEqual(res.json()['code'], 1)
 
-    def test_request_repair(self):
+    def test_request_transfer(self):
         user = self.create_token('test_user', 'staff')
         asset_list = ["as"]
         to = ["dep_child", "test_user"]
@@ -531,3 +534,10 @@ class AttributeTests(TestCase):
         # res = self.post_request_approve(asset_list, type_list)
         # self.assertEqual(res.json()['info'], "Succeed")
         # self.assertEqual(res.json()['code'], 0)
+    
+    def test_request_list(self):
+        user = self.create_token('test_user', 'asset_super')
+
+        res = self.get_request_list()
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)

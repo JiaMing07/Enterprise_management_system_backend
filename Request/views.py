@@ -70,11 +70,10 @@ def waiting_list(req: HttpRequest):
         requests_list = NormalRequests.objects.filter(asset__department__id__in=department_list).filter(result=0)
         waitinglist = []
         for request in requests_list:
-            waitinglist.append(return_field(request.serialize(), ["id", "initiator", "asset", "type", "request_time", "review_time", "messages"]))
+            waitinglist.append(return_field(request.serialize(), ["id", "initiator", "asset", "type", "request_time", "review_time", "messages", "status"]))
         transfer_list = TransferRequests.objects.filter(asset__department__id__in=department_list).filter(result=0)
-        print(TransferRequests.objects.all())
         for request in transfer_list:
-            waitinglist.append(return_field(request.serialize(), ["id", "participant","initiator", "asset", "type", "request_time", "review_time", "messages"]))
+            waitinglist.append(return_field(request.serialize(), ["id", "participant","initiator", "asset", "type", "request_time", "review_time", "messages", "status"]))
         return request_success({
             "requests": waitinglist
         })
@@ -208,9 +207,9 @@ def requests_user(req: HttpRequest):
         transfer_requests = TransferRequests.objects.filter(initiator=user)
         requestslist = []
         for request in normal_requests:
-            requestslist.append(return_field(request.serialize(), ["id", "initiator", "asset", "type", "request_time", "review_time", "messages"]))
+            requestslist.append(return_field(request.serialize(), ["id", "initiator", "asset", "type", "request_time", "review_time", "messages", "status"]))
         for request in transfer_requests:
-            requestslist.append(return_field(request.serialize(), ["id", "initiator","participant", "asset", "type", "request_time", "review_time", "messages"]))
+            requestslist.append(return_field(request.serialize(), ["id", "initiator","participant", "asset", "type", "request_time", "review_time", "messages", "status"]))
         return request_success({
             "requests": requestslist
         })
@@ -324,7 +323,7 @@ def requests_delete(req: HttpRequest):
                     err_msg += f'第{idx+1}条想要申领的资产 {asset_name} 不在申请list中; '
                 else:
                     request.result = 3
-                    request.delete()
+                    request.save()
 
             elif type == "2": # 退库
                 request = NormalRequests.objects.filter(initiator=user, asset=asset, type=2, result=0).first()
@@ -332,7 +331,7 @@ def requests_delete(req: HttpRequest):
                     err_msg += f'第{idx+1}条想要退库的资产 {asset_name} 不在申请list中; '
                 else:
                     request.result = 3
-                    request.delete()
+                    request.save()
 
             elif type == "3": # 维修
                 request = NormalRequests.objects.filter(initiator=user, asset=asset, type=3, result=0).first()
@@ -340,7 +339,7 @@ def requests_delete(req: HttpRequest):
                     err_msg += f'第{idx+1}条想要维修的资产 {asset_name} 不在申请list中; '
                 else:
                     request.result = 3
-                    request.delete()
+                    request.save()
 
             elif type == "4": # 转移
                 request = TransferRequests.objects.filter(initiator=user, asset=asset, type=4, result=0).first()
@@ -348,7 +347,7 @@ def requests_delete(req: HttpRequest):
                     err_msg += f'第{idx+1}条想要转移的资产 {asset_name} 不在申请list中; '
                 else:
                     request.result = 3
-                    request.delete()
+                    request.save()
 
             else:
                 err_msg += f'第{idx+1}条想要处理的资产 {asset_name} 申请不符合要求; '
@@ -431,4 +430,20 @@ def requests_disapprove(req: HttpRequest):
         
         return request_success()
     
+def requests_list(req: HttpRequest):
+    if req.method == 'GET':
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        department_list = subtree_department(user.department)
+        requests_list = NormalRequests.objects.filter(asset__department__id__in=department_list)
+        all_list = []
+        for request in requests_list:
+            all_list.append(return_field(request.serialize(), ["id", "initiator", "asset", "type", "request_time", "review_time", "messages", "status"]))
+        transfer_list = TransferRequests.objects.filter(asset__department__id__in=department_list)
+        for request in transfer_list:
+            all_list.append(return_field(request.serialize(), ["id", "participant","initiator", "asset", "type", "request_time", "review_time", "messages", "status"]))
+        return request_success({
+            "requests": all_list
+        })
     return BAD_METHOD

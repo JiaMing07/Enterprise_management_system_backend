@@ -296,9 +296,7 @@ def asset_add_list(req:HttpRequest):
         user = User.objects.filter(username=decoded['username']).first()
         entity = user.entity
         err_msg=""
-        # print(assets_new)
         for idx, asset_single in enumerate(assets_new):
-            # print("yes")
             name, parentName, description, position, value, department, number, categoryName, image_url = get_args(
             asset_single, ["name", "parent", "description", "position", "value", "department", "number", "category", "image"], 
             ["string", "string", "string", "string", "int", "string", "int", "string", "string"])
@@ -375,25 +373,31 @@ def asset_retire(req: HttpRequest):
         entity = user.entity
 
         body = json.loads(req.body.decode("utf-8"))
-        assetName = body.get('assetName')
-        checklength(assetName, 0, 50, "assetName")
+        assets = get_args(body, ["assetName"], ["list"])[0]
+        err_msg = ""
+        for assetName in assets:
+            checklength(assetName, 0, 50, "assetName")
 
-        asset = Asset.objects.filter(entity=entity, name=assetName).first()
-        if asset is None:
-            return request_failed(1, "asset not found", status_code=404)
-        
-        department = asset.department
-        ancestor_list = department.get_ancestors(include_self=True)
-        if user.department not in ancestor_list:
-            return request_failed(2, "部门不在管理范围内", status_code=403)
-        
-        asset.state = "RETIRED"
-        asset.value = 0
-        children_list = asset.get_children()
-        for child in children_list:
-            child.parent = Asset.objects.filter(name = asset.entity.name).first()
-            child.save()
-        asset.save()
+            asset = Asset.objects.filter(entity=entity, name=assetName).first()
+            if asset is None:
+                err_msg += f"asset {assetName} not found；"
+                continue
+            
+            department = asset.department
+            ancestor_list = department.get_ancestors(include_self=True)
+            if user.department not in ancestor_list:
+                err_msg += f"资产 {assetName} 的部门不在管理范围内；"
+                continue
+            
+            asset.state = "RETIRED"
+            asset.value = 0
+            children_list = asset.get_children()
+            for child in children_list:
+                child.parent = Asset.objects.filter(name = asset.entity.name).first()
+                child.save()
+            asset.save()
+        if len(err_msg) > 0:
+            return request_failed(1, err_msg[:-1], status_code=403)
         return request_success()
     else:
         return BAD_METHOD
@@ -870,7 +874,6 @@ def user_query(req: HttpRequest):
 
 @CheckRequire
 def asset_delete(req: HttpRequest):
-    print(req.method)
     if req.method == 'DELETE':
         CheckAuthority(req, ["entity_super"])
         token, decoded = CheckToken(req)

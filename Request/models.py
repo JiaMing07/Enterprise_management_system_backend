@@ -30,7 +30,6 @@ class NormalRequests(models.Model):
         elif self.type == 3:
             type_str = "维修"
         messages = f"{self.initiator.username}{type_str}资产"
-        print(messages)
         status = ""
         if self.result == 0:
             status = "待审批"
