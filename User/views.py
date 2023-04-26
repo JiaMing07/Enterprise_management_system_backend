@@ -325,18 +325,12 @@ def user_menu(req: HttpRequest):
         menus_entity = Menu.objects.filter(entity = user.entity)
         menus_base = Menu.objects.filter(entity = Entity.objects.filter(name='admin_entity').first())
         menus_list = menus_entity | menus_base
-        print(menus_list)
         if authority == 'entity_super':
-            sum = 0
-            for menu in menus_list:
-                print(menu.entity_show,menu.asset_show,menu.staff_show)
-            print(sum)
             menu_list = menus_list.filter(entity_show=True)
         elif authority == 'asset_super':
             menu_list = menus_list.filter(asset_show=True)
         elif authority == 'staff':
             menu_list = menus_list.filter(staff_show=True)
-        print(menu_list)
         return_data = {
             "menu": [menu.serialize() for menu in menu_list]
         }

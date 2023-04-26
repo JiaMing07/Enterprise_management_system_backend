@@ -147,9 +147,7 @@ def add_menu():
     from Department.models import Department, Entity
     from User.models import User, Menu
     for menu in base_menu:
-        print(menu)
         if not Menu.objects.filter(first=menu['first'], second=menu['second']).exists():
-            print("yes")
             menu_1 = Menu(first=menu['first'], second=menu['second'], url=menu['url'])
             au = menu['authority'].split('/')
             menu_1.entity_show, menu_1.asset_show, menu_1.staff_show = menu_1.set_authority(au)
