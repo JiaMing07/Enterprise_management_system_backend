@@ -37,7 +37,7 @@ def startup(req: HttpRequest):
         add_category()
         add_asset()
         add_request()
-        # add_menu()
+        add_menu()
     except (OperationalError, IntegrityError):
         pass
     return HttpResponse("Congratulations! You have successfully installed the requirements. Go ahead!")
@@ -322,15 +322,21 @@ def user_menu(req: HttpRequest):
         if user.token != token:
             return request_failed(-6, "用户不在线", status_code=403)
         authority = user.check_authen()
-        menus_entity = Menu.objects.filter(entity = user.entity).filter(second="")
-        menus_base = Menu.objects.filter(entity = Entity.objects.filter(name='admin_entity').first()).filter(second="")
+        menus_entity = Menu.objects.filter(entity = user.entity)
+        menus_base = Menu.objects.filter(entity = Entity.objects.filter(name='admin_entity').first())
         menus_list = menus_entity | menus_base
+        print(menus_list)
         if authority == 'entity_super':
-            menu_list = Menu.objects.filter(entity_show=True)
+            sum = 0
+            for menu in menus_list:
+                print(menu.entity_show,menu.asset_show,menu.staff_show)
+            print(sum)
+            menu_list = menus_list.filter(entity_show=True)
         elif authority == 'asset_super':
-            menu_list = Menu.objects.filter(asset_show=True)
+            menu_list = menus_list.filter(asset_show=True)
         elif authority == 'staff':
-            menu_list = Menu.objects.filter(staff_show=True)
+            menu_list = menus_list.filter(staff_show=True)
+        print(menu_list)
         return_data = {
             "menu": [menu.serialize() for menu in menu_list]
         }
