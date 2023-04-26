@@ -173,6 +173,9 @@ class UserTests(TestCase):
     def get_user_menu(self):
         return self.client.get(f"/user/menu")
     
+    def get_user_menu_list(self):
+        return self.client.get(f"/user/menu/list")
+    
     def post_user_menu(self, first, second, url, authority):
         payload = {
             'first': first,
@@ -810,6 +813,10 @@ class UserTests(TestCase):
 
         second = ''
         res = self.delete_user_menu(first, second)
+        self.assertEqual(res.json()['code'], 0)
+
+        # menu_list
+        res = self.get_user_menu_list()
         self.assertEqual(res.json()['code'], 0)
 
     def test_user_department_list(self):
