@@ -9,4 +9,5 @@ urlpatterns = [
     path('require', views.requests_require),
     path('user', views.requests_user),
     path('list', views.requests_list),
+    path('approve', views.requests_approve)
 ]

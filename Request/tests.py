@@ -87,6 +87,15 @@ class AttributeTests(TestCase):
         }    
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post("/requests/require", data=payload, content_type="application/json")
+    
+    def post_request_approve(self, assets_list, type_list):
+        payload = {
+            "assetName": assets_list,
+            "type": type_list
+        }    
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.post("/requests/approve", data=payload, content_type="application/json")
+
     # start test
 
     def test_request_return(self):
@@ -300,3 +309,75 @@ class AttributeTests(TestCase):
         res = self.get_request_list()
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
+
+    def test_request_approve(self):
+        user = self.create_token('George', 'asset_super')
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("staff")
+        user.save()
+
+        # 申领
+        asset = Asset.objects.filter(name="asset_1").first()
+        asset.state = "IDLE"
+        asset.save()
+        asset_list = ["asset_1"]
+        res = self.post_request_require(asset_list)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
+
+        # 退库
+        asset = Asset.objects.filter(name="ass").first()
+        asset.state = "IN_USE"
+        asset.save()
+        asset_list = ["ass"]
+        res = self.post_request_return(asset_list)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
+
+        # 维修
+        asset = Asset.objects.filter(name="asset_2").first()
+        asset.state = "IN_USE"
+        asset.save()
+        asset_list = ["asset_2"]
+        res = self.post_request_repair(asset_list)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
+
+        # 转移
+        # asset = Asset.objects.filter(name="asset_3").first()
+        # asset.state = "IN_USE"
+        # asset.save()
+        # asset_list = ["asset_3"]
+        # res = self.post_request_repair(asset_list)
+        # self.assertEqual(res.json()['info'], "Succeed")
+        # self.assertEqual(res.json()['code'], 0)
+
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("asset_super")
+        user.save()
+
+        # 同意申领, 1
+        asset_list = ["asset_1"]
+        type_list = ["1"]
+        res = self.post_request_approve(asset_list, type_list)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
+
+        # 同意退库, 2
+        asset_list = ["ass"]
+        type_list = ["2"]
+        res = self.post_request_approve(asset_list, type_list)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
+        
+        # 同意维修, 3
+        asset_list = ["asset_2"]
+        type_list = ["3"]
+        res = self.post_request_approve(asset_list, type_list)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
+
+        # 同意转移, 4
+        # asset_list = [""]
+        # type_list = ["4"]
+        # res = self.post_request_approve(asset_list, type_list)
+        # self.assertEqual(res.json()['info'], "Succeed")
+        # self.assertEqual(res.json()['code'], 0)
