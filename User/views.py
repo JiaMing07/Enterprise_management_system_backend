@@ -37,7 +37,7 @@ def startup(req: HttpRequest):
         add_category()
         add_asset()
         add_request()
-        # add_menu()
+        add_menu()
     except (OperationalError, IntegrityError):
         pass
     return HttpResponse("Congratulations! You have successfully installed the requirements. Go ahead!")
@@ -322,15 +322,15 @@ def user_menu(req: HttpRequest):
         if user.token != token:
             return request_failed(-6, "用户不在线", status_code=403)
         authority = user.check_authen()
-        menus_entity = Menu.objects.filter(entity = user.entity).filter(second="")
-        menus_base = Menu.objects.filter(entity = Entity.objects.filter(name='admin_entity').first()).filter(second="")
+        menus_entity = Menu.objects.filter(entity = user.entity)
+        menus_base = Menu.objects.filter(entity = Entity.objects.filter(name='admin_entity').first())
         menus_list = menus_entity | menus_base
         if authority == 'entity_super':
-            menu_list = Menu.objects.filter(entity_show=True)
+            menu_list = menus_list.filter(entity_show=True)
         elif authority == 'asset_super':
-            menu_list = Menu.objects.filter(asset_show=True)
+            menu_list = menus_list.filter(asset_show=True)
         elif authority == 'staff':
-            menu_list = Menu.objects.filter(staff_show=True)
+            menu_list = menus_list.filter(staff_show=True)
         return_data = {
             "menu": [menu.serialize() for menu in menu_list]
         }
@@ -357,8 +357,8 @@ def user_menu(req: HttpRequest):
             for menu in menus:
                 menu.delete()
         else:
-            menus_entity = Menu.objects.filter(entity=entity).filter(first=first).filter(second=second)
-            menus_base = Menu.objects.filter(entity=entity_base).filter(first=first).filter(second=second)
+            menus_entity = Menu.objects.filter(entity=entity).filter(first=first, second=second)
+            menus_base = Menu.objects.filter(entity=entity_base).filter(first=first, second=second)
             if menus_base:
                 return request_failed(4, "不可删除初始二级菜单", status_code=403)
             menu = menus_entity
@@ -393,7 +393,9 @@ def department_user_list(req: HttpRequest):
 def menu_list(req: HttpRequest):
     if req.method == 'GET':
         CheckAuthority(req, ["entity_super"])
-        menu_list = Menu.objects.all()
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        menu_list = Menu.objects.filter(entity=user.entity)
         return_data = {
             "menu": [menu.serialize() for menu in menu_list]
         }

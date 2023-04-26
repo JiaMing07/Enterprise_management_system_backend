@@ -1,6 +1,86 @@
 import hashlib
 from .utils_time import get_timestamp
 
+base_menu = [{
+	"first":"用户管理",
+	"second":"",
+	"url":"/user_manage",
+	"authority":"entity_super"
+},
+{
+	"first":"组织管理",
+	"second":"",
+	"url":"/group_manage",
+	"authority":"entity_super"
+},
+{
+	"first":"资产管理",
+	"second":"资产录入",
+	"url":"/asset_add",
+	"authority":"entity_super/asset_super"
+},
+{
+	"first":"资产管理",
+	"second":"部门资产管理",
+	"url":"/asset_manage",
+	"authority":"entity_super/asset_super"
+},
+{
+	"first":"资产使用",
+	"second":"资产领用",
+	"url":"/asset_user_require",
+	"authority":"staff"
+},
+{
+	"first":"资产管理",
+	"second":"资产查看",
+	"url":"/asset_manage_user",
+	"authority":"staff"
+},
+{
+	"first":"资产使用",
+	"second":"请求审批",
+	"url":"/request_approve",
+	"authority":"asset_super"
+},
+{
+	"first":"资产使用",
+	"second":"请求列表",
+	"url":"/request_list",
+	"authority":"asset_super"
+},
+{
+	"first":"资产使用",
+	"second":"用户请求",
+	"url":"/request_user",
+	"authority":"staff"
+},
+{
+	"first":"资产管理员首页",
+	"second":"",
+	"url":"/asset_super",
+	"authority":"asset_super"
+},
+{
+	"first":"系统管理员首页",
+	"second":"",
+	"url":"/entity_super",
+	"authority":"entity_super"
+},
+{
+	"first":"资产标签",
+	"second":"添加标签",
+	"url":"/asset_label",
+	"authority":"asset_super"
+},
+{
+	"first":"资产标签",
+	"second":"使用标签",
+	"url":"/asset_label_list",
+	"authority":"staff/asset_super"
+},
+]
+
 def init_entity():
     from Department.models import Entity
 
@@ -66,22 +146,13 @@ def add_users():
 def add_menu():
     from Department.models import Department, Entity
     from User.models import User, Menu
-    if not Menu.objects.filter(first='首页').filter(second='').exists():
-        menu_1 = Menu(first="首页",second="",url="https://eam-frontend-bughunters.app.secoder.net/super_manager", entity_show = True, asset_show=True, staff_show=True)
-        menu_1.entity = Entity.objects.filter(name="admin_entity").first()
-        menu_1.save()
-    if not Menu.objects.filter(first='用户管理').filter(second='').exists():
-        menu_2 = Menu(first="用户管理",second="",url="https://eam-frontend-bughunters.app.secoder.net/user_manage", entity_show=True)
-        menu_2.entity = Entity.objects.filter(name="admin_entity").first()
-        menu_2.save()
-    if not Menu.objects.filter(first='资产管理').filter(second='').exists():
-        menu_3 = Menu(first="资产管理", second="", url="https://eam-frontend-bughunters.app.secoder.net",asset_show=True)
-        menu_3.entity = Entity.objects.filter(name="admin_entity").first()
-        menu_3.save()
-    if not Menu.objects.filter(first='查看事项').filter(second='审批情况').exists():
-        menu_4 = Menu(first="查看事项", second="审批情况", url="https://eam-frontend-bughunters.app.secoder.net/asset",staff_show=True)
-        menu_4.entity = Entity.objects.filter(name="admin_entity").first()
-        menu_4.save()
+    for menu in base_menu:
+        if not Menu.objects.filter(first=menu['first'], second=menu['second']).exists():
+            menu_1 = Menu(first=menu['first'], second=menu['second'], url=menu['url'])
+            au = menu['authority'].split('/')
+            menu_1.entity_show, menu_1.asset_show, menu_1.staff_show = menu_1.set_authority(au)
+            menu_1.entity = Entity.objects.filter(name="admin_entity").first()
+            menu_1.save()
 
 def add_category():
     from Department.models import Entity
