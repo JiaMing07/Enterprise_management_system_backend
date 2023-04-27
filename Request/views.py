@@ -266,7 +266,7 @@ def requests_approve(req: HttpRequest):
                 if request not in normal_list:
                     err_msg += f'第{idx+1}条想要申领的资产 {asset_name} 不在申请list中; '
                 else:
-                    asset.owner = user.username
+                    asset.owner = request.initiator.username
                     request.review_time = get_timestamp()
                     request.result = 1
                     request.save()
@@ -276,7 +276,8 @@ def requests_approve(req: HttpRequest):
                 if request not in normal_list:
                     err_msg += f'第{idx+1}条想要退库的资产 {asset_name} 不在申请list中; '
                 else:
-                    asset.state = 'RETIRED'
+                    asset.state = 'IDLE'
+                    asset.owner = user.username
                     request.review_time = get_timestamp()
                     request.result = 1
                     request.save()
@@ -303,7 +304,6 @@ def requests_approve(req: HttpRequest):
                     request.save()
 
             else:
-                print("nonono")
                 err_msg += f'第{idx+1}条想要处理的资产 {asset_name} 申请不符合要求; '
 
             asset.save()
