@@ -256,7 +256,7 @@ def requests_approve(req: HttpRequest):
         transfer_list = TransferRequests.objects.filter(asset__department__id__in=department_list).filter(result=0)
         
         err_msg = ""
-        for idx, (asset_name, type) in enumerate(zip(assets_list, type_list)):
+        for idx, (asset_name, typtypee) in enumerate(zip(assets_list, type_list)):
             asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
             # if asset is None:
             #     err_msg += f'第{idx+1}条想要维修的资产 {asset_name} 不存在；'
