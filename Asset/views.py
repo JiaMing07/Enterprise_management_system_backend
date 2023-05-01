@@ -11,7 +11,7 @@ from utils.utils_checkauthority import CheckAuthority, CheckToken
 
 from User.models import User, Menu
 from Department.models import Department, Entity
-from Asset.models import Attribute, Asset, AssetAttribute, AssetCategory, Label
+from Asset.models import Attribute, Asset, AssetAttribute, AssetCategory, Label, Warning
 
 from eam_backend.settings import SECRET_KEY
 import jwt
@@ -1051,3 +1051,83 @@ def asset_allocate(req: HttpRequest):
         return request_success()
     return BAD_METHOD
     
+@CheckRequire
+def asset_warning(req: HttpRequest):
+    CheckAuthority(req, ["entity_super", "asset_super"])
+    token, decoded = CheckToken(req)
+    user = User.objects.filter(username=decoded['username']).first()
+    entity = user.entity
+    if req.method == 'POST':
+        body = json.loads(req.body.decode("utf-8"))
+        assetName, ageLimit, numberLimit = get_args(body, ["asset", "ageLimit", "numberLimit"], ["string", "int", "int"])
+        asset = Asset.objects.filter(entity=entity, name=assetName).first()
+        if asset is None:
+            return request_failed(1, "资产不存在", status_code=404)
+        warning = Warning.objects.filter(asset=asset).first()
+        if warning:
+            return request_failed(2, "告警已存在", status_code=403)
+        department = asset.department
+        warning = Warning(asset=asset, entity=entity, department=department, ageLimit=ageLimit, numberLimit=numberLimit)
+        warning.save()
+        return request_success()
+    elif req.method == 'GET':
+        warnings = []
+        departments = []
+        departments.append(user.department)
+        while (len(departments) != 0):
+            department = departments.pop(0)
+            dep_warnings = Warning.objects.filter(entity=entity, department=department)
+            for warning in dep_warnings:
+                warnings.append(warning.serialize())
+            dep_children = department.get_children()
+            for child in dep_children:
+                departments.append(child)
+        return_data = {
+            'warnings': warnings,
+        }
+        return request_success(return_data)
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
+def asset_warning_assetName(req: HttpRequest, assetName: str):
+    CheckAuthority(req, ["entity_super", "asset_super"])
+    token, decoded = CheckToken(req)
+    user = User.objects.filter(username=decoded['username']).first()
+    entity = user.entity
+    checklength(assetName, 0, 50, 'assetName')
+
+    if req.method == 'GET':
+        asset = Asset.objects.filter(entity=entity, name=assetName).first()
+        if asset is None:
+            return request_failed(1, "资产不存在", status_code=404)
+        warning = Warning.objects.filter(asset=asset).first()
+        if warning is None:
+            return request_failed(2, "告警不存在", status_code=404)
+        return request_success(warning.serialize())
+    
+    elif req.method == 'PUT':
+        body = json.loads(req.body.decode("utf-8"))
+        ageLimit, numberLimit = get_args(body, ["ageLimit", "numberLimit"], ["int", "int"])
+        asset = Asset.objects.filter(entity=entity, name=assetName).first()
+        if asset is None:
+            return request_failed(1, "资产不存在", status_code=404)
+        warning = Warning.objects.filter(asset=asset).first()
+        if warning is None:
+            return request_failed(2, "告警不存在", status_code=404)
+        warning.ageLimit = ageLimit
+        warning.numberLimit = numberLimit
+        warning.save()
+        return request_success()
+    
+    elif req.method == 'DELETE':
+        asset = Asset.objects.filter(entity=entity, name=assetName).first()
+        if asset is None:
+            return request_failed(1, "资产不存在", status_code=404)
+        warning = Warning.objects.filter(asset=asset).first()
+        if warning is None:
+            return request_failed(2, "告警不存在", status_code=404)
+        warning.delete()
+        return request_success()
+    else:
+        return BAD_METHOD
