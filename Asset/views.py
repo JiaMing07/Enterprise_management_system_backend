@@ -602,8 +602,9 @@ def attribute_edit(req: HttpRequest):
     
 @CheckRequire    
 def asset_attribute(req: HttpRequest):
-
+    print(req.method)
     if req.method == 'POST':
+        print(1)
         # check format
         body = json.loads(req.body.decode("utf-8"))
         asset_name, attribute_name, description = get_args(body, ['asset', 'attribute', 'description'], ['string','string','string'])
@@ -1051,3 +1052,24 @@ def asset_allocate(req: HttpRequest):
         return request_success()
     return BAD_METHOD
     
+@CheckRequire
+def asset_id(req: HttpRequest, id: int):
+    if req.method == 'GET':
+        asset = Asset.objects.filter(id=id).first()
+        if asset is None:
+            return request_failed(1, "asset not found", status_code=404)
+        
+        property = asset.serialize()
+        assetAttributes = AssetAttribute.objects.filter(asset=asset)
+        attributes = []
+        for assetAttribute in assetAttributes:
+            attr = {}
+            attr['key'] = assetAttribute.attribute.name
+            attr['value'] = assetAttribute.description
+            attributes.append(attr)
+        property['attribute'] = attributes
+        return_data = {
+            "property": property,
+        }
+        return request_success(return_data)
+    return BAD_METHOD

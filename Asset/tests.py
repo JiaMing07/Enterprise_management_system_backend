@@ -261,6 +261,9 @@ class AttributeTests(TestCase):
     def get_asset_label(self):
         return self.client.get(f'/asset/label')
     
+    def get_asset_id(self, id):
+        return self.client.get(f"/asset/id/{id}")
+    
     # Now start testcases. 
     def test_asset_category_add(self):
         user = User.objects.filter(username='test_user').first()
@@ -1820,3 +1823,15 @@ class AttributeTests(TestCase):
         res = self.get_asset_label()
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
+
+    def test_asset_id(self):
+        id = 1
+
+        res = self.get_asset_id(id)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        id = 5
+        res = self.get_asset_id(id)
+        self.assertEqual(res.json()['code'], 1)
+        self.assertEqual(res.json()['info'], 'asset not found')
