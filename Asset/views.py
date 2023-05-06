@@ -13,6 +13,7 @@ from User.models import User, Menu
 from Department.models import Department, Entity
 from Asset.models import Attribute, Asset, AssetAttribute, AssetCategory, Label
 
+
 from eam_backend.settings import SECRET_KEY
 import jwt
 

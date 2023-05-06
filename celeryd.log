@@ -1,0 +1,36 @@
+ 
+ -------------- celery@DESKTOP-83HRKM3 v5.2.7 (dawn-chorus)
+--- ***** ----- 
+-- ******* ---- Linux-5.10.60.1-microsoft-standard-WSL2-x86_64-with-glibc2.31 2023-05-06 17:19:51
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         eam_backend:0x7f385c7171c0
+- ** ---------- .> transport:   redis://172.17.0.2:6379/0
+- ** ---------- .> results:     
+- *** --- * --- .> concurrency: 8 (prefork)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . eam_backend.celery.debug_task
+
+[2023-05-06 17:19:54,747: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 113 connecting to 172.17.0.2:6379. No route to host..
+Trying again in 2.00 seconds... (1/100)
+
+[2023-05-06 17:19:57,867: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 113 connecting to 172.17.0.2:6379. No route to host..
+Trying again in 4.00 seconds... (2/100)
+
+[2023-05-06 17:20:04,987: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 113 connecting to 172.17.0.2:6379. No route to host..
+Trying again in 6.00 seconds... (3/100)
+
+[2023-05-06 17:20:14,107: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 113 connecting to 172.17.0.2:6379. No route to host..
+Trying again in 8.00 seconds... (4/100)
+
+[2023-05-06 17:20:25,227: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 113 connecting to 172.17.0.2:6379. No route to host..
+Trying again in 10.00 seconds... (5/100)
+
+
+worker: Warm shutdown (MainProcess)
