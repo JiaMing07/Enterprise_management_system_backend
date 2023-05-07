@@ -52,7 +52,8 @@ INSTALLED_APPS = [
     'Department',
     'User',
     'mptt',
-    'Request'
+    'Request',
+    'async'
 ]
 
 MIDDLEWARE = [

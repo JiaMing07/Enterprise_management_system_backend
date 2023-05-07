@@ -126,8 +126,6 @@ class Menu(models.Model):
                 asset_show = True
             if authority == 'staff':
                 staff_show = True
-        print(au)
-        print(entity_show, asset_show, staff_show)
         return entity_show, asset_show, staff_show
     
     def serialize(self):
