@@ -161,7 +161,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-CELERY_BROKER_URL = 'redis://172.17.0.2:6379/0' # Broker配置，使用Redis作为消息中间件
+# CELERY_BROKER_URL = 'redis://172.17.0.2:6379/0' # Broker配置，使用Redis作为消息中间件
+
+CELERY_BROKER_URL = 'redis://redis-BugHunters.app.secoder.net:6379/0'
 
 CELERY_RESULT_BACKEND = 'django-db' # BACKEND配置，这里使用redis
 

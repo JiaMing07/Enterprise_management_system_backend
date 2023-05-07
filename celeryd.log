@@ -34,3 +34,32 @@ Trying again in 10.00 seconds... (5/100)
 
 
 worker: Warm shutdown (MainProcess)
+ 
+ -------------- celery@DESKTOP-83HRKM3 v5.2.7 (dawn-chorus)
+--- ***** ----- 
+-- ******* ---- Linux-5.10.60.1-microsoft-standard-WSL2-x86_64-with-glibc2.31 2023-05-07 16:10:45
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         eam_backend:0x7fc0e8c59340
+- ** ---------- .> transport:   redis://redis-bughunters.app.secoder.net:6379/0
+- ** ---------- .> results:     
+- *** --- * --- .> concurrency: 8 (prefork)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . add_assets
+  . eam_backend.celery.debug_task
+  . test
+
+[2023-05-07 16:12:59,795: ERROR/MainProcess] consumer: Cannot connect to redis://redis-bughunters.app.secoder.net:6379/0: Error 110 connecting to redis-bughunters.app.secoder.net:6379. Connection timed out..
+Trying again in 2.00 seconds... (1/100)
+
+[2023-05-07 16:15:12,916: ERROR/MainProcess] consumer: Cannot connect to redis://redis-bughunters.app.secoder.net:6379/0: Error 110 connecting to redis-bughunters.app.secoder.net:6379. Connection timed out..
+Trying again in 4.00 seconds... (2/100)
+
+
+worker: Warm shutdown (MainProcess)
