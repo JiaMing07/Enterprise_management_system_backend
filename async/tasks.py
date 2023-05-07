@@ -83,9 +83,11 @@ def add_assets(self, assets_new, username):
         if user.department not in ancestor_list:
             err_msg = err_msg +'第' +str(idx + 1) +"条资产录入失败，部门不在管理范围内" + '；'
             continue
-        asset = Asset(name=name, description=description, position=position, value=value, owner=owner.username, number=number,
+        Asset.objects.create(name=name, description=description, position=position, value=value, owner=owner.username, number=number,
                     category=category, entity=entity, department=department, parent=parent, image_url=image_url,state=state)
-        asset.save()
+        # asset.save()
+        print(Asset.objects.all())
+    return err_msg
 
 @app.task(name='test', bind=True)
 def test1(self, body, username):
