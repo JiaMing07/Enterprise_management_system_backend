@@ -1133,3 +1133,43 @@ def asset_warning_assetName(req: HttpRequest, assetName: str):
         return request_success()
     else:
         return BAD_METHOD
+    
+@CheckRequire
+def asset_warning_message(req: HttpRequest):
+    if req.method == 'GET':
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        time = get_timestamp()
+
+        messages = []
+        departments = []
+        departments.append(user.department)
+        while (len(departments) != 0):
+            department = departments.pop(0)
+            dep_warnings = Warning.objects.filter(entity=entity, department=department)
+            for warning in dep_warnings:
+                age = warning.asset.life - (time - warning.asset.created_time) / 3600 / 24 / 365
+                number = warning.asset.number
+                if age < warning.ageLimit:
+                    messages.append({
+                        "asset": warning.asset.name,
+                        "department": warning.department.name,
+                        "warning": "age",
+                    })
+                if number < warning.numberLimit:
+                    messages.append({
+                        "asset": warning.asset.name,
+                        "department": warning.department.name,
+                        "warning": "number",
+                    })
+            dep_children = department.get_children()
+            for child in dep_children:
+                departments.append(child)
+        return_data = {
+            'messages': messages,
+        }
+        return request_success(return_data)
+    else:
+        return BAD_METHOD
