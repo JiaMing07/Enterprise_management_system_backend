@@ -37,6 +37,19 @@ def test(req: HttpRequest):
         return request_success()
     return BAD_METHOD
 
+
+@CheckRequire
+def add(req: HttpRequest):
+    if req.method == 'POST':
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        body = json.loads(req.body.decode("utf-8"))
+        assets_new = body['assets']
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        res = add_assets.delay(assets_new, user.username)
+        return request_success()
+    return BAD_METHOD
+
 @CheckRequire
 def show_list(req: HttpRequest):
     if req.method == 'GET':

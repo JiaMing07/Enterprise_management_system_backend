@@ -15,7 +15,8 @@ import time
 
 
 @app.task(name='add_assets', bind=True)
-def add_assets(assets_new, username):
+def add_assets(self, assets_new, username):
+    AsyncTask.objects.create(task_id=self.request.id, initiator=username, body=assets_new)
     user = User.objects.filter(username=username).first()
     entity=user.entity
     err_msg=""
