@@ -29,13 +29,13 @@ def add_assets(self, assets_new, username):
         def check_length(string, lowerbound, upperbound, name,err_msg):
             if lowerbound < len(string) <=upperbound:
                 err_msg += f"Bad length of [{name}]；"
-        check_length(name, 0, 50, "assetName")
-        check_length(parentName, -1, 50, "parentName")
-        check_length(department, -1, 30, "department")
-        check_length(categoryName, 0, 50, "categoryName")
-        check_length(description, 0, 300, "description")
-        check_length(position, 0, 300, "position")
-        check_length(image_url, -1, 300, "imageURL")
+        check_length(name, 0, 50, "assetName", err_msg)
+        check_length(parentName, -1, 50, "parentName", err_msg)
+        check_length(department, -1, 30, "department", err_msg)
+        check_length(categoryName, 0, 50, "categoryName", err_msg)
+        check_length(description, 0, 300, "description", err_msg)
+        check_length(position, 0, 300, "position", err_msg)
+        check_length(image_url, -1, 300, "imageURL", err_msg)
         if parentName == "":
             parentName = entity.name
             parent = Asset.objects.filter(name=entity.name).first()
