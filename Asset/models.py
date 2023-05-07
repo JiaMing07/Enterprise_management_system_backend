@@ -1,6 +1,7 @@
 from django.db import models
 from utils import utils_time
 from utils.utils_request import return_field
+from simple_history.models import HistoricalRecords
 
 # Create your models here.
 from mptt.models import MPTTModel, TreeForeignKey
@@ -64,6 +65,7 @@ class Asset(MPTTModel):
     created_time = models.FloatField(default=utils_time.get_timestamp)
     life = models.BigIntegerField(default=10) # 寿命
     image_url = models.CharField(max_length=300)
+    history = HistoricalRecords(excluded_fields=['lft', 'rght', 'tree_id', 'level', 'description', 'position', 'entity', 'created_time', 'image_url'])
     @classmethod
     def root(cls):
         ''' return the root of the tree'''

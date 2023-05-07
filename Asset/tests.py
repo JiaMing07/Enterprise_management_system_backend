@@ -283,13 +283,13 @@ class AttributeTests(TestCase):
         }
 
         payload = {k: v for k, v in payload.items() if v is not None}
-        return self.client.put(f"/asset/warning/{assetName}", data=payload, content_type="application/json")
+        return self.client.put(f"/asset/{assetName}/warning", data=payload, content_type="application/json")
     
     def get_asset_warning_assetName(self, assetName):
-        return self.client.get(f"/asset/warning/{assetName}")
+        return self.client.get(f"/asset/{assetName}/warning")
     
     def delete_asset_warning_assetName(self, assetName):
-        return self.client.delete(f"/asset/warning/{assetName}")
+        return self.client.delete(f"/asset/{assetName}/warning")
 
     def get_asset_warning_message(self):
         return self.client.get("/asset/warning/message")

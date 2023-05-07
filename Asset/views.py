@@ -1173,3 +1173,42 @@ def asset_warning_message(req: HttpRequest):
         return request_success(return_data)
     else:
         return BAD_METHOD
+    
+@CheckRequire
+def asset_assetName_history(req: HttpRequest, assetName: str):
+    if req.method == 'GET':
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        checklength(assetName, 0, 50, 'assetName')
+
+        asset = Asset.objects.filter(entity=entity, name=assetName).first()
+        if asset is None:
+            return request_failed(1, "资产不存在", status_code=404)
+
+        all_record = []
+        for history in asset.history.all():
+            parentName = ''
+            if history.parent is not None:
+                parentName = history.parent.name
+            record = {
+                "assetName": history.name,
+                "parentName": parentName,
+                "category": history.category.name,
+                "value": history.value,
+                "user": history.owner,
+                "number": history.number,
+                "state": history.state,
+                "department": history.department.name,
+                "life": history.life,
+                "changeTime": history.history_date,
+            }
+            all_record.append(record)
+            
+        return_data = {
+            'history': all_record,
+        }
+        return request_success(return_data)
+    else:
+        return BAD_METHOD
