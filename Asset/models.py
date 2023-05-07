@@ -1,4 +1,5 @@
 from django.db import models
+from utils import utils_time
 from utils.utils_request import return_field
 
 # Create your models here.
@@ -60,6 +61,8 @@ class Asset(MPTTModel):
     parent = TreeForeignKey('self', blank=True, null=True, on_delete=models.CASCADE)
     entity = models.ForeignKey(Entity, on_delete=models.CASCADE)
     department = models.ForeignKey(Department, on_delete=models.CASCADE)
+    created_time = models.FloatField(default=utils_time.get_timestamp)
+    life = models.BigIntegerField(default=10) # 寿命
     image_url = models.CharField(max_length=300)
     @classmethod
     def root(cls):
@@ -84,6 +87,8 @@ class Asset(MPTTModel):
             "state": self.state,
             "entity": self.entity.name,
             "department": self.department.name,
+            "createTime": self.created_time,
+            "life": self.life,
             "image": self.image_url,
         }
     
