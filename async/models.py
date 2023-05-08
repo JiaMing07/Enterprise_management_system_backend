@@ -18,4 +18,5 @@ class AsyncTask(models.Model):
             'end_time':self.task.date_done,
             'initiator': self.initiator,
             'result':self.task.result[2:-2],
+            'body': self.body
         }
