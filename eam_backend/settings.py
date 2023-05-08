@@ -171,7 +171,7 @@ value = os.getenv(key)
 if value is not None:
     CELERY_BROKER_URL = 'redis://redis.BugHunters.secoder.local:6379/0'
 # CELERY_BROKER_URL = 'redis://172.17.0.2:6379/0' # Broker配置，使用Redis作为消息中间件
-# CELERY_BROKER_URL = 'redis://172.17.0.2:6379/0'
+CELERY_BROKER_URL = 'redis://172.17.0.2:6379/0'
 # CELERY_BROKER_URL = 'redis://redis-BugHunters.app.secoder.net:6379/0'
 
 CELERY_TASK_TRACK_STARTED = True

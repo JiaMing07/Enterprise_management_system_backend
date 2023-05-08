@@ -3,10 +3,10 @@ import hashlib
 from django.http import HttpRequest, HttpResponse
 
 from User.models import User, Menu
-from Department.models import Department, Entity
+from Department.models import Department, Entity, Log
 from utils.utils_request import BAD_METHOD, request_failed, request_success, return_field
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
-from utils.utils_time import get_timestamp
+from utils.utils_time import get_timestamp, get_date
 from utils.utils_getbody import get_args
 from utils.utils_checklength import checklength
 from utils.utils_checkauthority import CheckAuthority, CheckToken
@@ -60,6 +60,9 @@ def login_normal(req: HttpRequest):
                 # if user.token == '':
                 user.token = user.generate_token()
                 user.save()
+                log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 登录"
+                log = Log(log=log_info, type = 0, entity=user.entity)
+                log.save()
                 return request_success(data={'token': user.token,
                                             'system_super':user.system_super, 
                                             'entity_super': user.entity_super,
@@ -77,6 +80,9 @@ def login_normal(req: HttpRequest):
 @CheckRequire    
 def user_add(req: HttpRequest):
     if req.method == 'POST':
+        token = req.COOKIES['token']
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        creator = User.objects.filter(username=decoded['username']).first()
         body = json.loads(req.body.decode("utf-8"))
         user_name, entity_name, department_name, authority, password  = get_args(body, ['name', 'entity', 'department', 'authority', 'password'], ['string','string','string','string','string'])
         checklength(user_name, 0, 50, "username")
@@ -114,6 +120,9 @@ def user_add(req: HttpRequest):
         pwd = md5.hexdigest()
         user = User(username=user_name, entity=entity, department=department, system_super = is_system_super, entity_super = is_entity_super, asset_super = is_asset_super, password=pwd)
         user.save()
+        log_info = f"用户{creator.username} ({creator.department.name}) 在 {get_date()} 新增用户 {user.username}"
+        log = Log(log=log_info, type = 1, entity=user.entity)
+        log.save()
         return request_success()
     else:
         return BAD_METHOD
@@ -143,6 +152,8 @@ def logout_normal(req: HttpRequest):
 def user_lock(req: HttpRequest):
     if req.method == 'POST':
         CheckAuthority(req, ["entity_super"])
+        token, decoded = CheckToken(req)
+        creator = User.objects.filter(username=decoded['username']).first()
         body = json.loads(req.body.decode("utf-8"))
         user_name = require(body, "username", "string", err_msg="Missing or error type of [username]")
         active = require(body, "active", "int", err_msg="Missing or error type of [active]")
@@ -161,6 +172,9 @@ def user_lock(req: HttpRequest):
         else:
             return request_failed(-2, "无效请求", status_code=400)
         user.save()
+        log_info = f"用户{creator.username} ({creator.department.name}) 在 {get_date()} 锁定用户 {user.username}"
+        log = Log(log=log_info, type = 1,entity = user.entity)
+        log.save()
         return request_success()
     else:
         return BAD_METHOD
@@ -169,6 +183,9 @@ def user_lock(req: HttpRequest):
 @CheckRequire
 def user_edit(req: HttpRequest):
     if req.method == 'POST':
+        token, decoded = CheckToken(req)
+        creator_name = decoded['username']
+        creator = User.objects.filter(username=decoded['username']).first()
         body = json.loads(req.body.decode("utf-8"))
         user_name = json.loads(req.body.decode("utf-8")).get('username')
         password = json.loads(req.body.decode("utf-8")).get('password')
@@ -241,6 +258,9 @@ def user_edit(req: HttpRequest):
                 user.department = department
         
         user.save()
+        log_info = f"用户{creator_name} ({creator.department.name}) 在 {get_date()} 修改用户（{user.username}）的信息"
+        log = Log(log=log_info, type = 1, entity=user.entity)
+        log.save()
         return request_success()
     else:
         return BAD_METHOD
@@ -311,6 +331,9 @@ def user_menu(req: HttpRequest):
         menu = Menu(first=first, second=second, url=url, entity=user.entity)
         menu.entity_show, menu.asset_show, menu.staff_show = menu.set_authority(authority)
         menu.save()
+        log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 增加菜单 {menu.first} {menu.second}"
+        log = Log(log=log_info, type = 1, entity=user.entity)
+        log.save()
         return request_success()
     elif req.method == 'GET':
         CheckToken(req)

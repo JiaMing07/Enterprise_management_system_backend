@@ -4,13 +4,13 @@ from django.http import HttpRequest, HttpResponse
 
 from utils.utils_request import BAD_METHOD, request_failed, request_success, return_field
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
-from utils.utils_time import get_timestamp
+from utils.utils_time import get_timestamp, get_date
 from utils.utils_getbody import get_args
 from utils.utils_checklength import checklength
 from utils.utils_checkauthority import CheckAuthority, CheckToken
 
 from User.models import User, Menu
-from Department.models import Department, Entity
+from Department.models import Department, Entity, Log
 from Asset.models import Attribute, Asset, AssetAttribute, AssetCategory, Label
 
 
@@ -74,6 +74,9 @@ def asset_category_add(req: HttpRequest):
             return request_failed(2, "该资产类型已存在", status_code=403)
         category = AssetCategory(name=name, entity=entity, parent=parent, is_number=is_number)
         category.save()
+        # log_info = f"用户{user.username}({user.department.name})  在 {get_date()} 添加资产类型 {department_name}"
+        # log = Log(log=log_info, type = 1, entity=entity)
+        # log.save()
         return request_success()
     else:
         return BAD_METHOD

@@ -4,13 +4,13 @@ from django.http import HttpRequest, HttpResponse
 
 from utils.utils_request import BAD_METHOD, request_failed, request_success, return_field
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
-from utils.utils_time import get_timestamp
+from utils.utils_time import get_timestamp, get_date
 from utils.utils_getbody import get_args
 from utils.utils_checklength import checklength
 from utils.utils_checkauthority import CheckAuthority, CheckToken
 
 from User.models import User, Menu
-from Department.models import Department, Entity
+from Department.models import Department, Entity, Log
 from Asset.models import Attribute, Asset, AssetAttribute, AssetCategory
 from .models import NormalRequests, TransferRequests
 
@@ -270,6 +270,9 @@ def requests_approve(req: HttpRequest):
                     request.review_time = get_timestamp()
                     request.result = 1
                     request.save()
+                    # log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 同意 {request.initiator.username} 的申领请求 {asset.name}"
+                    # log = Log(log=log_info, type = 1, entity=user.entity)
+                    # log.save()
 
             elif type == "2": # 退库
                 request = NormalRequests.objects.filter(asset=asset, type=2, result=0).first()
@@ -281,6 +284,9 @@ def requests_approve(req: HttpRequest):
                     request.review_time = get_timestamp()
                     request.result = 1
                     request.save()
+                    # log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 同意 {request.initiator.username} 的退库请求 {asset.name}"
+                    # log = Log(log=log_info, type = 1, entity=user.entity)
+                    # log.save()
 
             elif type == "3": # 维修
                 request = NormalRequests.objects.filter(asset=asset, type=3, result=0).first()
@@ -291,6 +297,9 @@ def requests_approve(req: HttpRequest):
                     request.review_time = get_timestamp()
                     request.result = 1
                     request.save()
+                    # log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 同意 {request.initiator.username} 的维修请求 {asset.name}"
+                    # log = Log(log=log_info, type = 1, entity=user.entity)
+                    # log.save()
 
             elif type == "4": # 转移
                 request = TransferRequests.objects.filter(asset=asset, type=4, result=0).first()
@@ -302,6 +311,9 @@ def requests_approve(req: HttpRequest):
                     request.review_time = get_timestamp()
                     request.result = 1
                     request.save()
+                    # log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 同意 {request.initiator.username} 的转移请求：{asset.name}转移至{request.participant.username}（{request.participant.department.name}）"
+                    # log = Log(log=log_info, type = 1, entity=user.entity)
+                    # log.save()
 
             else:
                 err_msg += f'第{idx+1}条想要处理的资产 {asset_name} 申请不符合要求; '
@@ -412,6 +424,9 @@ def requests_disapprove(req: HttpRequest):
                     request.review_time = get_timestamp()
                     request.result = 2
                     request.save()
+                    # log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 拒绝 {request.initiator.username} 的申领请求 {asset.name}"
+                    # log = Log(log=log_info, type = 1, entity=user.entity)
+                    # log.save()
 
             elif type == "2": # 退库
                 request = NormalRequests.objects.filter(asset=asset, type=2, result=0).first()
@@ -421,6 +436,9 @@ def requests_disapprove(req: HttpRequest):
                     request.review_time = get_timestamp()
                     request.result = 2
                     request.save()
+                    # log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 拒绝 {request.initiator.username} 的退库请求 {asset.name}"
+                    # log = Log(log=log_info, type = 1, entity=user.entity)
+                    # log.save()
 
             elif type == "3": # 维修
                 request = NormalRequests.objects.filter(asset=asset, type=3, result=0).first()
@@ -430,6 +448,9 @@ def requests_disapprove(req: HttpRequest):
                     request.review_time = get_timestamp()
                     request.result = 2
                     request.save()
+                    # log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 拒绝 {request.initiator.username} 的维修请求 {asset.name}"
+                    # log = Log(log=log_info, type = 1, entity=user.entity)
+                    # log.save()
 
             elif type == "4": # 转移
                 request = TransferRequests.objects.filter(asset=asset, type=4, result=0).first()
@@ -439,6 +460,9 @@ def requests_disapprove(req: HttpRequest):
                     request.review_time = get_timestamp()
                     request.result = 2
                     request.save()
+                    # log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 拒绝 {request.initiator.username} 的转移请求 {asset.name}"
+                    # log = Log(log=log_info, type = 1, entity=user.entity)
+                    # log.save()
 
             else:
                 print("nonono")

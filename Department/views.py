@@ -3,10 +3,10 @@ import json
 from django.http import HttpRequest, HttpResponse
 
 from User.models import User
-from Department.models import Department, Entity
+from Department.models import Department, Entity, Log
 from utils.utils_request import BAD_METHOD, request_failed, request_success, return_field
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
-from utils.utils_time import get_timestamp
+from utils.utils_time import get_timestamp, get_date
 from utils.utils_getbody import get_args
 from utils.utils_checklength import checklength
 from utils.utils_checkauthority import CheckAuthority, CheckToken
@@ -32,6 +32,8 @@ def add_entity(req: HttpRequest):
 def add_department(req: HttpRequest):
     if req.method == 'POST':
         CheckAuthority(req, ["entity_super"])
+        token, decoded = CheckToken(req)
+        username = decoded['username']
         body = json.loads(req.body.decode("utf-8"))
         entity_name, department_name, parent_name = get_args(body, ["entity", "department", "parent"], ["string", "string", "string"])
         checklength(entity_name, 0, 50, "entity_name")
@@ -54,6 +56,9 @@ def add_department(req: HttpRequest):
             return request_failed(1, "该部门已存在", status_code=403)
         department = Department(name=department_name, entity=entity, parent=parent)
         department.save()
+        log_info = f"用户{username}  在 {get_date()} 新增部门 {department.name}"
+        log = Log(log=log_info, type = 1, entity=entity)
+        log.save()
         return request_success()
 
     return BAD_METHOD
@@ -144,6 +149,8 @@ def entity_entityName_entitySuper(req: HttpRequest, entityName: str):
 def department_delete(req: HttpRequest):
     if req.method == 'DELETE':
         CheckAuthority(req, ["entity_super"])
+        token, decoded = CheckToken(req)
+        username = decoded['username']
         # check for correct format
         entity_name = json.loads(req.body.decode("utf-8")).get('entity')
         department_name = json.loads(req.body.decode("utf-8")).get('department')
@@ -165,7 +172,11 @@ def department_delete(req: HttpRequest):
             return request_failed(2, "不可删除超级管理员所在的部门", status_code=403)
         
         # delete
+        department_name = department_.name
         department_.delete()
+        log_info = f"用户{username}  在 {get_date()} 删除部门 {department_name}"
+        log = Log(log=log_info, type = 1, entity=entity)
+        log.save()
         return request_success()
 
     else:
@@ -195,4 +206,22 @@ def entity_department_subtree(req: HttpRequest):
             "departments": department.sub_tree()
         }
         return request_success(return_data)
+    return BAD_METHOD
+
+@CheckRequire
+def entity_log(req: HttpRequest):
+    if req.method == 'GET':
+        CheckAuthority(req, ['entity_super'])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        log_list = Log.objects.filter(entity=entity)
+        logs = []
+        for log in log_list:
+            logs.append({
+                'log_info':log.log
+            })
+        return request_success({
+            'log': logs
+        })
     return BAD_METHOD
