@@ -219,6 +219,7 @@ def entity_log(req: HttpRequest):
         logs = []
         for log in log_list:
             logs.append({
+                'id': log.id,
                 'log_info':log.log
             })
         return request_success({

@@ -77,3 +77,26 @@ def show_list(req: HttpRequest):
             'data': data
         })
     return BAD_METHOD
+
+@CheckRequire
+def failed_list(req: HttpRequest):
+    if req.method == 'GET':
+        # all = AsyncTask.objects.all()
+        all = TaskResult.objects.filter(status='FAILED')
+        print(all)
+        data = []
+        # for each in all:
+            # data.append(each.serialze())
+        for each in all:
+            data.append({
+                'id':each.task_id,
+                'start_time': each.date_created,
+                'end_time': each.date_done, 
+                'result': each.result,
+                'status': each.status,
+                'initiator': 'Alice'
+            })
+        return request_success({
+            'data': data
+        })
+    return BAD_METHOD
