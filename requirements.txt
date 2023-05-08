@@ -23,4 +23,6 @@ Redis
 django-celery-beat
 django-celery-results
 supervisor==4.2.5
+apscheduler
+django-apscheduler
 # TODO End: [Student] Add dependency on uWSGI

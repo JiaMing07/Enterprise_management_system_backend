@@ -17,6 +17,10 @@ from .tasks import *
 from eam_backend.celery import app
 from celery.result import AsyncResult
 
+from django.utils import timezone
+from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.schedulers.background import BackgroundScheduler
+
 from eam_backend.settings import SECRET_KEY
 import jwt
 
@@ -33,6 +37,7 @@ def test(req: HttpRequest):
             name = username + str(i)
             res = test1.delay(body, name)
             ans.append(res)
+            print(res.id)
         print(ans)
         return request_success()
     return BAD_METHOD
@@ -54,6 +59,7 @@ def add(req: HttpRequest):
 def show_list(req: HttpRequest):
     if req.method == 'GET':
         all = AsyncTask.objects.all()
+        # all = TaskResult.objects.all()
         print(all)
         data = []
         for each in all:
