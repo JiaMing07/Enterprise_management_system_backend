@@ -31,26 +31,12 @@ from .models import AsyncModel, AsyncTask
 
 # Create your views here.
 
-@CheckRequire
-def test(req: HttpRequest):
-    if req.method == 'POST':
-        body = json.loads(req.body.decode("utf-8"))
-        username = get_args(body,["username"], ["string"])[0]
-        ans = []
-        print(username)
-        for i in range(3):
-            name = username + str(i)
-            res = test1.delay(body, name)
-            ans.append(res)
-            print(res.id)
-        print(ans)
-        return request_success()
-    return BAD_METHOD
 
 
 async def http_call_async(i):
     try:
-        asy = await AsyncModel.objects.acreate(initiator="Alice", start_time=get_date(), status = "STARTED", body = {})
+        entity = await Entity.objects.all().afirst()
+        asy = await AsyncModel.objects.acreate(initiator="Alice", start_time=get_date(), status = "STARTED", body = {}, entity= entity)
         print('ok')
         for num in range(6):
             await asyncio.sleep(1)
@@ -160,6 +146,7 @@ async def add_asset(assets_new, username):
     asy.result = 'ok'
     if len(err_msg) > 0:
         asy.result = err_msg[:-1]
+        asy.status = 'FAILED'
     await asy.asave()
 
 async def test2(req: HttpRequest):
@@ -191,8 +178,6 @@ def model_list(req: HttpRequest):
 
 async def add(req: HttpRequest):
     if req.method == 'POST':
-        print(req.COOKIES)
-        # CheckAuthority(req, ["entity_super", "asset_super"])
         try:
             token = req.COOKIES['token']
         except KeyError:
@@ -252,38 +237,57 @@ def show_list(req: HttpRequest):
 @CheckRequire
 def failed_list(req: HttpRequest):
     if req.method == 'GET':
-        # all = AsyncTask.objects.all()
-        all = TaskResult.objects.filter(status='FAILURE')
-        print(all)
+        CheckAuthority(req, ['entity_super'])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        models = AsyncModel.objects.filter(entity=entity, status='FAILED')
         data = []
-        # for each in all:
-            # data.append(each.serialze())
-        for each in all:
-            data.append({
-                'task_id':each.task_id,
-                'start_time': each.date_created,
-                'end_time': each.date_done, 
-                'result': each.result,
-                'status': each.status,
-                'initiator': 'Alice'
-            })
+        for m in models:
+            data.append(m.serialize())
         return request_success({
             'data': data
         })
     return BAD_METHOD
 
-@CheckRequire
-def restart(req:HttpRequest):
+
+async def restart(req:HttpRequest):
     if req.method == 'POST':
+        try:
+            token = req.COOKIES['token']
+        except KeyError:
+            return request_failed(-2, 'Token未给出',status_code=400)
+        try:
+            decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        except jwt.ExpiredSignatureError:
+            decode = jwt.decode(token, SECRET_KEY, leeway=datetime.timedelta(days=3650), algorithms=['HS256'])
+            user = await User.objects.filter(username=decode['username']).afirst()
+            user.token = ''
+            user.asave()
+            return request_failed(-2, 'Token已过期',status_code=400)
+        except jwt.InvalidTokenError:
+            return request_failed(-2, 'Token不合法',status_code=400)
+        user = await User.objects.filter(username=decoded['username']).afirst()
+        if user is None:
+            return request_failed(-2, "不存在对应的用户",status_code=400)
+        if user.token != token:
+            return request_failed(-2, "用户已在其他地方登录，请退出后重新登陆",status_code=400)
+        have_authority = False
+        for au in ['entity_super']:
+            if user.check_authen() == au:
+                have_authority = True
+        if have_authority == False:        
+            return request_failed(-2, "没有操作权限",status_code=400)
         body = json.loads(req.body.decode("utf-8"))
-        print(body)
-        id = get_args(body, ["id"], ["string"])[0]
-        task = AsyncTask.objects.filter(task_id=id).first()
-        print(task)
-        assets_new = json.loads(task.body)
-        print(assets_new)
-        token, decoded = CheckToken(req)
-        user = User.objects.filter(username=decoded['username']).first()
-        res = add_assets.delay(assets_new, user.username)
+        id = body.get('id', 0)
+        if id == 0:
+            return request_failed(1, "请求体错误，不存在对应原始任务", status_code=403)
+        task = await AsyncModel.objects.filter(id=id).afirst()
+        if task is None:
+            return request_failed(2, "不存在原始任务", status_code=403)
+        task_body = json.load(task.body)
+        assets_new = task_body['assets_new']
+        loop = asyncio.get_event_loop()
+        loop.create_task(add_asset(assets_new, user.username))
         return request_success()
     return BAD_METHOD
