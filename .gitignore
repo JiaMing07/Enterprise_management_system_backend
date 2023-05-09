@@ -7,5 +7,5 @@ coverage-reports/
 xunit-reports/
 .pytest_cache/
 celeryd.log
-
+mystart.sh
 config.yml
