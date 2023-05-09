@@ -48,8 +48,6 @@ def test(req: HttpRequest):
 
 
 async def http_call_async(i):
-    print(i)
-    print("in")
     try:
         asy = await AsyncModel.objects.acreate(initiator="Alice", start_time=get_date(), status = "STARTED", body = {})
         print('ok')
@@ -64,6 +62,89 @@ async def http_call_async(i):
     except Exception as e:
         print(e)
 
+async def add(assets_new, username):
+    asy = await AsyncModel.objects.acreate(initiator="Alice", start_time=get_date(), status = "STARTED", body = {'assets_new': assets_new})
+    user = await User.objects.filter(username=username).afirst()
+    entity=user.entity
+    err_msg=""
+    for idx, asset_single in enumerate(assets_new):
+        name, parentName, description, position, value, department, number, categoryName, image_url = get_args(
+        asset_single, ["name", "parent", "description", "position", "value", "department", "number", "category", "image"], 
+        ["string", "string", "string", "string", "int", "string", "int", "string", "string"])
+        state = asset_single.get('state', 'IDLE')
+        owner = asset_single.get('owner', "")
+        def check_length(string, lowerbound, upperbound, name,err_msg):
+            if lowerbound < len(string) <=upperbound:
+                err_msg += f"Bad length of [{name}]；"
+        check_length(name, 0, 50, "assetName", err_msg)
+        check_length(parentName, -1, 50, "parentName", err_msg)
+        check_length(department, -1, 30, "department", err_msg)
+        check_length(categoryName, 0, 50, "categoryName", err_msg)
+        check_length(description, 0, 300, "description", err_msg)
+        check_length(position, 0, 300, "position", err_msg)
+        check_length(image_url, -1, 300, "imageURL", err_msg)
+        if parentName == "":
+            parentName = entity.name
+            parent = await Asset.objects.filter(name=entity.name).afirst()
+            if parent is None:
+                d = await Department.objects.filter(entity=entity, name=entity.name).afirst()
+                c = await AssetCategory.objects.filter(id=1).afirst()
+                p = await Asset.objects.filter(id=1).afirst()
+                parent = Asset(name=entity.name, owner=user.username, 
+                            category=c, entity=entity, department=d, parent=p)
+                parent.asave()
+            if department == "":
+                department = user.department
+            else:
+                department = await Department.objects.filter(entity=entity, name=department).afirst()
+                if department is None:
+                    err_msg = err_msg +'第' +str(idx + 1) +"条资产录入失败，挂账部门不存在" + '；'
+        else:
+            parent = await Asset.objects.filter(entity=entity, name=parentName).afirst()
+            if parent is None:
+                err_msg = err_msg +'第' +str(idx + 1) +"条资产录入失败，父资产不存在" + '；'
+                continue
+            if department == "":
+                department = parent.department
+            else:
+                department = await Department.objects.filter(entity=entity, name=department).afirst()
+                if department is None:
+                    err_msg = err_msg +'第' +str(idx + 1) +"条资产录入失败，挂账部门不存在" + '；'
+                    continue
+        category = await AssetCategory.objects.filter(name=categoryName, entity=entity).afirst()
+        if category is None:
+            err_msg = err_msg +'第' +str(idx + 1) +"条资产录入失败，资产类型不存在" + '；'
+            continue
+        asset = await Asset.objects.filter(entity=entity, name=name).afirst()
+        if asset:
+            err_msg = err_msg +'第' +str(idx + 1) +"条资产录入失败，该资产已存在" + '；'
+            continue
+        if owner == "":
+            owner = await User.objects.filter(entity=entity, department=department, asset_super=True).afirst()
+            if owner is None:
+                err_msg = err_msg +'第' +str(idx + 1) +"条资产录入失败，部门不存在资产管理员" + '；'
+                continue
+        else:
+            owner = await User.objects.filter(entity=entity, department=department, username=owner).afirst()
+            if owner is None:
+                err_msg = err_msg +'第' +str(idx + 1) +"条资产录入失败，挂账人不存在" + '；'
+                continue
+        ancestor_list = department.get_ancestors(include_self=True)
+        flag = False
+        async for ancestor in ancestor_list:
+            if user.department.id == ancestor.id:
+                flag = True
+                break
+        if flag == False:
+            err_msg = err_msg +'第' +str(idx + 1) +"条资产录入失败，部门不在管理范围内" + '；'
+            continue
+        await Asset.objects.acreate(name=name, description=description, position=position, value=value, owner=owner.username, number=number,
+                    category=category, entity=entity, department=department, parent=parent, image_url=image_url,state=state)
+    asy.end_time = get_date()
+    asy.status = 'SUCCESS'
+    asy.result = 'ok'
+    print('ok')
+    await asy.asave()
 
 async def test2(req: HttpRequest):
     if req.method == 'GET':

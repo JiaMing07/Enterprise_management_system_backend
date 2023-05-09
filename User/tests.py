@@ -716,7 +716,7 @@ class UserTests(TestCase):
         self.assertEqual(res.json()['info'], 'Token未给出')
 
         # token expired
-        payload = {'exp': datetime.datetime.now() + datetime.timedelta(seconds=1), 'iat': datetime.datetime.utcnow(), 'username': 'Alice'}
+        payload = {'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=1), 'iat': datetime.datetime.utcnow(), 'username': 'Alice'}
         time.sleep(2)
         Token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
         c = cookies.SimpleCookie()
