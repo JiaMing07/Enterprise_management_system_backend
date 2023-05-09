@@ -34,7 +34,7 @@ class User(models.Model):
             return False
     
     def generate_token(self):
-        payload = {'exp': datetime.now() + timedelta(days=1), 'iat': datetime.utcnow(), 'username': self.username}
+        payload = {'exp': datetime.utcnow() + timedelta(days=1), 'iat': datetime.utcnow(), 'username': self.username}
         token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
         return token
     
