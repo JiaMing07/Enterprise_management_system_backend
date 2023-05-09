@@ -198,6 +198,14 @@ class UserTests(TestCase):
     
     def get_user_department_list(self):
         return self.client.get("/user/department/list")
+    
+    def post_feishu_bind(self, username, feishuname):
+        payload = {
+            'username': username,
+            'feishuname': feishuname
+        }
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.post("/user/feishu/bind", data=payload, content_type="application/json")
 
     # Now start testcases. 
 
@@ -811,3 +819,18 @@ class UserTests(TestCase):
         res = self.get_user_department_list()
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], "Succeed")
+
+    def test_feishu_bind_post(self):
+
+        username = 'test_user'
+        # user = User.objects.filter(username=username).first()
+        feishuname = 'feishu1'
+        res = self.post_feishu_bind(username, feishuname)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
+        
+        username = 'test_user'
+        feishuname = 'feishu2'
+        res = self.post_feishu_bind(username, feishuname)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)

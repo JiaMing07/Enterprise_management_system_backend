@@ -8,7 +8,7 @@ from eam_backend.settings import SECRET_KEY
 from Department.models import Department, Entity
 import jwt
 
-
+# Create your models here.
 class User(models.Model):
     '''
     User
@@ -139,5 +139,15 @@ class Menu(models.Model):
     
     class Meta:
         unique_together = ['first', 'second', 'entity']
-# Create your models here.
 
+class UserFeishu(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    username = models.CharField(max_length=50, unique=True)
+    feishuname = models.CharField(max_length=50)
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "username": self.username,
+            "feishuname": self.feishuname
+        }

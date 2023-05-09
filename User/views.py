@@ -2,7 +2,7 @@ import json
 import hashlib
 from django.http import HttpRequest, HttpResponse
 
-from User.models import User, Menu
+from User.models import User, Menu, UserFeishu
 from Department.models import Department, Entity
 from utils.utils_request import BAD_METHOD, request_failed, request_success, return_field
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
@@ -400,4 +400,30 @@ def menu_list(req: HttpRequest):
             "menu": [menu.serialize() for menu in menu_list]
         }
         return request_success(return_data)
+    return BAD_METHOD
+
+@CheckRequire
+def feishu_bind(req: HttpRequest):
+
+    if req.method == 'POST':
+        body = json.loads(req.body.decode("utf-8"))
+        username = json.loads(req.body.decode("utf-8")).get('username')
+        feishuname = json.loads(req.body.decode("utf-8")).get('feishuname')
+
+        user = User.objects.filter(username=username).first()
+
+        if user is None:
+            return request_failed(2, "用户不存在", 403)
+        
+        oldbind = UserFeishu.objects.filter(username=username).first()
+        if oldbind is not None:
+            oldbind.feishuname = feishuname
+            oldbind.save()
+        
+        else:
+            userbind = UserFeishu(username=username, feishuname=feishuname)
+            userbind.save()
+        
+        return request_success()
+
     return BAD_METHOD
