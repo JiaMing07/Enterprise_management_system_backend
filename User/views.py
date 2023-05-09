@@ -1,5 +1,6 @@
 import json
 import hashlib
+import requests
 from django.http import HttpRequest, HttpResponse
 
 from User.models import User, Menu, UserFeishu
@@ -425,5 +426,84 @@ def feishu_bind(req: HttpRequest):
             userbind.save()
         
         return request_success()
+
+    return BAD_METHOD
+
+@CheckRequire
+def feishu_login(req: HttpRequest):
+
+    if req.method == 'POST':
+        body = json.loads(req.body.decode("utf-8"))
+        code = json.loads(req.body.decode("utf-8")).get('code')
+
+        token, decoded = CheckToken(req)
+
+        url = "https://passport.feishu.cn/suite/passport/oauth/token"
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+        data = {
+            "grant_type": "authorization_code",
+            "client_id": "cli_a4d212cbb87a500d",
+            "client_secret": "M81ME3LFvgI7T0cIApC7xyTMuNEqbHFy",
+            "code": code,
+            "redirect_uri": "http://localhost:3000/feishu"
+        }
+        response = requests.post(url, headers=headers, data=data)
+        # content_type = response.headers.get("Content-Type")
+        # print("Content-Type:", content_type)
+
+        if response.status_code == 200:
+            json_data = response.json()
+            access_token = json_data.get('access_token')
+            token_type = json_data.get('token_type')
+            expires_in = json_data.get('expires_in')
+            refresh_token = json_data.get('refresh_token')
+            refresh_expires_in = json_data.get('refresh_expires_in')
+        
+        else:
+            return request_failed(2, "Failed to get response when requesting access_token", 403)
+
+        # 构造请求Header
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+        }
+
+        # 发送GET请求
+        url = "https://passport.feishu.cn/suite/passport/oauth/userinfo"
+        response = requests.get(url, headers=headers)
+
+        # 获取返回的name参数
+        if response.status_code == 200:
+            data = response.json()
+            # feishuname的定义究竟是什么
+            feishuname = data.get("name")
+            #feishuname = data.get("mobile")
+
+            cur_bind = UserFeishu.objects.filter(feishuname=feishuname).first()
+
+            if cur_bind is None:
+                return request_failed(1, "Feishu not bind with any name.", 403)
+            
+            username = cur_bind.username
+            user = User.objects.filter(username=username).first()
+            
+            if user is None:
+                return request_failed(1, "User not exist.", 403)
+
+            return_data = {
+                "username": username,
+                "token": token,
+                "system_super": user.system_super,
+                "entity_super": user.entity_super,
+                "asset_super": user.asset_super,
+                "entity": user.entity.name,
+                "department": user.department.name
+            }
+            return request_success(return_data)
+            
+        else:
+            return request_failed(2, "Failed to get response when requesting userInfo.", 403)
+        # print(json_data)
 
     return BAD_METHOD
