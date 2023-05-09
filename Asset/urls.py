@@ -26,6 +26,10 @@ urlpatterns = [
     path('category/<category_name>/number', views.asset_category_number),
     path('attribute/<assetName>', views.asset_attribute_list),
     path('assetSuper', views.asset_assetSuper),
+    path('warning', views.asset_warning),
+    path('warning/message', views.asset_warning_message),
+    path('<assetName>/warning', views.asset_warning_assetName),
+    path('<assetName>/history', views.asset_assetName_history),
     path('<assetName>', views.asset_assetName),
     path('id/<id>', views.asset_id),
 ]

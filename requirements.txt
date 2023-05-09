@@ -25,4 +25,5 @@ django-celery-results
 supervisor==4.2.5
 apscheduler
 django-apscheduler
+django-simple-history
 # TODO End: [Student] Add dependency on uWSGI

@@ -1,5 +1,7 @@
 from django.db import models
+from utils import utils_time
 from utils.utils_request import return_field
+from simple_history.models import HistoricalRecords
 
 # Create your models here.
 from mptt.models import MPTTModel, TreeForeignKey
@@ -60,7 +62,10 @@ class Asset(MPTTModel):
     parent = TreeForeignKey('self', blank=True, null=True, on_delete=models.CASCADE)
     entity = models.ForeignKey(Entity, on_delete=models.CASCADE)
     department = models.ForeignKey(Department, on_delete=models.CASCADE)
+    created_time = models.FloatField(default=utils_time.get_timestamp)
+    life = models.BigIntegerField(default=10) # 寿命
     image_url = models.CharField(max_length=300)
+    history = HistoricalRecords(excluded_fields=['lft', 'rght', 'tree_id', 'level', 'description', 'position', 'entity', 'created_time', 'image_url'])
     @classmethod
     def root(cls):
         ''' return the root of the tree'''
@@ -84,6 +89,8 @@ class Asset(MPTTModel):
             "state": self.state,
             "entity": self.entity.name,
             "department": self.department.name,
+            "createTime": self.created_time,
+            "life": self.life,
             "image": self.image_url,
         }
     
@@ -147,3 +154,19 @@ class Label(models.Model):
     description = models.BooleanField(default=True)
     QRcode = models.BooleanField(default=True)
     value = models.BooleanField(default=True) 
+
+class Warning(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
+    entity = models.ForeignKey(Entity, on_delete=models.CASCADE)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE)
+    ageLimit = models.BigIntegerField(default=0)
+    numberLimit = models.BigIntegerField(default=0)
+
+    def serialize(self):
+        return {
+            "asset": self.asset.name,
+            "department": self.department.name,
+            "ageLimit": self.ageLimit,
+            "numberLimit": self.numberLimit,
+        }
