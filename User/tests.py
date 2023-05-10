@@ -206,6 +206,13 @@ class UserTests(TestCase):
         }
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post("/user/feishu/bind", data=payload, content_type="application/json")
+    
+    def post_feishu_login(self, code):
+        payload = {
+            'code': code
+        }
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.post("/user/feishu/login", data=payload, content_type="application/json")
 
     # Now start testcases. 
 
