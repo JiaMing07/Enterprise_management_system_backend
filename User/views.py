@@ -436,7 +436,7 @@ def feishu_login(req: HttpRequest):
         body = json.loads(req.body.decode("utf-8"))
         code = json.loads(req.body.decode("utf-8")).get('code')
 
-        token, decoded = CheckToken(req)
+        # token, decoded = CheckToken(req)
 
         url = "https://passport.feishu.cn/suite/passport/oauth/token"
         headers = {
@@ -489,11 +489,16 @@ def feishu_login(req: HttpRequest):
             user = User.objects.filter(username=username).first()
             
             if user is None:
-                return request_failed(1, "User not exist.", 403)
+                return request_failed(2, "User not exist.", 403)
+            if not user.active:
+                return request_failed(3, "用户已锁定", status_code=403)
+
+            user.token = user.generate_token()
+            user.save()
 
             return_data = {
                 "username": username,
-                "token": token,
+                "token": user.token,
                 "system_super": user.system_super,
                 "entity_super": user.entity_super,
                 "asset_super": user.asset_super,
