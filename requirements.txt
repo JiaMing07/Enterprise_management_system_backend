@@ -17,4 +17,5 @@ cryptography
 psycopg2
 pymysql
 mysqlclient==2.1.0
+requests
 # TODO End: [Student] Add dependency on uWSGI
