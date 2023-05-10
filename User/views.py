@@ -477,8 +477,8 @@ def feishu_login(req: HttpRequest):
         if response.status_code == 200:
             data = response.json()
             # feishuname的定义究竟是什么
-            feishuname = data.get("name")
-            #feishuname = data.get("mobile")
+            # feishuname = data.get("name")
+            feishuname = data.get("mobile")
 
             cur_bind = UserFeishu.objects.filter(feishuname=feishuname).first()
 
