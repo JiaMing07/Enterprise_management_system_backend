@@ -426,6 +426,23 @@ def feishu_bind(req: HttpRequest):
             userbind.save()
         
         return request_success()
+    
+    elif req.method == 'GET':
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        
+        if user is not None:
+            userbind = UserFeishu.objects.filter(username=user.username).first()
+
+            if userbind is None:
+                return request_failed(1, "用户未绑定飞书账户", 403)
+            
+            feishuname = userbind.feishuname
+            return_data = {
+                "feishuname": feishuname
+            }
+            
+            return request_success(return_data)
 
     return BAD_METHOD
 
