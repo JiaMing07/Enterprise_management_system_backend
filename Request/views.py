@@ -80,6 +80,22 @@ def waiting_list(req: HttpRequest):
     return BAD_METHOD
 
 @CheckRequire
+def requests_number(req: HttpRequest):
+    if req.method == 'GET':
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        department_list = subtree_department(user.department)
+        requests_list = NormalRequests.objects.filter(asset__department__id__in=department_list).filter(result=0)
+        num = len(requests_list)
+        transfer_list = TransferRequests.objects.filter(asset__department__id__in=department_list).filter(result=0)
+        num = num + len(transfer_list)
+        return request_success({
+            "number": num
+        })
+    return BAD_METHOD
+
+@CheckRequire
 def requests_repair(req: HttpRequest):
     if req.method == 'POST':
         CheckAuthority(req, ["staff"])

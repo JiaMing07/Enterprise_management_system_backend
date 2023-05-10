@@ -7,7 +7,7 @@ from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
 from utils.utils_time import get_timestamp, get_date
 from utils.utils_getbody import get_args
 from utils.utils_checklength import checklength
-from utils.utils_checkauthority import CheckAuthority, CheckToken
+from utils.utils_checkauthority import *
 
 from User.models import User, Menu
 from Department.models import Department, Entity
@@ -186,25 +186,12 @@ def model_list(req: HttpRequest):
 
 async def add(req: HttpRequest):
     if req.method == 'POST':
-        try:
-            token = req.COOKIES['token']
-        except KeyError:
-            return request_failed(-2, 'Token未给出',status_code=400)
-        try:
-            decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
-        except jwt.ExpiredSignatureError:
-            decode = jwt.decode(token, SECRET_KEY, leeway=datetime.timedelta(days=3650), algorithms=['HS256'])
-            user = await User.objects.filter(username=decode['username']).afirst()
-            user.token = ''
-            user.asave()
-            return request_failed(-2, 'Token已过期',status_code=400)
-        except jwt.InvalidTokenError:
-            return request_failed(-2, 'Token不合法',status_code=400)
+        res = await AsyncCheckToken(req)
+        if res != 'ok':
+            return request_failed(-2, res,status_code=400)
+        token = req.COOKIES['token']
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         user = await User.objects.filter(username=decoded['username']).afirst()
-        if user is None:
-            return request_failed(-2, "不存在对应的用户",status_code=400)
-        if user.token != token:
-            return request_failed(-2, "用户已在其他地方登录，请退出后重新登陆",status_code=400)
         have_authority = False
         for au in ['entity_super', 'asset_super']:
             if user.check_authen() == au:
@@ -239,25 +226,12 @@ def failed_list(req: HttpRequest):
 
 async def restart(req:HttpRequest):
     if req.method == 'POST':
-        try:
-            token = req.COOKIES['token']
-        except KeyError:
-            return request_failed(-2, 'Token未给出',status_code=400)
-        try:
-            decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
-        except jwt.ExpiredSignatureError:
-            decode = jwt.decode(token, SECRET_KEY, leeway=datetime.timedelta(days=3650), algorithms=['HS256'])
-            user = await User.objects.filter(username=decode['username']).afirst()
-            user.token = ''
-            user.asave()
-            return request_failed(-2, 'Token已过期',status_code=400)
-        except jwt.InvalidTokenError:
-            return request_failed(-2, 'Token不合法',status_code=400)
+        res = await AsyncCheckToken(req)
+        if res != 'ok':
+            return request_failed(-2, res,status_code=400)
+        token = req.COOKIES['token']
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         user = await User.objects.filter(username=decoded['username']).afirst()
-        if user is None:
-            return request_failed(-2, "不存在对应的用户",status_code=400)
-        if user.token != token:
-            return request_failed(-2, "用户已在其他地方登录，请退出后重新登陆",status_code=400)
         have_authority = False
         for au in ['entity_super']:
             if user.check_authen() == au:

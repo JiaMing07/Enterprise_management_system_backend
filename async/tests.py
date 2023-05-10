@@ -4,6 +4,9 @@ from Department.models import *
 from User.models import *
 import hashlib
 from http import cookies
+import time
+import asyncio
+from asgiref.sync import sync_to_async
 
 # Create your tests here.
 
@@ -31,30 +34,32 @@ class AsyncTests(TestCase):
         Asset.objects.create(name='ass', entity=ent, owner=user.username, category=category, department=dep)
         Attribute.objects.create(id=1, name="attri_0", entity=ent, department=dep_ent)
 
-    def create_token(self, name, authority):
-        user = User.objects.filter(username=name).first()
+    async def create_token(self, name, authority):
+        user = await User.objects.filter(username=name).afirst()
         user.token = user.generate_token()
         user.system_super, user.entity_super, user.asset_super = user.set_authen(authority)
-        user.save()
+        await user.asave()
         Token = user.token
         c = cookies.SimpleCookie()
         c['token'] = Token
         self.client.cookies = c
-        return user
+        self.async_client.cookies = c
     
-    def post_async_add(self, body):
+    async def post_async_add(self, body):
         payload = {
             'assets': body
         }
         payload = {k: v for k, v in payload.items() if v is not None}
-        return self.async_client.post("/async/add", data=payload, content_type="application/json")
-    
-    def post_async_add(self, id):
+        res = await self.async_client.post("/async/add", data=payload, content_type="application/json")
+        return res
+        
+    async def post_async_restart(self, id):
         payload = {
             'id': id
         }
         payload = {k: v for k, v in payload.items() if v is not None}
-        return self.async_client.post("/async/restart", data=payload, content_type="application/json")
+        res = await self.async_client.post("/async/restart", data=payload, content_type="application/json")
+        return res
     
     def get_async_list(self):
         return self.client.get('/async/list')
@@ -62,8 +67,16 @@ class AsyncTests(TestCase):
     def get_failed_list(self):
         return self.client.get('/async/failed')
     
-    def test_async_add(self):
-        user = self.create_token('test_user', 'entity_super')
+    async def test_async_add(self):
+        user = await User.objects.filter(username='test_user').afirst()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen('staff')
+        await user.asave()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+        self.async_client.cookies = c
 
         assets = [
             {
@@ -167,4 +180,35 @@ class AsyncTests(TestCase):
             }
         ]
         
-        res = self.post_async_add('')
+        res = await self.post_async_add(assets)
+        print(res)
+        self.assertEqual(res.json()['info'], '没有操作权限')
+
+        await self.create_token('test_user', 'entity_super')
+        res = await self.post_async_add(assets)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        res = await self.post_async_restart(0)
+        self.assertEqual(res.json()['info'], '请求体错误，不存在对应原始任务')
+        
+        res = await self.post_async_restart(3)
+        self.assertEqual(res.json()['info'], '不存在原始任务')
+
+        res = await self.post_async_restart(1)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+    def test_list(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen('entity_super')
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        res = self.get_async_list()
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        res = self.get_failed_list()
+        self.assertEqual(res.json()['info'], 'Succeed')
