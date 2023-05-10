@@ -11,7 +11,7 @@ from utils.utils_checkauthority import CheckAuthority, CheckToken
 
 from User.models import User, Menu
 from Department.models import Department, Entity, Log
-from Asset.models import Attribute, Asset, AssetAttribute, AssetCategory, Label
+from Asset.models import Attribute, Asset, AssetAttribute, AssetCategory, Label, Warning
 
 
 from eam_backend.settings import SECRET_KEY
@@ -364,6 +364,7 @@ def asset_add_list(req:HttpRequest):
                 continue
             asset = Asset(name=name, description=description, position=position, value=value, owner=owner.username, number=number,
                         category=category, entity=entity, department=department, parent=parent, life=life, image_url=image_url,state=state)
+            print(asset)
             asset.save()
         if len(err_msg)>0:
             return request_failed(1, err_msg[:-1], status_code=403)

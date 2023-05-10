@@ -7,7 +7,7 @@ WORKDIR /opt/tmp
 
 COPY . .
 
-RUN pip install -i https://pypi.tuna.tsinghua.edu.cn/simple --no-cache-dir -r requirements.txt
+RUN pip install -i https://pypi.tuna.tsinghua.edu.cn/simple --no-cache-dir -r re.txt
 
 EXPOSE 80
 

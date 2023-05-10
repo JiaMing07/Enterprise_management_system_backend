@@ -45,7 +45,7 @@ async def http_call_async(i):
         asy.status = 'SUCCESS'
         asy.result = 'ok'
         print('ok')
-        await asy.asave()
+        await sync_to_async(asy.save)()
     except Exception as e:
         print(e)
 
@@ -57,9 +57,9 @@ async def add_asset(assets_new, username):
     for idx, asset_single in enumerate(assets_new):
         try:
             try:
-                name, parentName, description, position, value, department, number, categoryName, image_url = get_args(
-                asset_single, ["name", "parent", "description", "position", "value", "department", "number", "category", "image"], 
-                ["string", "string", "string", "string", "int", "string", "int", "string", "string"])
+                name, parentName, description, position, value, department, number, categoryName, life, image_url = get_args(
+                    asset_single, ["name", "parent", "description", "position", "value", "department", "number", "category", "life", "image"], 
+                    ["string", "string", "string", "string", "int", "string", "int", "string", "int", "string"])
             except Exception as e:
                 error_code = -2 if len(e.args) < 2 else e.args[1]
                 err_msg = err_msg + '第' +str(idx + 1) +"条资产输入信息有误, " + e.args[0] + ";"  # Refer to below
@@ -67,7 +67,15 @@ async def add_asset(assets_new, username):
                 continue
             print(name, parentName, description, position, value, department, number, categoryName, image_url)
             state = asset_single.get('state', 'IDLE')
+            if state == "":
+                state = "IDLE"
             owner = asset_single.get('owner', "")
+            created_time = asset_single.get('created_time', "")
+            if created_time == "":
+                created_time = get_timestamp()
+            else:
+                created_time = datetime.datetime.strptime(created_time, '%Y-%m-%d')
+                created_time = created_time.timestamp()
             def check_length(string, lowerbound, upperbound, name,err_msg):
                 if lowerbound < len(string) <=upperbound:
                     err_msg += f"Bad length of [{name}]；"
@@ -134,10 +142,16 @@ async def add_asset(assets_new, username):
                 err_msg = err_msg +'第' +str(idx + 1) +"条资产录入失败，部门不在管理范围内" + '；'
                 continue
             late = await Asset.objects.all().order_by('id').alast()
+            id = late.id + 1
             owner_name = owner.username
-            asset = Asset(name=name, description=description, position=position, value=value, owner=owner_name, number=number,
-                        category=category, entity=entity, department=department, parent=parent, image_url=image_url,state=state)
+            print(f"id {id}")
+            asset = Asset(id=id, name=name, description=description, position=position, value=value, owner=owner_name, number=number,
+                        category=category, entity=entity, department=department, parent=parent, image_url=image_url,state=state, life=life)
+            asset.created_time = created_time
+            print("2")
+            print(asset)
             await asset.asave()
+            print("3")
         except Exception as e:
             print(e)
             continue
@@ -285,7 +299,7 @@ async def restart(req:HttpRequest):
         task = await AsyncModel.objects.filter(id=id).afirst()
         if task is None:
             return request_failed(2, "不存在原始任务", status_code=403)
-        task_body = json.load(task.body)
+        task_body = task.body
         assets_new = task_body['assets_new']
         loop = asyncio.get_event_loop()
         loop.create_task(add_asset(assets_new, user.username))

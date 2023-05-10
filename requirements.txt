@@ -1,4 +1,4 @@
-django==4.1.3
+django==4.2
 
 django-cors-headers
 # pymysql
@@ -19,11 +19,10 @@ pymysql
 mysqlclient==2.1.0
 celery
 redis
-Redis
-django-celery-beat
 django-celery-results
 supervisor==4.2.5
 apscheduler
 django-apscheduler
 django-simple-history
+daphne
 # TODO End: [Student] Add dependency on uWSGI

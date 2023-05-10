@@ -6,16 +6,16 @@ python3 manage.py makemigrations Request
 python3 manage.py makemigrations async
 python3 manage.py migrate
 # python3 manage.py loaddata db.json
-supervisord
 
 # TODO Start: [Student] Run with uWSGI instead
 # python3 manage.py runserver 8000
-uwsgi --module=eam_backend.wsgi:application \
+uwsgi -d --module=eam_backend.wsgi:application \
     --env DJANGO_SETTINGS_MODULE=eam_backend.settings \
     --master \
     --http=0.0.0.0:80 \
     --processes=5 \
     --harakiri=20 \
     --max-requests=5000 \
-    --vacuum
+    --vacuum &&
+daphne -b 0.0.0.0 -p 80 eam_backend.asgi:application
 # TODO End: [Student] Run with uWSGI instead
