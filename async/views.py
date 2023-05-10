@@ -13,7 +13,6 @@ from User.models import User, Menu
 from Department.models import Department, Entity
 from Asset.models import Attribute, Asset, AssetAttribute, AssetCategory, Label
 
-from .tasks import *
 from eam_backend.celery import app
 from celery.result import AsyncResult
 
@@ -224,28 +223,6 @@ async def add(req: HttpRequest):
         return request_success()
     return BAD_METHOD
 
-@CheckRequire
-def show_list(req: HttpRequest):
-    if req.method == 'GET':
-        # all = AsyncTask.objects.all()
-        all = TaskResult.objects.all()
-        print(all)
-        data = []
-        # for each in all:
-            # data.append(each.serialze())
-        for each in all:
-            data.append({
-                'id':each.task_id,
-                'start_time': each.date_created,
-                'end_time': each.date_done, 
-                'result': each.result,
-                'status': each.status,
-                'initiator': 'Alice'
-            })
-        return request_success({
-            'data': data
-        })
-    return BAD_METHOD
 
 @CheckRequire
 def failed_list(req: HttpRequest):
