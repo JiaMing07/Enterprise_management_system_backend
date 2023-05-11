@@ -32,21 +32,6 @@ from .models import AsyncModel, AsyncTask
 
 
 
-async def http_call_async(i):
-    try:
-        entity = await Entity.objects.all().afirst()
-        asy = await AsyncModel.objects.acreate(initiator="Alice", start_time=get_date(), status = "STARTED", body = {}, entity= entity)
-        print('ok')
-        for num in range(6):
-            await asyncio.sleep(1)
-            print(num)
-        asy.end_time = get_date()
-        asy.status = 'SUCCESS'
-        asy.result = 'ok'
-        print('ok')
-        await sync_to_async(asy.save)()
-    except Exception as e:
-        print(e)
 
 async def add_asset(assets_new, username):
     user = await User.objects.filter(username=username).afirst()
@@ -157,14 +142,6 @@ async def add_asset(assets_new, username):
         asy.status = 'FAILED'
     await asy.asave()
 
-async def test2(req: HttpRequest):
-    if req.method == 'GET':
-        loop = asyncio.get_event_loop()
-        loop.create_task(http_call_async(1))
-        res = {"code": 0, "info": 'Succeed'}
-        return HttpResponse(json.dumps(res))
-    res = {"code": -3, "info": 'bad method'}
-    return HttpResponse(json.dumps(res))
 
 @CheckRequire
 def model_list(req: HttpRequest):

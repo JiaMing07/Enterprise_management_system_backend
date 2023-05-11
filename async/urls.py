@@ -6,5 +6,4 @@ urlpatterns = [
     path('add', add),
     path('failed', failed_list),
     path('restart', restart),
-    path('test2', test2),
 ]
