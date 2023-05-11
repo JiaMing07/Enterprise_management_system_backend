@@ -26,7 +26,7 @@ import asyncio
 from asgiref.sync import sync_to_async
 import datetime
 
-from .models import AsyncModel, AsyncTask
+from .models import AsyncModel
 
 # Create your views here.
 
