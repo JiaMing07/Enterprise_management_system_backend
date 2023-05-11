@@ -199,10 +199,10 @@ class UserTests(TestCase):
     def get_user_department_list(self):
         return self.client.get("/user/department/list")
     
-    def post_feishu_bind(self, username, feishuname):
+    def post_feishu_bind(self, username, mobile):
         payload = {
             'username': username,
-            'feishuname': feishuname
+            'mobile': mobile
         }
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post("/user/feishu/bind", data=payload, content_type="application/json")
@@ -213,6 +213,9 @@ class UserTests(TestCase):
         }
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post("/user/feishu/login", data=payload, content_type="application/json")
+    
+    def get_feishu_bind(self):
+        return self.client.get("/user/feishu/bind")
 
     # Now start testcases. 
 
@@ -831,13 +834,42 @@ class UserTests(TestCase):
 
         username = 'test_user'
         # user = User.objects.filter(username=username).first()
-        feishuname = 'feishu1'
-        res = self.post_feishu_bind(username, feishuname)
+        mobile = 'feishu1'
+        res = self.post_feishu_bind(username, mobile)
         self.assertEqual(res.json()['info'], "Succeed")
         self.assertEqual(res.json()['code'], 0)
         
         username = 'test_user'
-        feishuname = 'feishu2'
-        res = self.post_feishu_bind(username, feishuname)
+        mobile = 'feishu2'
+        res = self.post_feishu_bind(username, mobile)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
+    
+    def test_feishu_bind_get(self):
+
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        username = 'test_user'
+        # user = User.objects.filter(username=username).first()
+        mobile = 'feishu1'
+        res = self.post_feishu_bind(username, mobile)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
+        
+        username = 'test_user'
+        mobile = 'feishu2'
+        res = self.post_feishu_bind(username, mobile)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.get_feishu_bind()
+        self.assertEqual(res.json()['mobile'], "feishu2")
         self.assertEqual(res.json()['info'], "Succeed")
         self.assertEqual(res.json()['code'], 0)

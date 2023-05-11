@@ -141,11 +141,16 @@ class Menu(models.Model):
 class UserFeishu(models.Model):
     id = models.BigAutoField(primary_key=True)
     username = models.CharField(max_length=50, unique=True)
+    mobile = models.CharField(max_length=50)
     feishuname = models.CharField(max_length=50)
+    open_id = models.CharField(max_length=50)
+
 
     def serialize(self):
         return {
             "id": self.id,
-            "username": self.username,
-            "feishuname": self.feishuname
+            "username": self.username,      # name in SEM
+            "mobile": self.mobile,          # mobile
+            "feishuname": self.feishuname,
+            "open_id": self.open_id
         }
