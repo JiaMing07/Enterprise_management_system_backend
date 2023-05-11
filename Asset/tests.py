@@ -69,7 +69,7 @@ class AttributeTests(TestCase):
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post("/asset/category/add", data=payload, content_type="application/json")
     
-    def post_asset_add(self, name, parent, description, position, value, department, number, category, image):
+    def post_asset_add(self, name, parent, description, position, value, department, number, category, life, image):
         payload = {
             "name": name, 
             "parent": parent, 
@@ -79,6 +79,7 @@ class AttributeTests(TestCase):
             "department": department,
             "number": number, 
             "category": category,
+            "life": life,
             "image": image,
         }
 
@@ -164,7 +165,7 @@ class AttributeTests(TestCase):
     def get_asset_idle(self):
         return self.client.get(f"/asset/idle")
     
-    def put_asset_edit(self, oldName, name, parent, description, position, value, owner, number, state, category, image):
+    def put_asset_edit(self, oldName, name, parent, description, position, value, owner, number, state, category, life, image):
         payload = {
             'oldName': oldName,
             "name": name, 
@@ -176,6 +177,7 @@ class AttributeTests(TestCase):
             "number": number,
             "state": state,
             "category": category,
+            "life": life,
             "image": image,
         }
 
@@ -260,6 +262,43 @@ class AttributeTests(TestCase):
     
     def get_asset_label(self):
         return self.client.get(f'/asset/label')
+    
+    def get_asset_id(self, id):
+        return self.client.get(f"/asset/id/{id}")
+    
+    def post_asset_warning(self, asset, ageLimit, numberLimit):
+        payload = {
+            "asset": asset,
+            "ageLimit": ageLimit,
+            "numberLimit": numberLimit,
+        }
+
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.post("/asset/warning", data=payload, content_type="application/json")
+    
+    def get_asset_warning(self):
+        return self.client.get("/asset/warning")
+    
+    def put_asset_warning_assetName(self, assetName, ageLimit, numberLimit):
+        payload = {
+            "ageLimit": ageLimit,
+            "numberLimit": numberLimit,
+        }
+
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.put(f"/asset/{assetName}/warning", data=payload, content_type="application/json")
+    
+    def get_asset_warning_assetName(self, assetName):
+        return self.client.get(f"/asset/{assetName}/warning")
+    
+    def delete_asset_warning_assetName(self, assetName):
+        return self.client.delete(f"/asset/{assetName}/warning")
+
+    def get_asset_warning_message(self):
+        return self.client.get("/asset/warning/message")
+    
+    def get_asset_assetName_history(self, assetName):
+        return self.client.get(f"/asset/{assetName}/history")
     
     # Now start testcases. 
     def test_asset_category_add(self):
@@ -409,10 +448,11 @@ class AttributeTests(TestCase):
         department = 'dep'
         number = 1
         categoryName = 'cate'
+        life = 5
         image = '127.0.0.1'
         
         res = self.post_asset_add(assetName, parentName, description, position, 
-                                           value, department, number, categoryName, image)
+                                           value, department, number, categoryName, life, image)
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(len(Asset.objects.all()), 3)
@@ -427,10 +467,11 @@ class AttributeTests(TestCase):
         department = 'dep'
         number = 1
         categoryName = 'cate'
+        life = 5
         image = '127.0.0.1'
         
         res = self.post_asset_add(assetName, parentName, description, position, 
-                                           value, department, number, categoryName, image)
+                                           value, department, number, categoryName, life, image)
         self.assertEqual(res.json()['code'], 1)
         self.assertEqual(len(Asset.objects.all()), 3)
 
@@ -443,10 +484,11 @@ class AttributeTests(TestCase):
         department = 'dep'
         number = 1
         categoryName = 'cat'
+        life = 5
         image = '127.0.0.1'
         
         res = self.post_asset_add(assetName, parentName, description, position, 
-                                           value, department, number, categoryName, image)
+                                           value, department, number, categoryName, life, image)
         self.assertEqual(res.json()['code'], 2)
         self.assertEqual(len(Asset.objects.all()), 3)
 
@@ -459,10 +501,11 @@ class AttributeTests(TestCase):
         department = 'Bob'
         number = 1
         categoryName = 'cate'
+        life = 5
         image = '127.0.0.1'
         
         res = self.post_asset_add(assetName, parentName, description, position, 
-                                           value, department, number, categoryName, image)
+                                           value, department, number, categoryName, life, image)
         self.assertEqual(res.json()['code'], 3)
         self.assertEqual(len(Asset.objects.all()), 3)
 
@@ -475,10 +518,11 @@ class AttributeTests(TestCase):
         department = 'dep'
         number = 1
         categoryName = 'cate'
+        life = 5
         image = '127.0.0.1'
         
         res = self.post_asset_add(assetName, parentName, description, position, 
-                                           value, department, number, categoryName, image)
+                                           value, department, number, categoryName, life, image)
         self.assertEqual(res.json()['code'], 4)
         self.assertEqual(len(Asset.objects.all()), 3)
 
@@ -505,10 +549,11 @@ class AttributeTests(TestCase):
         department = 'dep'
         number = 1
         categoryName = 'cate'
+        life = 5
         image = '127.0.0.1'
         
         res = self.post_asset_add(assetName, parentName, description, position, 
-                                           value, department, number, categoryName, image)
+                                           value, department, number, categoryName, life, image)
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
 
@@ -524,10 +569,11 @@ class AttributeTests(TestCase):
         number = 1
         state = 'IN_USE'
         categoryName = 'cate'
+        life = 5
         image = '127.0.0.1'
 
         res = self.put_asset_edit(oldName, newName, parentName, description, position, 
-                                  value, owner, number, state, categoryName, image)
+                                  value, owner, number, state, categoryName, life, image)
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(len(Asset.objects.all()), 2)
@@ -535,31 +581,31 @@ class AttributeTests(TestCase):
         self.assertTrue(Asset.objects.filter(name=newName).exists())
         
         res = self.put_asset_edit(oldName, newName, parentName, description, position, 
-                                  value, owner, number, state, categoryName, image)
+                                  value, owner, number, state, categoryName, life, image)
         self.assertEqual(res.json()['code'], 1)
 
         oldName = 'mobile phone'
         newName = 'ass'
         res = self.put_asset_edit(oldName, newName, parentName, description, position, 
-                                  value, owner, number, state, categoryName, image)
+                                  value, owner, number, state, categoryName, life, image)
         self.assertEqual(res.json()['code'], 2)
 
         newName = 'computer'
         categoryName = 'category_1'
         res = self.put_asset_edit(oldName, newName, parentName, description, position, 
-                                  value, owner, number, state, categoryName, image)
+                                  value, owner, number, state, categoryName, life, image)
         self.assertEqual(res.json()['code'], 3)
 
         owner = 'Bob'
         categoryName = 'cate'
         res = self.put_asset_edit(oldName, newName, parentName, description, position, 
-                                  value, owner, number, state, categoryName, image)
+                                  value, owner, number, state, categoryName, life, image)
         self.assertEqual(res.json()['code'], 4)
 
         owner = 'Alice'
         parentName = 'asset_1'
         res = self.put_asset_edit(oldName, newName, parentName, description, position, 
-                                  value, owner, number, state, categoryName, image)
+                                  value, owner, number, state, categoryName, life, image)
         self.assertEqual(res.json()['code'], 7)
 
         parentName = 'ass'
@@ -575,13 +621,13 @@ class AttributeTests(TestCase):
 
         owner = 'test_user'
         res = self.put_asset_edit(oldName, newName, parentName, description, position, 
-                                  value, owner, number, state, categoryName, image)
+                                  value, owner, number, state, categoryName, life, image)
         self.assertEqual(res.json()['code'], 6)
 
         owner = 'Alice'
         oldName = 'ass'
         res = self.put_asset_edit(oldName, newName, parentName, description, position, 
-                                  value, owner, number, state, categoryName, image)
+                                  value, owner, number, state, categoryName, life, image)
         self.assertEqual(res.json()['code'], 5)
 
     def test_asset_retire(self):
@@ -604,10 +650,11 @@ class AttributeTests(TestCase):
         department = 'dep'
         number = 1
         categoryName = 'cate'
+        life = 5
         image = '127.0.0.1'
         
         res = self.post_asset_add(assetName, parentName, description, position, 
-                                           value, department, number, categoryName, image)
+                                           value, department, number, categoryName, life, image)
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(len(Asset.objects.all()), 2)
@@ -636,10 +683,11 @@ class AttributeTests(TestCase):
         department = 'dep'
         number = 1
         categoryName = 'cate'
+        life = 5
         image = '127.0.0.1'
         
         res = self.post_asset_add(assetName, parentName, description, position, 
-                                           value, department, number, categoryName, image)
+                                           value, department, number, categoryName, life, image)
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
         # self.assertEqual(len(Asset.objects.all()), 2)
@@ -1355,10 +1403,11 @@ class AttributeTests(TestCase):
         department = 'dep'
         number = 1
         categoryName = 'cate'
+        life = 5
         image = '127.0.0.1'
         
         res = self.post_asset_add(assetName, parentName, description, position, 
-                                           value, department, number, categoryName, image)
+                                           value, department, number, categoryName, life, image)
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(len(Asset.objects.all()), 2)
@@ -1526,6 +1575,7 @@ class AttributeTests(TestCase):
             "department": 'dep_child',
             "number": 1, 
             "category": 'cate',
+            "life": 5,
             "image": '127.0.0.1',
             },
             {
@@ -1537,6 +1587,7 @@ class AttributeTests(TestCase):
             "department": '',
             "number": 1, 
             "category": 'cate',
+            "life": 5,
             "image": '127.0.0.2',
             "state": 'IN_USE',
             "owner": 'Alice',
@@ -1550,6 +1601,7 @@ class AttributeTests(TestCase):
             "department": '',
             "number": 1, 
             "category": 'cate',
+            "life": 5,
             "image": '127.0.0.2',
             },
             {
@@ -1561,6 +1613,7 @@ class AttributeTests(TestCase):
             "department": 'department_1',# department not found
             "number": 1, 
             "category": 'cate',
+            "life": 5,
             "image": '127.0.0.2',
             },
             {
@@ -1572,6 +1625,7 @@ class AttributeTests(TestCase):
             "department": 'dep_child',
             "number": 1, 
             "category": 'category_1',# category not found
+            "life": 5,
             "image": '127.0.0.2',
             },
             {
@@ -1583,6 +1637,7 @@ class AttributeTests(TestCase):
             "department": 'dep_child',
             "number": 1, 
             "category": 'cate',
+            "life": 5,
             "image": '127.0.0.2',
             },
             {
@@ -1594,6 +1649,7 @@ class AttributeTests(TestCase):
             "department": 'dep_child',
             "number": 1, 
             "category": 'cate',
+            "life": 5,
             "image": '127.0.0.3',
             "owner": 'Bob',# owner not found
             },
@@ -1606,6 +1662,7 @@ class AttributeTests(TestCase):
             "department": 'dep',# 部门不在管理范围内
             "number": 1, 
             "category": 'cate',
+            "life": 5,
             "image": '127.0.0.3',
             }
         ]
@@ -1631,10 +1688,11 @@ class AttributeTests(TestCase):
         department = 'dep'
         number = 1
         categoryName = 'cate'
+        life = 5
         image = '127.0.0.1'
         
         res = self.post_asset_add(assetName, parentName, description, position, 
-                                           value, department, number, categoryName, image)
+                                           value, department, number, categoryName, life, image)
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(len(Asset.objects.all()), 2)
@@ -1666,10 +1724,11 @@ class AttributeTests(TestCase):
         department = 'dep'
         number = 1
         categoryName = 'cate'
+        life = 5
         image = '127.0.0.1'
         
         res = self.post_asset_add(assetName, parentName, description, position, 
-                                           value, department, number, categoryName, image)
+                                           value, department, number, categoryName, life, image)
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(len(Asset.objects.all()), 2)
@@ -1820,3 +1879,224 @@ class AttributeTests(TestCase):
         res = self.get_asset_label()
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
+
+    def test_asset_warning(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("asset_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        assetName = 'computer'
+        parentName = 'ass'
+        description = 'des'
+        position = 'pos'
+        value = '1000'
+        department = 'dep'
+        number = 3
+        categoryName = 'cate'
+        life = 3
+        image = '127.0.0.1'
+        
+        res = self.post_asset_add(assetName, parentName, description, position, 
+                                           value, department, number, categoryName, life, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        assetName = 'asset_1'
+        ageLimit = 2
+        numberLimit = 2
+
+        res = self.post_asset_warning(assetName, ageLimit, numberLimit)
+        self.assertEqual(res.json()['code'], 1)
+
+        assetName = 'computer'
+
+        res = self.post_asset_warning(assetName, ageLimit, numberLimit)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.post_asset_warning(assetName, ageLimit, numberLimit)
+        self.assertEqual(res.json()['code'], 2)
+
+        assetName = 'keyboard'
+        parentName = 'computer'
+        description = 'des'
+        position = 'pos'
+        value = '1000'
+        department = 'dep_child'
+        number = 3
+        categoryName = 'cate'
+        life = 3
+        image = '127.0.0.1'
+        
+        res = self.post_asset_add(assetName, parentName, description, position, 
+                                           value, department, number, categoryName, life, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.put_asset_edit(assetName, assetName, parentName, description, position, 
+                                           value, 'Alice', number, 'IDLE', categoryName, life, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        ageLimit = 2
+        numberLimit = 2
+
+        res = self.post_asset_warning(assetName, ageLimit, numberLimit)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.get_asset_warning()
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(len(res.json()['warnings']), 2)
+
+        res = self.get_asset_warning_message()
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(len(res.json()['messages']), 0)
+
+        assetName = 'asset_1'
+        ageLimit = 2
+        numberLimit = 4
+
+        res = self.put_asset_warning_assetName(assetName, ageLimit, numberLimit)
+        self.assertEqual(res.json()['code'], 1)
+
+        assetName = 'keyboard'
+
+        res = self.put_asset_warning_assetName(assetName, ageLimit, numberLimit)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.get_asset_warning_message()
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(len(res.json()['messages']), 1)
+
+        assetName = 'computer'
+        ageLimit = 4
+        numberLimit = 2
+
+        res = self.put_asset_warning_assetName(assetName, ageLimit, numberLimit)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.get_asset_warning_message()
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(len(res.json()['messages']), 2)
+        
+        assetName = 'computer'
+        ageLimit = 4
+        numberLimit = 4
+
+        res = self.put_asset_warning_assetName(assetName, ageLimit, numberLimit)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.get_asset_warning_message()
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(len(res.json()['messages']), 3)
+
+        res = self.delete_asset_warning_assetName(assetName)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.get_asset_warning_message()
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(len(res.json()['messages']), 1)
+
+        res = self.get_asset_warning_assetName(assetName)
+        self.assertEqual(res.json()['code'], 2)
+
+        assetName = 'keyboard'
+        res = self.get_asset_warning_assetName(assetName)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+    def test_asset_history(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("asset_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        assetName = 'computer'
+        parentName = 'ass'
+        description = 'des'
+        position = 'pos'
+        value = '1000'
+        department = 'dep'
+        number = 3
+        categoryName = 'cate'
+        life = 3
+        image = '127.0.0.1'
+        
+        res = self.post_asset_add(assetName, parentName, description, position, 
+                                           value, department, number, categoryName, life, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.put_asset_edit(assetName, assetName, parentName, description, position, 
+                                           value, 'Alice', number, 'IDLE', categoryName, life, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.put_asset_edit(assetName, assetName, parentName, description, position, 
+                                           value, 'Alice', number, 'IN_USE', categoryName, life, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.put_asset_edit(assetName, assetName, parentName, description, position, 
+                                           value, 'Alice', number, 'IN_MAINTAIN', categoryName, life, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.put_asset_edit(assetName, assetName, parentName, description, position, 
+                                           value, 'test_user', number, 'IDLE', categoryName, life, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.put_asset_edit(assetName, assetName, parentName, description, position, 
+                                           value, 'test_user', number, 'RETIRED', categoryName, life, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.get_asset_assetName_history(assetName)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(len(res.json()['history']), 6)
+        
+    def test_asset_id(self):
+        entity = Entity.objects.create(name="entity_id")
+        department = Department.objects.create(name='dep_id', entity=entity)
+        password='123'
+        md5 = hashlib.md5()
+        md5.update(password.encode('utf-8'))
+        pwd = md5.hexdigest()
+        user = User.objects.create(username='test_id', password=pwd, department=department, entity=entity)
+        category = AssetCategory.objects.create(name='cate', entity=entity)
+        ass = Asset.objects.create(name='ass', entity=entity, owner=user.username, category=category, department=department)
+        id = ass.id
+
+        res = self.get_asset_id(id)
+        # ass = Asset.objects.filter(id=1).first()
+        # print(ass.name)
+        # print(id)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        id = id+2
+        res = self.get_asset_id(id)
+        self.assertEqual(res.json()['code'], 1)
+        self.assertEqual(res.json()['info'], 'asset not found')

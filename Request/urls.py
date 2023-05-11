@@ -12,4 +12,5 @@ urlpatterns = [
     path('approve', views.requests_approve),
     path('disapprove', views.requests_disapprove),
     path('delete', views.requests_delete),
+    path('number', views.requests_number),
 ]

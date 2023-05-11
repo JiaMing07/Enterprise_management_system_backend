@@ -4,14 +4,15 @@ from django.http import HttpRequest, HttpResponse
 
 from utils.utils_request import BAD_METHOD, request_failed, request_success, return_field
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
-from utils.utils_time import get_timestamp
+from utils.utils_time import get_timestamp, get_date
 from utils.utils_getbody import get_args
 from utils.utils_checklength import checklength
 from utils.utils_checkauthority import CheckAuthority, CheckToken
 
 from User.models import User, Menu
-from Department.models import Department, Entity
-from Asset.models import Attribute, Asset, AssetAttribute, AssetCategory, Label
+from Department.models import Department, Entity, Log
+from Asset.models import Attribute, Asset, AssetAttribute, AssetCategory, Label, Warning
+
 
 from eam_backend.settings import SECRET_KEY
 import jwt
@@ -73,6 +74,9 @@ def asset_category_add(req: HttpRequest):
             return request_failed(2, "该资产类型已存在", status_code=403)
         category = AssetCategory(name=name, entity=entity, parent=parent, is_number=is_number)
         category.save()
+        # log_info = f"用户{user.username}({user.department.name})  在 {get_date()} 添加资产类型 {department_name}"
+        # log = Log(log=log_info, type = 1, entity=entity)
+        # log.save()
         return request_success()
     else:
         return BAD_METHOD
@@ -150,7 +154,8 @@ def asset_list(req: HttpRequest):
         return_data = {
             "assets": [
                 return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
-                                                 "position", "value", "user", "number", "state", "department", "image"])
+                                                 "position", "value", "user", "number", "state", "department", 
+                                                 "createTime", "life", "image"])
             for asset in assets],
         }
         return request_success(return_data)
@@ -162,9 +167,9 @@ def asset_add(req: HttpRequest):
     if req.method == 'POST':
         CheckAuthority(req, ["entity_super", "asset_super"])
         body = json.loads(req.body.decode("utf-8"))
-        name, parentName, description, position, value, department, number, categoryName, image_url = get_args(
-            body, ["name", "parent", "description", "position", "value", "department", "number", "category", "image"], 
-            ["string", "string", "string", "string", "int", "string", "int", "string", "string"])
+        name, parentName, description, position, value, department, number, categoryName, life, image_url = get_args(
+            body, ["name", "parent", "description", "position", "value", "department", "number", "category", "life", "image"], 
+            ["string", "string", "string", "string", "int", "string", "int", "string", "int", "string"])
         token, decoded = CheckToken(req)
         user = User.objects.filter(username=decoded['username']).first()
         entity = user.entity
@@ -206,7 +211,7 @@ def asset_add(req: HttpRequest):
         if user.department not in ancestor_list:
             return request_failed(5, "部门不在管理范围内", status_code=403)
         asset = Asset(name=name, description=description, position=position, value=value, owner=owner.username, number=number,
-                      category=category, entity=entity, department=department, parent=parent, image_url=image_url)
+                      category=category, entity=entity, department=department, parent=parent, life=life, image_url=image_url)
         asset.save()
         return request_success()
     else:
@@ -217,9 +222,9 @@ def asset_edit(req: HttpRequest):
     if req.method == 'PUT':
         CheckAuthority(req, ["entity_super", "asset_super"])
         body = json.loads(req.body.decode("utf-8"))
-        oldName, assetName, parentName, description, position, value, owner, number, state, categoryName, image_url = get_args(
-            body, ["oldName", "name", "parent", "description", "position", "value", "owner", "number", "state", "category", "image"], 
-            ["string", "string", "string", "string", "string", "int", "string", "int", "string", "string", "string"])
+        oldName, assetName, parentName, description, position, value, owner, number, state, categoryName, life, image_url = get_args(
+            body, ["oldName", "name", "parent", "description", "position", "value", "owner", "number", "state", "category", "life", "image"], 
+            ["string", "string", "string", "string", "string", "int", "string", "int", "string", "string", "int", "string"])
         token, decoded = CheckToken(req)
         user = User.objects.filter(username=decoded['username']).first()
         entity = user.entity
@@ -281,6 +286,7 @@ def asset_edit(req: HttpRequest):
         asset.category = category
         asset.department = department
         asset.image_url = image_url
+        asset.life = life
         asset.save()
         return request_success()
     else:
@@ -297,9 +303,9 @@ def asset_add_list(req:HttpRequest):
         entity = user.entity
         err_msg=""
         for idx, asset_single in enumerate(assets_new):
-            name, parentName, description, position, value, department, number, categoryName, image_url = get_args(
-            asset_single, ["name", "parent", "description", "position", "value", "department", "number", "category", "image"], 
-            ["string", "string", "string", "string", "int", "string", "int", "string", "string"])
+            name, parentName, description, position, value, department, number, categoryName, life, image_url = get_args(
+            asset_single, ["name", "parent", "description", "position", "value", "department", "number", "category", "life", "image"], 
+            ["string", "string", "string", "string", "int", "string", "int", "string", "int", "string"])
             state = asset_single.get('state', 'IDLE')
             owner = asset_single.get('owner', "")
             checklength(name, 0, 50, "assetName")
@@ -357,7 +363,8 @@ def asset_add_list(req:HttpRequest):
                 err_msg = err_msg +'第' +str(idx + 1) +"条资产录入失败，部门不在管理范围内" + '；'
                 continue
             asset = Asset(name=name, description=description, position=position, value=value, owner=owner.username, number=number,
-                        category=category, entity=entity, department=department, parent=parent, image_url=image_url,state=state)
+                        category=category, entity=entity, department=department, parent=parent, life=life, image_url=image_url,state=state)
+            print(asset)
             asset.save()
         if len(err_msg)>0:
             return request_failed(1, err_msg[:-1], status_code=403)
@@ -602,8 +609,9 @@ def attribute_edit(req: HttpRequest):
     
 @CheckRequire    
 def asset_attribute(req: HttpRequest):
-
+    print(req.method)
     if req.method == 'POST':
+        print(1)
         # check format
         body = json.loads(req.body.decode("utf-8"))
         asset_name, attribute_name, description = get_args(body, ['asset', 'attribute', 'description'], ['string','string','string'])
@@ -1051,3 +1059,184 @@ def asset_allocate(req: HttpRequest):
         return request_success()
     return BAD_METHOD
     
+@CheckRequire
+def asset_warning(req: HttpRequest):
+    CheckAuthority(req, ["entity_super", "asset_super"])
+    token, decoded = CheckToken(req)
+    user = User.objects.filter(username=decoded['username']).first()
+    entity = user.entity
+    if req.method == 'POST':
+        body = json.loads(req.body.decode("utf-8"))
+        assetName, ageLimit, numberLimit = get_args(body, ["asset", "ageLimit", "numberLimit"], ["string", "int", "int"])
+        asset = Asset.objects.filter(entity=entity, name=assetName).first()
+        if asset is None:
+            return request_failed(1, "资产不存在", status_code=404)
+        warning = Warning.objects.filter(asset=asset).first()
+        if warning:
+            return request_failed(2, "告警已存在", status_code=403)
+        department = asset.department
+        warning = Warning(asset=asset, entity=entity, department=department, ageLimit=ageLimit, numberLimit=numberLimit)
+        warning.save()
+        return request_success()
+    elif req.method == 'GET':
+        warnings = []
+        departments = []
+        departments.append(user.department)
+        while (len(departments) != 0):
+            department = departments.pop(0)
+            dep_warnings = Warning.objects.filter(entity=entity, department=department)
+            for warning in dep_warnings:
+                warnings.append(warning.serialize())
+            dep_children = department.get_children()
+            for child in dep_children:
+                departments.append(child)
+        return_data = {
+            'warnings': warnings,
+        }
+        return request_success(return_data)
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
+def asset_warning_assetName(req: HttpRequest, assetName: str):
+    CheckAuthority(req, ["entity_super", "asset_super"])
+    token, decoded = CheckToken(req)
+    user = User.objects.filter(username=decoded['username']).first()
+    entity = user.entity
+    checklength(assetName, 0, 50, 'assetName')
+
+    if req.method == 'GET':
+        asset = Asset.objects.filter(entity=entity, name=assetName).first()
+        if asset is None:
+            return request_failed(1, "资产不存在", status_code=404)
+        warning = Warning.objects.filter(asset=asset).first()
+        if warning is None:
+            return request_failed(2, "告警不存在", status_code=404)
+        return request_success(warning.serialize())
+    
+    elif req.method == 'PUT':
+        body = json.loads(req.body.decode("utf-8"))
+        ageLimit, numberLimit = get_args(body, ["ageLimit", "numberLimit"], ["int", "int"])
+        asset = Asset.objects.filter(entity=entity, name=assetName).first()
+        if asset is None:
+            return request_failed(1, "资产不存在", status_code=404)
+        warning = Warning.objects.filter(asset=asset).first()
+        if warning is None:
+            return request_failed(2, "告警不存在", status_code=404)
+        warning.ageLimit = ageLimit
+        warning.numberLimit = numberLimit
+        warning.save()
+        return request_success()
+    
+    elif req.method == 'DELETE':
+        asset = Asset.objects.filter(entity=entity, name=assetName).first()
+        if asset is None:
+            return request_failed(1, "资产不存在", status_code=404)
+        warning = Warning.objects.filter(asset=asset).first()
+        if warning is None:
+            return request_failed(2, "告警不存在", status_code=404)
+        warning.delete()
+        return request_success()
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
+def asset_warning_message(req: HttpRequest):
+    if req.method == 'GET':
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        time = get_timestamp()
+
+        messages = []
+        departments = []
+        departments.append(user.department)
+        while (len(departments) != 0):
+            department = departments.pop(0)
+            dep_warnings = Warning.objects.filter(entity=entity, department=department)
+            for warning in dep_warnings:
+                age = warning.asset.life - (time - warning.asset.created_time) / 3600 / 24 / 365
+                number = warning.asset.number
+                if age < warning.ageLimit:
+                    messages.append({
+                        "asset": warning.asset.name,
+                        "department": warning.department.name,
+                        "warning": "age",
+                    })
+                if number < warning.numberLimit:
+                    messages.append({
+                        "asset": warning.asset.name,
+                        "department": warning.department.name,
+                        "warning": "number",
+                    })
+            dep_children = department.get_children()
+            for child in dep_children:
+                departments.append(child)
+        return_data = {
+            'messages': messages,
+        }
+        return request_success(return_data)
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
+def asset_assetName_history(req: HttpRequest, assetName: str):
+    if req.method == 'GET':
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        checklength(assetName, 0, 50, 'assetName')
+
+        asset = Asset.objects.filter(entity=entity, name=assetName).first()
+        if asset is None:
+            return request_failed(1, "资产不存在", status_code=404)
+
+        all_record = []
+        for history in asset.history.all():
+            parentName = ''
+            if history.parent is not None:
+                parentName = history.parent.name
+            record = {
+                "assetName": history.name,
+                "parentName": parentName,
+                "category": history.category.name,
+                "value": history.value,
+                "user": history.owner,
+                "number": history.number,
+                "state": history.state,
+                "department": history.department.name,
+                "life": history.life,
+                "changeTime": history.history_date,
+            }
+            all_record.append(record)
+            
+        return_data = {
+            'history': all_record,
+        }
+        return request_success(return_data)
+    else:
+        return BAD_METHOD
+
+@CheckRequire
+def asset_id(req: HttpRequest, id: int):
+    if req.method == 'GET':
+        asset = Asset.objects.filter(id=id).first()
+        if asset is None:
+            return request_failed(1, "asset not found", status_code=404)
+        
+        property = asset.serialize()
+        assetAttributes = AssetAttribute.objects.filter(asset=asset)
+        attributes = []
+        for assetAttribute in assetAttributes:
+            attr = {}
+            attr['key'] = assetAttribute.attribute.name
+            attr['value'] = assetAttribute.description
+            attributes.append(attr)
+        property['attribute'] = attributes
+        return_data = {
+            "property": property,
+        }
+        return request_success(return_data)
+    return BAD_METHOD

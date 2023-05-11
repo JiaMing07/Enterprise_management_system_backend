@@ -8,7 +8,7 @@ from eam_backend.settings import SECRET_KEY
 from Department.models import Department, Entity
 import jwt
 
-
+# Create your models here.
 class User(models.Model):
     '''
     User
@@ -34,7 +34,7 @@ class User(models.Model):
             return False
     
     def generate_token(self):
-        payload = {'exp': datetime.now() + timedelta(days=1), 'iat': datetime.utcnow(), 'username': self.username}
+        payload = {'exp': datetime.utcnow() + timedelta(days=1), 'iat': datetime.utcnow(), 'username': self.username}
         token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
         return token
     
@@ -126,8 +126,6 @@ class Menu(models.Model):
                 asset_show = True
             if authority == 'staff':
                 staff_show = True
-        print(au)
-        print(entity_show, asset_show, staff_show)
         return entity_show, asset_show, staff_show
     
     def serialize(self):
@@ -139,5 +137,20 @@ class Menu(models.Model):
     
     class Meta:
         unique_together = ['first', 'second', 'entity']
-# Create your models here.
 
+class UserFeishu(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    username = models.CharField(max_length=50, unique=True)
+    mobile = models.CharField(max_length=50)
+    feishuname = models.CharField(max_length=50)
+    open_id = models.CharField(max_length=50)
+
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "username": self.username,      # name in SEM
+            "mobile": self.mobile,          # mobile
+            "feishuname": self.feishuname,
+            "open_id": self.open_id
+        }

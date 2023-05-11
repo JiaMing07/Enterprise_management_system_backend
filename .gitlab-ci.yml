@@ -47,6 +47,7 @@ unit-test:
     - python3 manage.py makemigrations User
     - python3 manage.py makemigrations Asset
     - python3 manage.py makemigrations Request
+    - python3 manage.py makemigrations Async
     - python3 manage.py migrate
     - python manage.py createcachetable
     - sh ./test.sh

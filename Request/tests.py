@@ -112,6 +112,8 @@ class AttributeTests(TestCase):
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post("/requests/delete", data=payload, content_type="application/json")
     
+    def get_request_number(self):
+        return self.client.get("/requests/number")
     # start test
 
     def test_request_return(self):
@@ -218,6 +220,11 @@ class AttributeTests(TestCase):
         res = self.post_request_repair(asset_list)
         self.assertEqual(res.json()['info'], "第1条想要维修的资产 asset_3 已提交转移申请")
         self.assertEqual(res.json()['code'], 1)
+
+        user = self.create_token('test_user', 'entity_super')
+        res = self.get_request_number()
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['number'], 4)
 
     def test_request_transfer(self):
         user = self.create_token('test_user', 'staff')

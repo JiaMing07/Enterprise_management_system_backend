@@ -43,3 +43,25 @@ def CheckAuthority(req: HttpRequest, authority: list):
     msg = CompareAuthority(req, authority)
     assert msg == "ok", f"{msg}"
 
+async def AsyncCheckToken(req: HttpRequest):
+    try:
+        token = req.COOKIES['token']
+    except KeyError:
+        return 'Token未给出'
+    try:
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+    except jwt.ExpiredSignatureError:
+        decode = jwt.decode(token, SECRET_KEY, leeway=datetime.timedelta(days=3650), algorithms=['HS256'])
+        user = await User.objects.filter(username=decode['username']).afirst()
+        user.token = ''
+        user.asave()
+        return 'Token已过期'
+    except jwt.InvalidTokenError:
+        return 'Token不合法'
+    user = await User.objects.filter(username=decoded['username']).afirst()
+    if user is None:
+        return "不存在对应的用户"
+    if user.token != token:
+        return "用户已在其他地方登录，请退出后重新登陆"
+    return 'ok'
+
