@@ -409,7 +409,7 @@ def feishu_bind(req: HttpRequest):
     if req.method == 'POST':
         body = json.loads(req.body.decode("utf-8"))
         username = json.loads(req.body.decode("utf-8")).get('username')
-        feishuname = json.loads(req.body.decode("utf-8")).get('feishuname')
+        mobile = json.loads(req.body.decode("utf-8")).get('mobile')
 
         user = User.objects.filter(username=username).first()
 
@@ -418,11 +418,11 @@ def feishu_bind(req: HttpRequest):
         
         oldbind = UserFeishu.objects.filter(username=username).first()
         if oldbind is not None:
-            oldbind.feishuname = feishuname
+            oldbind.mobile = mobile
             oldbind.save()
         
         else:
-            userbind = UserFeishu(username=username, feishuname=feishuname)
+            userbind = UserFeishu(username=username, mobile=mobile)
             userbind.save()
         
         return request_success()
@@ -437,9 +437,9 @@ def feishu_bind(req: HttpRequest):
             if userbind is None:
                 return request_failed(1, "用户未绑定飞书账户", 403)
             
-            feishuname = userbind.feishuname
+            mobile = userbind.mobile
             return_data = {
-                "feishuname": feishuname
+                "mobile": mobile
             }
             
             return request_success(return_data)
@@ -493,16 +493,20 @@ def feishu_login(req: HttpRequest):
         # 获取返回的name参数
         if response.status_code == 200:
             data = response.json()
-            # feishuname的定义究竟是什么
-            # feishuname = data.get("name")
-            feishuname = data.get("mobile")
+            # mobile的定义究竟是什么
+            # mobile = data.get("name")
+            mobile = data.get("mobile")
+            open_id = data.get("open_id")
+            feishuname = data.get("name")
 
-            cur_bind = UserFeishu.objects.filter(feishuname=feishuname).first()
+            cur_bind = UserFeishu.objects.filter(mobile=mobile).first()
 
             if cur_bind is None:
                 return request_failed(1, "Feishu not bind with any name.", 403)
             
             username = cur_bind.username
+            cur_bind.open_id = open_id
+            cur_bind.feishuname = feishuname
             user = User.objects.filter(username=username).first()
             
             if user is None:

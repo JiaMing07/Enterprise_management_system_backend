@@ -199,10 +199,10 @@ class UserTests(TestCase):
     def get_user_department_list(self):
         return self.client.get("/user/department/list")
     
-    def post_feishu_bind(self, username, feishuname):
+    def post_feishu_bind(self, username, mobile):
         payload = {
             'username': username,
-            'feishuname': feishuname
+            'mobile': mobile
         }
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post("/user/feishu/bind", data=payload, content_type="application/json")
@@ -834,14 +834,14 @@ class UserTests(TestCase):
 
         username = 'test_user'
         # user = User.objects.filter(username=username).first()
-        feishuname = 'feishu1'
-        res = self.post_feishu_bind(username, feishuname)
+        mobile = 'feishu1'
+        res = self.post_feishu_bind(username, mobile)
         self.assertEqual(res.json()['info'], "Succeed")
         self.assertEqual(res.json()['code'], 0)
         
         username = 'test_user'
-        feishuname = 'feishu2'
-        res = self.post_feishu_bind(username, feishuname)
+        mobile = 'feishu2'
+        res = self.post_feishu_bind(username, mobile)
         self.assertEqual(res.json()['info'], "Succeed")
         self.assertEqual(res.json()['code'], 0)
     
@@ -858,18 +858,18 @@ class UserTests(TestCase):
 
         username = 'test_user'
         # user = User.objects.filter(username=username).first()
-        feishuname = 'feishu1'
-        res = self.post_feishu_bind(username, feishuname)
+        mobile = 'feishu1'
+        res = self.post_feishu_bind(username, mobile)
         self.assertEqual(res.json()['info'], "Succeed")
         self.assertEqual(res.json()['code'], 0)
         
         username = 'test_user'
-        feishuname = 'feishu2'
-        res = self.post_feishu_bind(username, feishuname)
+        mobile = 'feishu2'
+        res = self.post_feishu_bind(username, mobile)
         self.assertEqual(res.json()['info'], "Succeed")
         self.assertEqual(res.json()['code'], 0)
 
         res = self.get_feishu_bind()
-        self.assertEqual(res.json()['feishuname'], "feishu2")
+        self.assertEqual(res.json()['mobile'], "feishu2")
         self.assertEqual(res.json()['info'], "Succeed")
         self.assertEqual(res.json()['code'], 0)
