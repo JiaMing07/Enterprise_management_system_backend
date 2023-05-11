@@ -464,7 +464,7 @@ def feishu_login(req: HttpRequest):
             "client_id": "cli_a4d212cbb87a500d",
             "client_secret": "M81ME3LFvgI7T0cIApC7xyTMuNEqbHFy",
             "code": code,
-            "redirect_uri": "http://localhost:3000/feishu"
+            "redirect_uri": "https://eam-frontend-bughunters.app.secoder.net/feishu"
         }
         response = requests.post(url, headers=headers, data=data)
         # content_type = response.headers.get("Content-Type")
