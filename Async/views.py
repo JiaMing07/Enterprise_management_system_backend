@@ -47,9 +47,7 @@ async def add_asset(assets_new, username):
             except Exception as e:
                 error_code = -2 if len(e.args) < 2 else e.args[1]
                 err_msg = err_msg + '第' +str(idx + 1) +"条资产输入信息有误, " + e.args[0] + ";"  # Refer to below
-                print(err_msg)
                 continue
-            print(name, parentName, description, position, value, department, number, categoryName, image_url)
             state = asset_single.get('state', 'IDLE')
             if state == "":
                 state = "IDLE"
@@ -151,7 +149,6 @@ def model_list(req: HttpRequest):
         user = User.objects.filter(username=decoded['username']).first()
         entity = user.entity
         models = AsyncModel.objects.filter(entity=entity)
-        print(models)
         data = []
         for m in models:
             data.append(m.serialize())

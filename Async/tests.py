@@ -181,7 +181,6 @@ class AsyncTests(TestCase):
         ]
         
         res = await self.post_async_add(assets)
-        print(res)
         self.assertEqual(res.json()['info'], '没有操作权限')
 
         await self.create_token('test_user', 'entity_super')
