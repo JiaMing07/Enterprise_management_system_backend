@@ -94,7 +94,7 @@ async def add_asset(assets_new, username):
                     p = await Asset.objects.filter(id=1).afirst()
                     parent = Asset(name=entity.name, owner=user.username, 
                                 category=c, entity=entity, department=d, parent=p)
-                    parent.asave()
+                    await parent.asave()
                 if department == "":
                     department = Department.objects.filter(id=user.department_id).afirst()
                 else:

@@ -32,6 +32,7 @@ def CompareAuthority(req: HttpRequest, authority):
     if user.token != token:
         return "用户已在其他地方登录，请退出后重新登陆"
     have_authority = False
+    print(user.check_authen())
     for au in authority:
         if user.check_authen() == au:
             have_authority = True

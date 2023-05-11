@@ -53,7 +53,7 @@ INSTALLED_APPS = [
     'User',
     'mptt',
     'Request',
-    'async'
+    'Async'
 ]
 
 MIDDLEWARE = [

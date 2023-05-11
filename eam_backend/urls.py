@@ -22,5 +22,5 @@ urlpatterns = [
     path('asset/', include("Asset.urls")),
     path('', include("Department.urls")),
     path('requests/', include("Request.urls")),
-    path('async/', include("async.urls")),
+    path('async/', include("Async.urls")),
 ]
