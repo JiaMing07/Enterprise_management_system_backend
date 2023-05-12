@@ -306,6 +306,7 @@ def requests_approve(req: HttpRequest):
             else:
                 err_msg += f'第{idx+1}条想要处理的资产 {asset_name} 申请不符合要求; '
 
+            asset.change_time = get_timestamp()
             asset.save()
 
         if len(err_msg) > 0:

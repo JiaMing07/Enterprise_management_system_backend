@@ -65,6 +65,9 @@ class Asset(MPTTModel):
     created_time = models.FloatField(default=utils_time.get_timestamp)
     life = models.BigIntegerField(default=10) # 寿命
     image_url = models.CharField(max_length=300)
+    # history method
+    operation = models.CharField(max_length=50, default='add')
+    change_time = models.FloatField(default=utils_time.get_timestamp)
     history = HistoricalRecords(excluded_fields=['lft', 'rght', 'tree_id', 'level', 'description', 'position', 'entity', 'created_time', 'image_url'])
     @classmethod
     def root(cls):

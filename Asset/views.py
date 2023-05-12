@@ -271,6 +271,9 @@ def asset_edit(req: HttpRequest):
         if parent is None:
             return request_failed(7, "父资产不存在", status_code=404)
         
+        asset.operation = 'edit'
+        if asset.state != state:
+            asset.operation = state
         asset.name = assetName
         asset.parent = parent
         asset.description = description
@@ -283,6 +286,7 @@ def asset_edit(req: HttpRequest):
         asset.department = department
         asset.image_url = image_url
         asset.life = life
+        asset.change_time = get_timestamp()
         asset.save()
         return request_success()
     else:
@@ -396,7 +400,11 @@ def asset_retire(req: HttpRequest):
             children_list = asset.get_children()
             for child in children_list:
                 child.parent = Asset.objects.filter(name = asset.entity.name).first()
+                child.operation = 'edit'
+                child.change_time = get_timestamp()
                 child.save()
+            asset.operation = 'RETIRED'
+            asset.change_time = get_timestamp()
             asset.save()
         if len(err_msg) > 0:
             return request_failed(1, err_msg[:-1], status_code=403)
@@ -1047,6 +1055,8 @@ def asset_allocate(req: HttpRequest):
                 err_msg += f"第{idx+1}条资产 {ass} 不在管辖范围内，无法调拨；"
             asset.owner = asset_super.username
             asset.department = asset_super.department
+            asset.operation = 'ALLOCATE'
+            asset.change_time = get_timestamp()
             asset.save()
         if len(err_msg) > 0:
             return request_failed(1, err_msg[:-1], status_code=403)
