@@ -110,6 +110,8 @@ class Asset(MPTTModel):
     class Meta:
         unique_together = ['entity', 'name']
 
+    def __str__(self):
+        return self.name
 
 class Attribute(models.Model):
     '''自定义属性'''

@@ -276,6 +276,8 @@ def asset_edit(req: HttpRequest):
             return request_failed(7, "父资产不存在", status_code=404)
         
         asset.operation = 'edit'
+        if asset.owner != owner:
+            asset.operation = 'MOVE'
         if asset.state != state:
             asset.operation = state
         asset.name = assetName
@@ -368,7 +370,6 @@ def asset_add_list(req:HttpRequest):
                 continue
             asset = Asset(name=name, description=description, position=position, value=value, owner=owner.username, number=number,
                         category=category, entity=entity, department=department, parent=parent, life=life, image_url=image_url,state=state)
-            print(asset)
             asset.save()
         if len(err_msg)>0:
             return request_failed(1, err_msg[:-1], status_code=403)
@@ -617,9 +618,7 @@ def attribute_edit(req: HttpRequest):
     
 @CheckRequire    
 def asset_attribute(req: HttpRequest):
-    print(req.method)
     if req.method == 'POST':
-        print(1)
         # check format
         body = json.loads(req.body.decode("utf-8"))
         asset_name, attribute_name, description = get_args(body, ['asset', 'attribute', 'description'], ['string','string','string'])
@@ -1061,7 +1060,7 @@ def asset_allocate(req: HttpRequest):
                 err_msg += f"第{idx+1}条资产 {ass} 不在管辖范围内，无法调拨；"
             asset.owner = asset_super.username
             asset.department = asset_super.department
-            asset.operation = 'ALLOCATE'
+            asset.operation = 'MOVE'
             asset.change_time = get_timestamp()
             asset.save()
         if len(err_msg) > 0:
@@ -1218,7 +1217,8 @@ def asset_assetName_history(req: HttpRequest, assetName: str):
                 "state": history.state,
                 "department": history.department.name,
                 "life": history.life,
-                "changeTime": history.history_date,
+                "changeTime": history.change_time,
+                "operation": history.operation,
             }
             all_record.append(record)
             

@@ -283,6 +283,8 @@ def requests_approve(req: HttpRequest):
                     err_msg += f'第{idx+1}条想要申领的资产 {asset_name} 不在申请list中; '
                 else:
                     asset.owner = request.initiator.username
+                    asset.state = 'IN_USE'
+                    asset.operation = 'IN_USE'
                     request.review_time = get_timestamp()
                     request.result = 1
                     request.save()
@@ -297,6 +299,7 @@ def requests_approve(req: HttpRequest):
                 else:
                     asset.state = 'IDLE'
                     asset.owner = user.username
+                    asset.operation = 'IDLE'
                     request.review_time = get_timestamp()
                     request.result = 1
                     request.save()
@@ -310,6 +313,7 @@ def requests_approve(req: HttpRequest):
                     err_msg += f'第{idx+1}条想要维修的资产 {asset_name} 不在申请list中; '
                 else:
                     asset.state = 'IN_MAINTAIN'
+                    asset.operation = 'IN_MAINTAIN'
                     request.review_time = get_timestamp()
                     request.result = 1
                     request.save()
@@ -324,6 +328,7 @@ def requests_approve(req: HttpRequest):
                 else:
                     asset.owner = request.participant.username
                     asset.position = request.position
+                    asset.operation = 'MOVE'
                     request.review_time = get_timestamp()
                     request.result = 1
                     request.save()

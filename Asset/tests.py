@@ -2021,7 +2021,7 @@ class AttributeTests(TestCase):
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
 
-    def test_asset_history(self):
+    def test_asset_assetName_history(self):
         user = User.objects.filter(username='test_user').first()
         user.token = user.generate_token()
         user.system_super, user.entity_super, user.asset_super = user.set_authen("asset_super")
