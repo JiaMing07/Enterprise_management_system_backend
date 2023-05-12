@@ -1250,3 +1250,67 @@ def asset_id(req: HttpRequest, id: int):
         }
         return request_success(return_data)
     return BAD_METHOD
+
+@CheckRequire
+def asset_history(req: HttpRequest):
+    if req.method == 'GET':
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+
+        assets = []
+        departments = []
+        departments.append(user.department)
+        while (len(departments) != 0):
+            department = departments.pop(0)
+            dep_assets = Asset.objects.filter(entity=entity, department=department)
+            for asset in dep_assets:
+                assets.append(asset)
+            dep_children = department.get_children()
+            for child in dep_children:
+                departments.append(child)
+
+        add_record = []
+        edit_record = []
+        idle_record = []
+        in_use_record = []
+        in_maintain_record = []
+        retired_record = []
+        move_record = []
+        for asset in assets:
+            for history in asset.history.all():
+                record = {
+                    "assetName": history.name,
+                    "category": history.category.name,
+                    "user": history.owner,
+                    "department": history.department.name,
+                    "changeTime": history.change_time,
+                }
+                if history.operation == 'add':
+                    add_record.append(record)
+                elif history.operation == 'edit':
+                    edit_record.append(record)
+                elif history.operation == 'IDLE':
+                    idle_record.append(record)
+                elif history.operation == 'IN_USE':
+                    in_use_record.append(record)
+                elif history.operation == 'IN_MAINTAIN':
+                    in_maintain_record.append(record)
+                elif history.operation == 'RETIRED':
+                    retired_record.append(record)
+                elif history.operation == 'MOVE':
+                    move_record.append(record)
+        
+        return_data = {
+            'add': add_record,
+            'edit': edit_record,
+            'idle': idle_record,
+            'use': in_use_record,
+            'maintain': in_maintain_record,
+            'retired': retired_record,
+            'move': move_record,
+        }
+        return request_success(return_data)
+    else:
+        return BAD_METHOD
