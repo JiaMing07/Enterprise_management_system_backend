@@ -105,6 +105,9 @@ class DepartmentTests(TestCase):
     def get_entity_department_subtree(self):
         return self.client.get(f"/entity/department/subtree")
     
+    def get_entity_log(self):
+        return self.client.get(f"/log")
+    
     def test_entity_add(self):
         user = User.objects.filter(username='test_user').first()
         user.token = user.generate_token()
@@ -458,3 +461,17 @@ class DepartmentTests(TestCase):
         res = self.get_entity_department_subtree()
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
+
+    def test_entity_log(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+        entity_name = 'en1'
+        res = self.get_entity_log()
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)

@@ -4,14 +4,15 @@ from django.http import HttpRequest, HttpResponse
 
 from utils.utils_request import BAD_METHOD, request_failed, request_success, return_field
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
-from utils.utils_time import get_timestamp
+from utils.utils_time import get_timestamp, get_date
 from utils.utils_getbody import get_args
 from utils.utils_checklength import checklength
 from utils.utils_checkauthority import CheckAuthority, CheckToken
 
 from User.models import User, Menu
-from Department.models import Department, Entity
+from Department.models import Department, Entity, Log
 from Asset.models import Attribute, Asset, AssetAttribute, AssetCategory, Label, Warning
+
 
 from eam_backend.settings import SECRET_KEY
 import jwt
@@ -73,6 +74,9 @@ def asset_category_add(req: HttpRequest):
             return request_failed(2, "该资产类型已存在", status_code=403)
         category = AssetCategory(name=name, entity=entity, parent=parent, is_number=is_number)
         category.save()
+        # log_info = f"用户{user.username}({user.department.name})  在 {get_date()} 添加资产类型 {department_name}"
+        # log = Log(log=log_info, type = 1, entity=entity)
+        # log.save()
         return request_success()
     else:
         return BAD_METHOD
@@ -364,6 +368,7 @@ def asset_add_list(req:HttpRequest):
                 continue
             asset = Asset(name=name, description=description, position=position, value=value, owner=owner.username, number=number,
                         category=category, entity=entity, department=department, parent=parent, life=life, image_url=image_url,state=state)
+            print(asset)
             asset.save()
         if len(err_msg)>0:
             return request_failed(1, err_msg[:-1], status_code=403)
@@ -612,8 +617,9 @@ def attribute_edit(req: HttpRequest):
     
 @CheckRequire    
 def asset_attribute(req: HttpRequest):
-
+    print(req.method)
     if req.method == 'POST':
+        print(1)
         # check format
         body = json.loads(req.body.decode("utf-8"))
         asset_name, attribute_name, description = get_args(body, ['asset', 'attribute', 'description'], ['string','string','string'])
@@ -1222,3 +1228,25 @@ def asset_assetName_history(req: HttpRequest, assetName: str):
         return request_success(return_data)
     else:
         return BAD_METHOD
+
+@CheckRequire
+def asset_id(req: HttpRequest, id: int):
+    if req.method == 'GET':
+        asset = Asset.objects.filter(id=id).first()
+        if asset is None:
+            return request_failed(1, "asset not found", status_code=404)
+        
+        property = asset.serialize()
+        assetAttributes = AssetAttribute.objects.filter(asset=asset)
+        attributes = []
+        for assetAttribute in assetAttributes:
+            attr = {}
+            attr['key'] = assetAttribute.attribute.name
+            attr['value'] = assetAttribute.description
+            attributes.append(attr)
+        property['attribute'] = attributes
+        return_data = {
+            "property": property,
+        }
+        return request_success(return_data)
+    return BAD_METHOD

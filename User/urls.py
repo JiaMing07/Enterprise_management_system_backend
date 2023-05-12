@@ -13,4 +13,6 @@ urlpatterns = [
     path('<userName>', views.user_userName),
     path('department/list', views.department_user_list),
     path('menu/list', views.menu_list),
+    path('feishu/bind', views.feishu_bind),
+    path('feishu/login', views.feishu_login)
 ]

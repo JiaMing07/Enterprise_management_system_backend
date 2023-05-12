@@ -1,12 +1,13 @@
 import json
 import hashlib
+import requests
 from django.http import HttpRequest, HttpResponse
 
-from User.models import User, Menu
-from Department.models import Department, Entity
+from User.models import User, Menu, UserFeishu
+from Department.models import Department, Entity, Log
 from utils.utils_request import BAD_METHOD, request_failed, request_success, return_field
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
-from utils.utils_time import get_timestamp
+from utils.utils_time import get_timestamp, get_date
 from utils.utils_getbody import get_args
 from utils.utils_checklength import checklength
 from utils.utils_checkauthority import CheckAuthority, CheckToken
@@ -60,6 +61,9 @@ def login_normal(req: HttpRequest):
                 # if user.token == '':
                 user.token = user.generate_token()
                 user.save()
+                log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 登录"
+                log = Log(log=log_info, type = 0, entity=user.entity)
+                log.save()
                 return request_success(data={'token': user.token,
                                             'system_super':user.system_super, 
                                             'entity_super': user.entity_super,
@@ -77,6 +81,9 @@ def login_normal(req: HttpRequest):
 @CheckRequire    
 def user_add(req: HttpRequest):
     if req.method == 'POST':
+        token = req.COOKIES['token']
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        creator = User.objects.filter(username=decoded['username']).first()
         body = json.loads(req.body.decode("utf-8"))
         user_name, entity_name, department_name, authority, password  = get_args(body, ['name', 'entity', 'department', 'authority', 'password'], ['string','string','string','string','string'])
         checklength(user_name, 0, 50, "username")
@@ -114,6 +121,9 @@ def user_add(req: HttpRequest):
         pwd = md5.hexdigest()
         user = User(username=user_name, entity=entity, department=department, system_super = is_system_super, entity_super = is_entity_super, asset_super = is_asset_super, password=pwd)
         user.save()
+        log_info = f"用户{creator.username} ({creator.department.name}) 在 {get_date()} 新增用户 {user.username}"
+        log = Log(log=log_info, type = 1, entity=user.entity)
+        log.save()
         return request_success()
     else:
         return BAD_METHOD
@@ -143,6 +153,8 @@ def logout_normal(req: HttpRequest):
 def user_lock(req: HttpRequest):
     if req.method == 'POST':
         CheckAuthority(req, ["entity_super"])
+        token, decoded = CheckToken(req)
+        creator = User.objects.filter(username=decoded['username']).first()
         body = json.loads(req.body.decode("utf-8"))
         user_name = require(body, "username", "string", err_msg="Missing or error type of [username]")
         active = require(body, "active", "int", err_msg="Missing or error type of [active]")
@@ -161,6 +173,9 @@ def user_lock(req: HttpRequest):
         else:
             return request_failed(-2, "无效请求", status_code=400)
         user.save()
+        log_info = f"用户{creator.username} ({creator.department.name}) 在 {get_date()} 锁定用户 {user.username}"
+        log = Log(log=log_info, type = 1,entity = user.entity)
+        log.save()
         return request_success()
     else:
         return BAD_METHOD
@@ -169,6 +184,9 @@ def user_lock(req: HttpRequest):
 @CheckRequire
 def user_edit(req: HttpRequest):
     if req.method == 'POST':
+        token, decoded = CheckToken(req)
+        creator_name = decoded['username']
+        creator = User.objects.filter(username=decoded['username']).first()
         body = json.loads(req.body.decode("utf-8"))
         user_name = json.loads(req.body.decode("utf-8")).get('username')
         password = json.loads(req.body.decode("utf-8")).get('password')
@@ -241,6 +259,9 @@ def user_edit(req: HttpRequest):
                 user.department = department
         
         user.save()
+        log_info = f"用户{creator_name} ({creator.department.name}) 在 {get_date()} 修改用户（{user.username}）的信息"
+        log = Log(log=log_info, type = 1, entity=user.entity)
+        log.save()
         return request_success()
     else:
         return BAD_METHOD
@@ -311,6 +332,9 @@ def user_menu(req: HttpRequest):
         menu = Menu(first=first, second=second, url=url, entity=user.entity)
         menu.entity_show, menu.asset_show, menu.staff_show = menu.set_authority(authority)
         menu.save()
+        log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 增加菜单 {menu.first} {menu.second}"
+        log = Log(log=log_info, type = 1, entity=user.entity)
+        log.save()
         return request_success()
     elif req.method == 'GET':
         CheckToken(req)
@@ -400,4 +424,135 @@ def menu_list(req: HttpRequest):
             "menu": [menu.serialize() for menu in menu_list]
         }
         return request_success(return_data)
+    return BAD_METHOD
+
+@CheckRequire
+def feishu_bind(req: HttpRequest):
+
+    if req.method == 'POST':
+        body = json.loads(req.body.decode("utf-8"))
+        username = json.loads(req.body.decode("utf-8")).get('username')
+        mobile = json.loads(req.body.decode("utf-8")).get('mobile')
+
+        user = User.objects.filter(username=username).first()
+
+        if user is None:
+            return request_failed(2, "用户不存在", 403)
+        
+        oldbind = UserFeishu.objects.filter(username=username).first()
+        if oldbind is not None:
+            oldbind.mobile = mobile
+            oldbind.save()
+        
+        else:
+            userbind = UserFeishu(username=username, mobile=mobile)
+            userbind.save()
+        
+        return request_success()
+    
+    elif req.method == 'GET':
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        
+        if user is not None:
+            userbind = UserFeishu.objects.filter(username=user.username).first()
+
+            if userbind is None:
+                return request_failed(1, "用户未绑定飞书账户", 403)
+            
+            mobile = userbind.mobile
+            return_data = {
+                "mobile": mobile
+            }
+            
+            return request_success(return_data)
+
+    return BAD_METHOD
+
+@CheckRequire
+def feishu_login(req: HttpRequest):
+
+    if req.method == 'POST':
+        body = json.loads(req.body.decode("utf-8"))
+        code = json.loads(req.body.decode("utf-8")).get('code')
+
+        # token, decoded = CheckToken(req)
+
+        url = "https://passport.feishu.cn/suite/passport/oauth/token"
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+        data = {
+            "grant_type": "authorization_code",
+            "client_id": "cli_a4d212cbb87a500d",
+            "client_secret": "M81ME3LFvgI7T0cIApC7xyTMuNEqbHFy",
+            "code": code,
+            "redirect_uri": "https://eam-frontend-bughunters.app.secoder.net/feishu"
+        }
+        response = requests.post(url, headers=headers, data=data)
+        # content_type = response.headers.get("Content-Type")
+        # print("Content-Type:", content_type)
+
+        if response.status_code == 200:
+            json_data = response.json()
+            access_token = json_data.get('access_token')
+            token_type = json_data.get('token_type')
+            expires_in = json_data.get('expires_in')
+            refresh_token = json_data.get('refresh_token')
+            refresh_expires_in = json_data.get('refresh_expires_in')
+        
+        else:
+            return request_failed(2, "Failed to get response when requesting access_token", 403)
+
+        # 构造请求Header
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+        }
+
+        # 发送GET请求
+        url = "https://passport.feishu.cn/suite/passport/oauth/userinfo"
+        response = requests.get(url, headers=headers)
+
+        # 获取返回的name参数
+        if response.status_code == 200:
+            data = response.json()
+            # mobile的定义究竟是什么
+            # mobile = data.get("name")
+            mobile = data.get("mobile")
+            open_id = data.get("open_id")
+            feishuname = data.get("name")
+
+            cur_bind = UserFeishu.objects.filter(mobile=mobile).first()
+
+            if cur_bind is None:
+                return request_failed(1, "Feishu not bind with any name.", 403)
+            
+            username = cur_bind.username
+            cur_bind.open_id = open_id
+            cur_bind.feishuname = feishuname
+            user = User.objects.filter(username=username).first()
+            
+            if user is None:
+                return request_failed(2, "User not exist.", 403)
+            if not user.active:
+                return request_failed(3, "用户已锁定", status_code=403)
+
+            user.token = user.generate_token()
+            user.save()
+
+            return_data = {
+                "username": username,
+                "token": user.token,
+                "system_super": user.system_super,
+                "entity_super": user.entity_super,
+                "asset_super": user.asset_super,
+                "entity": user.entity.name,
+                "department": user.department.name
+            }
+            return request_success(return_data)
+            
+        else:
+            return request_failed(2, "Failed to get response when requesting userInfo.", 403)
+        # print(json_data)
+
     return BAD_METHOD

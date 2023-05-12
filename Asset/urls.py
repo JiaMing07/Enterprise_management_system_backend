@@ -15,6 +15,7 @@ urlpatterns = [
     path('delete', views.asset_delete),
     path('idle', views.asset_idle),
     path('allocate', views.asset_allocate),
+    path('attribute', views.asset_attribute),
     path('add/list', views.asset_add_list),
     path('query/<type>/<description>/<attribute>', views.asset_query),
     path('retire', views.asset_retire),
@@ -22,7 +23,6 @@ urlpatterns = [
     path('attribute/<department>/list', views.attribute_list),
     path('attribute/edit', views.attribute_edit),
     path('attribute/delete', views.attribute_delete),
-    path('attribute', views.asset_attribute),
     path('category/<category_name>/number', views.asset_category_number),
     path('attribute/<assetName>', views.asset_attribute_list),
     path('assetSuper', views.asset_assetSuper),
@@ -31,4 +31,5 @@ urlpatterns = [
     path('<assetName>/warning', views.asset_warning_assetName),
     path('<assetName>/history', views.asset_assetName_history),
     path('<assetName>', views.asset_assetName),
+    path('id/<id>', views.asset_id),
 ]

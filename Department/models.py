@@ -72,3 +72,9 @@ class Department(MPTTModel):
             "departmentName": self.name,
             "sub-departments": children_list,
         }
+
+class Log(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    log = models.TextField()
+    type = models.IntegerField()
+    entity = models.ForeignKey(Entity, on_delete=models.CASCADE)

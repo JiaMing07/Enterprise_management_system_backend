@@ -263,6 +263,9 @@ class AttributeTests(TestCase):
     def get_asset_label(self):
         return self.client.get(f'/asset/label')
     
+    def get_asset_id(self, id):
+        return self.client.get(f"/asset/id/{id}")
+    
     def post_asset_warning(self, asset, ageLimit, numberLimit):
         payload = {
             "asset": asset,
@@ -2073,3 +2076,27 @@ class AttributeTests(TestCase):
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(len(res.json()['history']), 6)
+        
+    def test_asset_id(self):
+        entity = Entity.objects.create(name="entity_id")
+        department = Department.objects.create(name='dep_id', entity=entity)
+        password='123'
+        md5 = hashlib.md5()
+        md5.update(password.encode('utf-8'))
+        pwd = md5.hexdigest()
+        user = User.objects.create(username='test_id', password=pwd, department=department, entity=entity)
+        category = AssetCategory.objects.create(name='cate', entity=entity)
+        ass = Asset.objects.create(name='ass', entity=entity, owner=user.username, category=category, department=department)
+        id = ass.id
+
+        res = self.get_asset_id(id)
+        # ass = Asset.objects.filter(id=1).first()
+        # print(ass.name)
+        # print(id)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        id = id+2
+        res = self.get_asset_id(id)
+        self.assertEqual(res.json()['code'], 1)
+        self.assertEqual(res.json()['info'], 'asset not found')
