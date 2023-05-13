@@ -1314,3 +1314,58 @@ def asset_history(req: HttpRequest):
         return request_success(return_data)
     else:
         return BAD_METHOD
+    
+@CheckRequire
+def asset_statics(req: HttpRequest):
+    if req.method == 'GET':
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+
+        assets = []
+        departments = []
+        department_number = []
+        departments.append(user.department)
+        while (len(departments) != 0):
+            department = departments.pop(0)
+            dep_assets = Asset.objects.filter(entity=entity, department=department)
+            department_number.append({
+                "departmentName": department.name,
+                "number": len(dep_assets),
+            })
+            for asset in dep_assets:
+                assets.append(asset)
+            dep_children = department.get_children()
+            for child in dep_children:
+                departments.append(child)
+        total_number = len(assets)
+
+        idle_number = 0
+        in_use_number = 0
+        in_maintain_number = 0
+        retired_number = 0
+        for asset in assets:
+            if asset.state == 'IDLE':
+                idle_number += 1
+            elif asset.state == 'IN_USE':
+                in_use_number += 1
+            elif asset.state == 'IN_MAINTAIN':
+                in_maintain_number += 1
+            elif asset.state == 'RETIRED':
+                retired_number += 1
+        status_number = {
+            "idle": idle_number,
+            "in_use": in_use_number,
+            "in_maintain": in_maintain_number,
+            "retired": retired_number,
+        }
+
+        return_data = {
+            "total_number": total_number,
+            "department_number": department_number,
+            "status_number": status_number,
+        }
+        return request_success(return_data)
+    else:
+        return BAD_METHOD

@@ -31,6 +31,7 @@ urlpatterns = [
     path('<assetName>/warning', views.asset_warning_assetName),
     path('history', views.asset_history),
     path('<assetName>/history', views.asset_assetName_history),
+    path('statics', views.asset_statics),
     path('<assetName>', views.asset_assetName),
     path('id/<id>', views.asset_id),
 ]

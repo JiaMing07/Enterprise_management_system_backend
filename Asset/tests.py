@@ -303,6 +303,9 @@ class AttributeTests(TestCase):
     def get_asset_history(self):
         return self.client.get("/asset/history")
     
+    def get_asset_statics(self):
+        return self.client.get("/asset/statics")
+    
     # Now start testcases. 
     def test_asset_category_add(self):
         user = User.objects.filter(username='test_user').first()
@@ -2079,6 +2082,10 @@ class AttributeTests(TestCase):
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(len(res.json()['history']), 6)
+
+        res = self.get_asset_statics()
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
         
     def test_asset_id(self):
         entity = Entity.objects.create(name="entity_id")
