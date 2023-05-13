@@ -631,13 +631,11 @@ def asset_attribute(req: HttpRequest):
         if asset is None:
             return request_failed(1, "资产不存在", status_code=403)
         
-        old_attri_list = AssetAttribute.objects.filter(asset=asset)
-        for old_attri in old_attri_list:
-            attri = Attribute.objects.filter(name=attri_name, entity=user.entity).first()
-            old_pair = AssetAttribute.objects.filter(asset=asset, attribute=attri).first()
-            if old_pair is not None:
-                return request_failed(1, "该财产自定义属性已存在", status_code=403)
+        # 注意删除的过程
+        old_attri = AssetAttribute.objects.filter(asset=asset).first()
+        while old_attri is not None:
             old_attri.delete()
+            old_attri = AssetAttribute.objects.filter(asset=asset).first()
 
         new_list = []
         for new_attri in attributes_list:
@@ -658,7 +656,8 @@ def asset_attribute(req: HttpRequest):
             # save
             new_pair = AssetAttribute(asset=asset, attribute=attribute, description=attri_description)
             new_pair.save()
-            return request_success()
+        
+        return request_success()
 
     if req.method == 'DELETE':
         body = json.loads(req.body.decode("utf-8"))

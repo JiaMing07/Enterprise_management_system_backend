@@ -94,11 +94,10 @@ class AttributeTests(TestCase):
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post("/asset/add/list", data=payload, content_type="application/json")
     
-    def post_asset_attribute_add(self, asset, attribute, description):
+    def post_asset_attribute_add(self, asset, attributes_list):
         payload = {
-            'asset': asset,
-            'attribute': attribute,
-            'description': description
+            'asset_name': asset,
+            'attributes': attributes_list
         }
 
         payload = {k: v for k, v in payload.items() if v is not None}
@@ -947,8 +946,8 @@ class AttributeTests(TestCase):
         ]
         # description = "This is a description."
         res = self.post_asset_attribute_add(asset, attributes_list)
-        self.assertEqual(res.json()['code'], 1)
         self.assertEqual(res.json()['info'], "资产不存在")
+        self.assertEqual(res.json()['code'], 1)
 
         # attribute not exist, 1, "自定义属性不存在"
         asset = "ass"
@@ -1340,8 +1339,6 @@ class AttributeTests(TestCase):
                 "value": "This is a description."
             }
         ]
-        attribute = "attri_1"
-        description = "This is a description."
         res = self.post_asset_attribute_add(asset, attributes_list)
         # self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], "Succeed")
@@ -1358,8 +1355,8 @@ class AttributeTests(TestCase):
                 "value": "This is a description."
             }
         ]
-        attribute = "attri_2"
-        description = "This is a description 2."
+        # attribute = "attri_2"
+        # description = "This is a description 2."
         res = self.post_asset_attribute_add(asset, attributes_list)
         # self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], "Succeed")
