@@ -609,15 +609,14 @@ def attribute_edit(req: HttpRequest):
     
 @CheckRequire    
 def asset_attribute(req: HttpRequest):
-    print(req.method)
+    # print(req.method)
     if req.method == 'POST':
-        print(1)
         # check format
         body = json.loads(req.body.decode("utf-8"))
-        asset_name, attribute_name, description = get_args(body, ['asset', 'attribute', 'description'], ['string','string','string'])
-        checklength(asset_name, 0, 50, "asset")
-        checklength(attribute_name, 0, 50, "attribute")
-        checklength(description, 0, 300, "description")
+        asset_name, attributes_list = get_args(body, ['asset_name', 'attributes'], ['string','list'])
+        checklength(asset_name, 0, 50, "asset_name")
+        # checklength(attribute_name, 0, 50, "attribute")
+        # checklength(description, 0, 300, "description")
 
         # check token and get entity
         CheckAuthority(req, ["entity_super", "asset_super"])
@@ -627,17 +626,37 @@ def asset_attribute(req: HttpRequest):
 
         # get asset and attribute
         asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
-        attribute = Attribute.objects.filter(name=attribute_name, entity=user.entity).first()
 
         # filter whether exist
         if asset is None:
             return request_failed(1, "资产不存在", status_code=403)
-        if attribute is None:
-            return request_failed(1, "自定义属性不存在", status_code=403)
+        
+        old_attri_list = AssetAttribute.objects.filter(asset=asset)
+        for old_attri in old_attri_list:
+            attri = Attribute.objects.filter(name=attri_name, entity=user.entity).first()
+            old_pair = AssetAttribute.objects.filter(asset=asset, attribute=attri).first()
+            if old_pair is not None:
+                return request_failed(1, "该财产自定义属性已存在", status_code=403)
+            old_attri.delete()
 
-        # save
-        else:
-            new_pair = AssetAttribute(asset=asset, attribute=attribute, description=description)
+        new_list = []
+        for new_attri in attributes_list:
+            attri_name = new_attri["key"]
+            attri_description = new_attri["value"]
+
+            attribute = Attribute.objects.filter(name=attri_name, entity=user.entity).first()
+            
+            # 判断自定义属性是否存在
+            if attribute is None:
+                return request_failed(1, "自定义属性不存在", status_code=403)
+            
+            # 判断重复
+            if attri_name in new_list:
+                return request_failed(1, "自定义属性与前面重复", status_code=403)
+            new_list.append(attri_name)
+            
+            # save
+            new_pair = AssetAttribute(asset=asset, attribute=attribute, description=attri_description)
             new_pair.save()
             return request_success()
 
