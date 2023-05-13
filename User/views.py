@@ -556,3 +556,51 @@ def feishu_login(req: HttpRequest):
         # print(json_data)
 
     return BAD_METHOD
+
+@CheckRequire
+def feishu_sync(req: HttpRequest):
+
+    if req.method == 'POST':
+        body = json.loads(req.body.decode("utf-8"))
+        users = json.loads(req.body.decode("utf-8")).get('users')
+
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        token, decoded = CheckToken(req)
+        creator = User.objects.filter(username=decoded['username']).first()
+
+        entity= creator.entity
+        department = creator.department
+        is_system_super = False
+        is_entity_super = False
+        is_asset_super = False
+
+        # 检查每一个员工，如果open_id在userfeishu内存在object，不作操作
+        for one in users:
+            user_name = one["name"]
+            open_id = one["open_id"]
+            staff = UserFeishu.objects.filter(open_id=open_id)
+
+            # 如果未绑定飞书账号
+            if staff is None:
+                # 如果飞书名和原有用户的用户名重复了
+                user = User.objects.filter(username=user_name).first()
+                while user is not None:
+                    user_name = user_name + "OA"
+                    user = User.objects.filter(username=user_name).first()
+            
+                # 初始密码都是000
+                md5 = hashlib.md5()
+                md5.update("000".encode('utf-8'))
+                pwd = md5.hexdigest()
+                    
+                user = User(username=user_name, entity=entity, department=department, password=pwd,
+                            system_super = is_system_super, entity_super = is_entity_super, asset_super = is_asset_super)
+                user.save()
+                
+                log_info = f"用户{creator.username} ({creator.department.name}) 在 {get_date()} 新增用户 {user.username}"
+                log = Log(log=log_info, type = 1, entity=user.entity)
+                log.save()
+        
+        return request_success()
+
+    return BAD_METHOD 
