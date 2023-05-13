@@ -1373,3 +1373,48 @@ def asset_statics(req: HttpRequest):
         return request_success(return_data)
     else:
         return BAD_METHOD
+    
+@CheckRequire
+def asset_history_query(req: HttpRequest, type: str):
+    if req.method == 'GET':
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+
+        if type not in ['add', 'edit', 'IDLE', 'IN_USE', 'IN_MAINTAIN', 'RETIRED', 'MOVE']:
+            return request_failed(1, "查询类型错误", status_code=403)
+
+        assets = []
+        departments = []
+        departments.append(user.department)
+        while (len(departments) != 0):
+            department = departments.pop(0)
+            dep_assets = Asset.objects.filter(entity=entity, department=department)
+            for asset in dep_assets:
+                assets.append(asset)
+            dep_children = department.get_children()
+            for child in dep_children:
+                departments.append(child)
+
+        historys = []
+        for asset in assets:
+            for history in asset.history.all():
+                historys.append(history)
+        historys = sorted(historys, key=lambda x:x.change_time, reverse=True)
+        history_data = []
+        for history in historys:
+            if history.operation == type:
+                history_data.append({
+                    "assetName": history.name, 
+                    "category": history.category.name, 
+                    "user": history.owner, 
+                    "department": history.department.name, 
+                    "changeTime": history.change_time,
+                })
+        return_data = {
+            'history': history_data,
+        }
+        return request_success(return_data)
+    else:
+        return BAD_METHOD
