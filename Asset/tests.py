@@ -35,7 +35,7 @@ class AttributeTests(TestCase):
         User.objects.create(username='test_attribute', password=pwd, department=dep, entity=ent)
         user = User.objects.create(username='test_user', password=pwd, department=dep, entity=ent)
         category = AssetCategory.objects.create(name='cate', entity=ent)
-        Asset.objects.create(name='ass', entity=ent, owner=user.username, category=category, department=dep)
+        Asset.objects.create(name='ass', entity=ent, owner=user.username, category=category, department=dep, value=10)
         Attribute.objects.create(id=1, name="attri_0", entity=ent, department=dep_ent)
         
     # Utility functions  
@@ -2074,7 +2074,7 @@ class AttributeTests(TestCase):
         self.assertEqual(res.json()['code'], 0)
 
         res = self.put_asset_edit(assetName, assetName, parentName, description, position, 
-                                           value, 'test_user', number, 'RETIRED', categoryName, life, image)
+                                           0, 'test_user', number, 'RETIRED', categoryName, life, image)
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
 
@@ -2165,10 +2165,4 @@ class AttributeTests(TestCase):
         res = self.get_asset_history()
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
-        self.assertEqual(len(res.json()['add']), 2)
-        self.assertEqual(len(res.json()['edit']), 0)
-        self.assertEqual(len(res.json()['idle']), 1)
-        self.assertEqual(len(res.json()['use']), 1)
-        self.assertEqual(len(res.json()['maintain']), 1)
-        self.assertEqual(len(res.json()['retired']), 1)
-        self.assertEqual(len(res.json()['move']), 1)
+        self.assertEqual(len(res.json()['history']), 7)

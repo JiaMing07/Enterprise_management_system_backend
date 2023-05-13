@@ -276,6 +276,7 @@ def asset_edit(req: HttpRequest):
             return request_failed(7, "父资产不存在", status_code=404)
         
         asset.operation = 'edit'
+        asset.change_value = value - asset.value
         if asset.owner != owner:
             asset.operation = 'MOVE'
         if asset.state != state:
@@ -402,11 +403,13 @@ def asset_retire(req: HttpRequest):
                 continue
             
             asset.state = "RETIRED"
+            asset.change_value = -asset.value
             asset.value = 0
             children_list = asset.get_children()
             for child in children_list:
                 child.parent = Asset.objects.filter(name = asset.entity.name).first()
                 child.operation = 'edit'
+                child.change_value = 0
                 child.change_time = get_timestamp()
                 child.save()
             asset.operation = 'RETIRED'
@@ -1061,6 +1064,7 @@ def asset_allocate(req: HttpRequest):
             asset.owner = asset_super.username
             asset.department = asset_super.department
             asset.operation = 'MOVE'
+            asset.change_value = 0
             asset.change_time = get_timestamp()
             asset.save()
         if len(err_msg) > 0:
@@ -1271,45 +1275,23 @@ def asset_history(req: HttpRequest):
             for child in dep_children:
                 departments.append(child)
 
-        add_record = []
-        edit_record = []
-        idle_record = []
-        in_use_record = []
-        in_maintain_record = []
-        retired_record = []
-        move_record = []
+        historys = []
         for asset in assets:
             for history in asset.history.all():
-                record = {
-                    "assetName": history.name,
-                    "category": history.category.name,
-                    "user": history.owner,
-                    "department": history.department.name,
-                    "changeTime": history.change_time,
-                }
-                if history.operation == 'add':
-                    add_record.append(record)
-                elif history.operation == 'edit':
-                    edit_record.append(record)
-                elif history.operation == 'IDLE':
-                    idle_record.append(record)
-                elif history.operation == 'IN_USE':
-                    in_use_record.append(record)
-                elif history.operation == 'IN_MAINTAIN':
-                    in_maintain_record.append(record)
-                elif history.operation == 'RETIRED':
-                    retired_record.append(record)
-                elif history.operation == 'MOVE':
-                    move_record.append(record)
-        
+                historys.append(history)
+        historys = sorted(historys, key=lambda x:x.change_time, reverse=True)
+        history_data = []
+        for history in historys:
+            history_data.append({
+                'type': history.operation,
+                "assetName": history.name, 
+                "category": history.category.name, 
+                "user": history.owner, 
+                "department": history.department.name, 
+                "changeTime": history.change_time,
+            })
         return_data = {
-            'add': add_record,
-            'edit': edit_record,
-            'idle': idle_record,
-            'use': in_use_record,
-            'maintain': in_maintain_record,
-            'retired': retired_record,
-            'move': move_record,
+            'history': history_data,
         }
         return request_success(return_data)
     else:
@@ -1361,10 +1343,32 @@ def asset_statics(req: HttpRequest):
             "retired": retired_number,
         }
 
+        total_value = 0
+        historys = []
+        value_time = []
+        for asset in assets:
+            total_value += asset.value
+            for history in asset.history.all():
+                historys.append(history)
+        value_time.append({
+            "time": get_timestamp(),
+            "value": total_value,
+        })
+        historys = sorted(historys, key=lambda x:x.change_time, reverse=True)
+        for history in historys:
+            value_time.append({
+                "time": history.change_time,
+                "value": total_value,
+            })
+            if history.operation != 'add':
+                total_value -= history.change_value
+            else:
+                total_value -= history.value
         return_data = {
             "total_number": total_number,
             "department_number": department_number,
             "status_number": status_number,
+            "value_time": value_time,
         }
         return request_success(return_data)
     else:
