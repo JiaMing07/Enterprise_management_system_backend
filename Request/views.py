@@ -497,3 +497,9 @@ def requests_disapprove(req: HttpRequest):
         return request_success()
     
     return BAD_METHOD
+
+@CheckRequire
+def feishu(req: HttpRequest):
+    print(req.method)
+    body = json.loads(req.body.decode("utf-8"))
+    print(body)
