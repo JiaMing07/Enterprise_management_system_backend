@@ -29,7 +29,10 @@ urlpatterns = [
     path('warning', views.asset_warning),
     path('warning/message', views.asset_warning_message),
     path('<assetName>/warning', views.asset_warning_assetName),
+    path('history', views.asset_history),
+    path('history/query/<type>', views.asset_history_query),
     path('<assetName>/history', views.asset_assetName_history),
+    path('statics', views.asset_statics),
     path('<assetName>', views.asset_assetName),
     path('id/<id>', views.asset_id),
 ]
