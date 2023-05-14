@@ -210,6 +210,8 @@ def asset_add(req: HttpRequest):
         ancestor_list = department.get_ancestors(include_self=True)
         if user.department not in ancestor_list:
             return request_failed(5, "部门不在管理范围内", status_code=403)
+        if number > 1 and category.is_number ==False:
+            number = 1
         asset = Asset(name=name, description=description, position=position, value=value, owner=owner.username, number=number,
                       category=category, entity=entity, department=department, parent=parent, life=life, image_url=image_url)
         asset.save()
@@ -778,6 +780,7 @@ def asset_tree(req: HttpRequest):
         return_data = {
             "assets": return_list
         }
+        print(return_data)
         return request_success(return_data)
     return BAD_METHOD
 
@@ -1173,6 +1176,7 @@ def asset_warning_message(req: HttpRequest):
             dep_children = department.get_children()
             for child in dep_children:
                 departments.append(child)
+        print(messages)
         return_data = {
             'messages': messages,
         }
