@@ -79,6 +79,42 @@ base_menu = [{
 	"url":"/asset_label_list",
 	"authority":"staff/asset_super"
 },
+{
+  "first":"资产告警",
+	"second":"告警策略",
+	"url":"/asset_warning",
+	"authority":"entity_super/asset_super"
+},
+{
+  "first":"资产告警",
+	"second":"告警提示",
+	"url":"/warning_list",
+	"authority":"entity_super/asset_super"
+},
+{
+  "first":"资产统计",
+	"second":"",
+	"url":"/asset_statis",
+	"authority":"entity_super/asset_super"
+},
+{
+  "first":"资产历史",
+	"second":"",
+	"url":"/asset_history",
+	"authority":"entity_super/asset_super"
+},
+{
+  "first":"系统审计",
+	"second":"导入导出管理",
+	"url":"/async",
+	"authority":"entity_super"
+},
+{
+  "first":"系统审计",
+	"second":"用户日志",
+	"url":"/log",
+	"authority":"entity_super"
+}
 ]
 
 def init_entity():
