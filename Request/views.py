@@ -59,7 +59,7 @@ def requests_return(req: HttpRequest):
                 continue
             request = NormalRequests(initiator=user, asset=asset, type=2, result=0, request_time=get_timestamp(),review_time=0.0)
             request.save()
-            msg = f"{user.name} 退库资产 {asset_name}"
+            msg = f"{user.username} 退库资产 {asset_name}"
             ids.append("1"+str(request.id) + "1")
             msgs.append(msg)
         if len(err_msg) > 0:
