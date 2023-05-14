@@ -461,8 +461,10 @@ def feishu_bind(req: HttpRequest):
                 return request_failed(1, "用户未绑定飞书账户", 403)
             
             mobile = userbind.mobile
+            open_id = userbind.open_id
             return_data = {
-                "mobile": mobile
+                "mobile": mobile,
+                "open_id": open_id
             }
             
             return request_success(return_data)
