@@ -44,10 +44,10 @@ async def get_asset_super(entity, status, title):
             num += 1
     return tasks
 
-def create_feishu_task(ids, initiator, msg, tenant_access_code, title, status):
+async def create_feishu_task(ids, initiator, msgs, tenant_access_code, title, status):
     url = "https://open.feishu.cn/open-apis/approval/v4/external_instances"
-    tasks = get_asset_super(initiator.entity,status,title)
-    for id in ids:
+    tasks = await get_asset_super(initiator.entity,status,title)
+    for idx,id in enumerate(ids):
         payload = json.dumps({
             "approval_code": "EC2FD08D-B00C-4D69-965E-F5BA2B181AC5",
             "end_time": 0,
@@ -55,7 +55,7 @@ def create_feishu_task(ids, initiator, msg, tenant_access_code, title, status):
             "form": [
                 {
                     "name": "@i18n@2",
-                    "value": f"{msg}"
+                    "value": f"{msgs[idx]}"
                 }
             ],
             "i18n_resources": [
@@ -86,38 +86,7 @@ def create_feishu_task(ids, initiator, msg, tenant_access_code, title, status):
             "open_id": "ou_8c87029791feec2705633229bf596648",
             "start_time": "1657093395000",
             "status": status,
-            "task_list": [
-                {
-                    "action_configs": [
-                        {
-                            "action_name": "@i18n@1",
-                            "action_type": "APPROVE",
-                            "is_need_attachment": False,
-                            "is_need_reason": False,
-                            "is_reason_required": False
-                        },{
-                            "action_name": "@i18n@1",
-                            "action_type": "REJECT",
-                            "is_need_attachment": False,
-                            "is_need_reason": False,
-                            "is_reason_required": False
-                        }
-                    ],
-                    "action_context": "123456",
-                    "create_time": "1638468921000",
-                    "end_time": 0,
-                    "extra": "",
-                    "links": {
-                        "mobile_link": "http://",
-                        "pc_link": "http://"
-                    },
-                    "status": status,
-                    "task_id": str(id+1),
-                    "title": title,
-                    "update_time": "1638468921000",
-                    "open_id": "ou_8c87029791feec2705633229bf596648"
-                }
-            ],
+            "task_list": tasks,
             "title": "@i18n@1",
             "update_mode": "REPLACE",
             "update_time": "1657093395000"
@@ -128,3 +97,17 @@ def create_feishu_task(ids, initiator, msg, tenant_access_code, title, status):
         }
     return "ok"
 
+def get_tenant():
+    url = "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal"
+    payload = json.dumps({
+        "app_id": "cli_a4ebb92f303ad013",
+        "app_secret": "Ejol3MvwF9B6Iai3Z9a1IdqRnyPnjeOd"
+    })
+
+
+    headers = {
+    'Content-Type': 'application/json'
+    }
+
+    response = requests.request("POST", url, headers=headers, data=payload)
+    return response.json()['tenant_access_token']

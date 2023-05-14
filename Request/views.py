@@ -8,6 +8,7 @@ from utils.utils_time import get_timestamp, get_date
 from utils.utils_getbody import get_args
 from utils.utils_checklength import checklength
 from utils.utils_checkauthority import CheckAuthority, CheckToken
+from utils.utils_feishu import *
 
 from User.models import User, Menu
 from Department.models import Department, Entity, Log
@@ -16,6 +17,7 @@ from .models import NormalRequests, TransferRequests
 
 from eam_backend.settings import SECRET_KEY
 import jwt
+import asyncio
 
 def subtree_department(department: Department):
     children_list = [department.id]
@@ -33,6 +35,8 @@ def requests_return(req: HttpRequest):
         body = json.loads(req.body.decode("utf-8"))
         assets_list = get_args(body, ["assets"], ["list"])[0]
         err_msg = ""
+        ids = []
+        msgs = []
         for idx, asset_name in enumerate(assets_list):
             asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
             if asset is None:
@@ -55,8 +59,14 @@ def requests_return(req: HttpRequest):
                 continue
             request = NormalRequests(initiator=user, asset=asset, type=2, result=0, request_time=get_timestamp(),review_time=0.0)
             request.save()
+            msg = f"{user.name} 退库资产 {asset_name}"
+            ids.append("1"+str(request.id) + "1")
+            msgs.append(msg)
         if len(err_msg) > 0:
             return request_failed(1, err_msg[:-1], status_code=403)
+        loop = asyncio.get_event_loop()
+        tenant = get_tenant()
+        loop.create_task(create_feishu_task(ids, user.entity.name, msgs,tenant, "退库", "PENDING"))
         return request_success()
     return BAD_METHOD
 
@@ -503,3 +513,4 @@ def feishu(req: HttpRequest):
     print(req.method)
     body = json.loads(req.body.decode("utf-8"))
     print(body)
+    return request_success()
