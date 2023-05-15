@@ -35,4 +35,5 @@ urlpatterns = [
     path('statics', views.asset_statics),
     path('<assetName>', views.asset_assetName),
     path('id/<id>', views.asset_id),
+    path('list/<page>',views.asset_list_page)
 ]

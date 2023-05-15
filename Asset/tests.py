@@ -1549,7 +1549,7 @@ class AttributeTests(TestCase):
         category_name = 'c_1'
         res = self.get_category_is_number(category_name)
         self.assertEqual(res.json()['code'], 1)
-        self.assertEqual(res.json()['info'], "不存在此资产")
+        self.assertEqual(res.json()['info'], "不存在此资产类型")
 
     def test_asset_query(self):
         user = User.objects.filter(username='test_user').first()

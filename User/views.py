@@ -433,8 +433,8 @@ def feishu_bind(req: HttpRequest):
         body = json.loads(req.body.decode("utf-8"))
         username = json.loads(req.body.decode("utf-8")).get('username')
         mobile = json.loads(req.body.decode("utf-8")).get('mobile')
-        open_id = json.loads(req.body.decode("utf-8")).get('open_id')
-        user_id = json.loads(req.body.decode("utf-8")).get('user_id')
+        open_id = json.loads(req.body.decode("utf-8")).get('open_id',"")
+        user_id = json.loads(req.body.decode("utf-8")).get('user_id',"")
         user = User.objects.filter(username=username).first()
 
         if user is None:

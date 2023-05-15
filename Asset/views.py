@@ -820,7 +820,7 @@ def asset_category_number(req: HttpRequest, category_name: str):
         user = User.objects.filter(username=decoded['username']).first()
         category = AssetCategory.objects.filter(entity=user.entity, name=category_name).first()
         if category is None:
-            return request_failed(1, "不存在此资产", status_code=404)
+            return request_failed(1, "不存在此资产类型", status_code=404)
         is_number = category.is_number
         return request_success({
             "is_number": is_number
@@ -1441,3 +1441,41 @@ def asset_history_query(req: HttpRequest, type: str):
         return request_success(return_data)
     else:
         return BAD_METHOD
+    
+@CheckRequire
+def asset_list_page(req: HttpRequest, page:int):
+    if req.method == 'GET':
+        token, decoded = CheckToken(req)
+        print("in")
+        assets = []
+        page = int(page)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        all_assets = Asset.objects.filter(entity=entity).exclude(name=entity.name).order_by('id')
+        department_tree = subtree_department(user.department)
+        all_assets = all_assets.filter(department__id__in=department_tree)
+        length = len(all_assets)
+        print(length)
+        if page < 1 or (page != 1 and page > (length-1)/20 + 1):
+            return request_failed(-1, "超出页数范围", 403)
+        if length % 20 != 0:
+            if page == int(length/20) + 1:
+                for i in range(length - (page-1)*20):
+                    print(i)
+                    assets.append(all_assets[(int(page)-1)*20+i])
+            else:
+                for i in range(20):
+                    assets.append(all_assets[(int(page)-1)*20+i])
+        else:
+            print(page)
+            for i in range(20):
+                assets.append(all_assets[(int(page)-1)*20+i])
+        return_data = {
+            "assets": [
+                return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
+                                                 "position", "value", "user", "number", "state", "department", 
+                                                 "createTime", "life", "image"])
+            for asset in assets],
+        }
+        return request_success(return_data)
+    return BAD_METHOD

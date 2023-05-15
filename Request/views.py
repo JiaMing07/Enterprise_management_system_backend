@@ -626,6 +626,7 @@ def requests_disapprove(req: HttpRequest):
 @CheckRequire
 def feishu(req: HttpRequest):
     body = json.loads(req.body.decode("utf-8"))
+    print(body)
     action_type = body.get("action_type", "")
     instance_id = body.get("instance_id", "")
     user_id = body.get("user_id", "")
