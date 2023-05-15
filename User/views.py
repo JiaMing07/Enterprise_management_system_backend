@@ -433,7 +433,7 @@ def feishu_bind(req: HttpRequest):
         body = json.loads(req.body.decode("utf-8"))
         print(body)
         username = json.loads(req.body.decode("utf-8")).get('username')
-        mobile = json.loads(req.body.decode("utf-8")).get('feishuname')
+        mobile = json.loads(req.body.decode("utf-8")).get('mobile')
         print(mobile)
         user = User.objects.filter(username=username).first()
 
