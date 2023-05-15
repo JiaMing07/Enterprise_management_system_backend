@@ -70,7 +70,7 @@ def requests_return(req: HttpRequest):
             return request_failed(1, err_msg[:-1], status_code=403)
         if flag:
             tenant = get_tenant()
-            create_feishu_task(ids, user.username, msgs,tenant, "退库", "PENDING")
+            create_feishu_task(ids, user.username, msgs,tenant, "退库", "PENDING", request.request_time, 0)
         return request_success()
     return BAD_METHOD
 
@@ -153,7 +153,7 @@ def requests_repair(req: HttpRequest):
             return request_failed(1, err_msg[:-1], status_code=403)
         if flag:
             tenant = get_tenant()
-            create_feishu_task(ids, user.username, msgs,tenant, "维修", "PENDING")
+            create_feishu_task(ids, user.username, msgs,tenant, "维修", "PENDING", request.request_time, 0)
         return request_success()
     return BAD_METHOD
 
@@ -207,14 +207,9 @@ def request_transfer(req:HttpRequest):
             
         if len(err_msg) > 0:
             return request_failed(1, err_msg[:-1], status_code=403)
-        try:
-            loop = asyncio.get_event_loop()
-        except:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
         if flag:
             tenant = get_tenant()
-            create_feishu_task(ids, user.username, msgs,tenant, "转移", "PENDING")
+            create_feishu_task(ids, user.username, msgs,tenant, "转移", "PENDING", request.request_time, 0)
         return request_success()
     return BAD_METHOD
 
@@ -266,7 +261,7 @@ def requests_require(req: HttpRequest):
             return request_failed(1, err_msg[:-1], status_code=403)
         if flag:
             tenant = get_tenant()
-            create_feishu_task(ids, user.username, msgs,tenant, "申领", "PENDING")
+            create_feishu_task(ids, user.username, msgs,tenant, "申领", "PENDING", request.request_time, 0)
         return request_success()
     return BAD_METHOD
 
@@ -425,7 +420,7 @@ def requests_approve(req: HttpRequest):
             return request_failed(1, err_msg[:-1], status_code=403)
         if len(ids)>0:
             tenant = get_tenant()
-            create_feishu_task(ids, user.username, msgs,tenant, "审批完成", "APPROVED")
+            create_feishu_task(ids, user.username, msgs,tenant, "审批完成", "APPROVED", request.request_time, request.review_time)
 
         return request_success()
     
@@ -513,7 +508,7 @@ def requests_delete(req: HttpRequest):
             return request_failed(1, err_msg[:-1], status_code=403)
         if len(ids) > 0:
             tenant = get_tenant()
-            create_feishu_task(ids, user.username, msgs,tenant, "撤回申请", "DELETED")
+            create_feishu_task(ids, user.username, msgs,tenant, "撤回申请", "DELETED", request.request_time, request.review_time, request.request_time, request.review_time)
         return request_success()
     
     return BAD_METHOD
@@ -622,7 +617,7 @@ def requests_disapprove(req: HttpRequest):
             return request_failed(1, err_msg[:-1], status_code=403)
         if len(ids) > 0:
             tenant = get_tenant()
-            create_feishu_task(ids, user.username, msgs,tenant, "审批完成", "REJECTED")
+            create_feishu_task(ids, user.username, msgs,tenant, "审批完成", "REJECTED", request.request_time, request.review_time)
         # loop.create_task(create_feishu_task(ids, user.entity.name, msgs,tenant, "申领", "REJECTED"))
         return request_success()
     
@@ -630,42 +625,74 @@ def requests_disapprove(req: HttpRequest):
 
 @CheckRequire
 def feishu(req: HttpRequest):
-    print(req.method)
     body = json.loads(req.body.decode("utf-8"))
-    print(body)
     action_type = body.get("action_type", "")
     instance_id = body.get("instance_id", "")
-    # id = instance_id[1:-1]
-    id = instance_id
+    user_id = body.get("user_id", "")
+    id = instance_id[1:-1]
     status = ""
     if action_type == 'APPROVE':
         status = "APPROVED"
     elif action_type == 'REJECT':
         status = "REJECTED"
-    print(status)
     try:
         id = int(id)
-        print(id)
         msg = ""
-        action = ""
-        # if instance_id[0] == '1':
-        #     request = NormalRequests.objects.filter(id=id).first()
-        #     type = request.type
-        #     if type == 1:
-        #         action = "申领"
-        #     elif type == 2:
-        #         action = "退库"
-        #     elif type == 3:
-        #         action = "维修"
-        #     initiator = request.initiator
-        #     entity = request.initiator.entity.name
-        #     msg = f"{initiator.username} "
-        # elif instance_id[0] == '2':
-        #     request = TransferRequests.objects.filter(id=id).first()
-        #     action = "转移"
+        action = "action"
+        user_name = ""
+        if instance_id[0] == '1':
+            request = NormalRequests.objects.filter(id=id).first()
+            if request is not None:
+                asset = request.asset
+            type = request.type
+            if type == 1:
+                action = "申领"
+                asset.owner = request.initiator.username
+                asset.state = 'IN_USE'
+                asset.operation = 'IN_USE'
+            elif type == 2:
+                action = "退库"
+                asset.state = 'IDLE'
+                open_id = get_open_id(user_id)
+                feishu_user = UserFeishu.objects.filter(open_id=open_id).first()
+                username = feishu_user.username
+                user = User.objects.filter(username=username).first()
+                asset.owner = user.username
+                asset.operation = 'IDLE'
+            elif type == 3:
+                action = "维修"
+                asset.state = 'IN_MAINTAIN'
+                asset.operation = 'IN_MAINTAIN'
+            initiator = request.initiator
+            entity = request.initiator.entity.name
+            msg = f"{initiator.username} {action} {request.asset.name}"
+            request.review_time = get_timestamp()
+            if status == "APPROVED":
+                request.result=1
+            elif status == "REJECTED":
+                request.result = 2
+            request.save()
+            asset.change_time = get_timestamp()
+            asset.change_value = 0
+            asset.save()
+        elif instance_id[0] == '2':
+            request = TransferRequests.objects.filter(id=id).first()
+            action = "转移"
+            asset.owner = request.participant.username
+            asset.position = request.position
+            asset.operation = 'MOVE'
+            request.review_time = get_timestamp()
+            if status == "APPROVED":
+                request.result=1
+            elif status == "REJECTED":
+                request.result = 2
+            request.save()
+            asset.change_time = get_timestamp()
+            asset.change_value = 0
+            asset.save()
+            msg = f"{initiator.username} 转移 {request.asset.name} 到 {request.participant.department.name} {request.participant.username}"
         tenant = get_tenant()
-        
-        create_feishu_task([instance_id],'Alice',[msg],tenant, action, status)
+        create_feishu_task([instance_id],'Alice',[msg],tenant, action, status,request.request_time, get_timestamp())
     except Exception as e:
         print(e)
     return request_success()

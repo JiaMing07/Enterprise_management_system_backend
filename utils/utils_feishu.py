@@ -2,10 +2,12 @@ import requests
 import json
 from User.models import *
 from Department.models import *
+from utils.utils_time import *
 
-def get_asset_super(entity, status, title):
-    print("ass")
-    asset_supers = User.objects.filter(entity=entity, asset_super=True)
+def get_asset_super(department, status, title):
+    ancestor_list = department.get_ancestors(include_self=True)
+    print(ancestor_list)
+    asset_supers = User.objects.filter(asset_super=True).filter(department__in=ancestor_list)
     tasks = []
     num = 0
     for ass in asset_supers:
@@ -39,23 +41,25 @@ def get_asset_super(entity, status, title):
                     "task_id": str(num+1),
                     "title": title,
                     "update_time": "1638468921000",
-                    "open_id": "ou_01e556dbbba824ae03df8547c28f4b6a"
+                    "open_id": f"{user.open_id}"
                 }
             tasks.append(task)
             num += 1
     print("finish")
     return tasks
 
-def create_feishu_task(ids, initiator, msgs, tenant_access_code, title, status):
-    print("in")
+def create_feishu_task(ids, initiator_name, msgs, tenant_access_code, title, status, start_time = get_timestamp(), end_time=0):
     url = "https://open.feishu.cn/open-apis/approval/v4/external_instances"
-    initiator = User.objects.filter(username=initiator).first()
-    tasks = get_asset_super(initiator.entity,status,title)
+    initiator = User.objects.filter(username=initiator_name).first()
+    tasks = get_asset_super(initiator.department,status,title)
     print("in2")
+    print(UserFeishu.objects.all())
+    print("in3")
+    feishu_user = UserFeishu.objects.filter(username=initiator_name).first()
     for idx,id in enumerate(ids):
         payload = json.dumps({
             "approval_code": "531E32E9-3867-486C-A0DD-378CD5B08CB7",
-            "end_time": 0,
+            "end_time": end_time,
             "extra": "",
             "form": [
                 {
@@ -88,8 +92,8 @@ def create_feishu_task(ids, initiator, msgs, tenant_access_code, title, status):
                 "mobile_link": "http://applink.feishu.cn/sso/common?redirectUrl=/seeyon/main.do?method=main&client=pc",
                 "pc_link": "http://applink.feishu.cn/sso/common?redirectUrl=/seeyon/main.do?method=main&client=pc"
             },
-            "open_id": "ou_8c87029791feec2705633229bf596648",
-            "start_time": "1657093395000",
+            "open_id": f"{feishu_user.open_id}",
+            "start_time": str(start_time*1000)[:-5],
             "status": status,
             "task_list": tasks,
             "title": "@i18n@1",
@@ -118,3 +122,16 @@ def get_tenant():
 
     response = requests.request("POST", url, headers=headers, data=payload)
     return response.json()['tenant_access_token']
+
+def get_open_id(user_id):
+    url = f"https://open.feishu.cn/open-apis/contact/v3/users/{user_id}?department_id_type=open_department_id&user_id_type=user_id"
+    payload = ''
+
+
+    headers = {
+    'Authorization': 'Bearer t-g1045ffoQJLKXKTIPO2MJ6NQEFWKB7VYTJPUMP2Q'
+    }
+
+    response = requests.request("GET", url, headers=headers, data=payload)
+    body = response.json()
+    return body['data']['user']['open_id']
