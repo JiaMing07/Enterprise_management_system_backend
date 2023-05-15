@@ -11,8 +11,10 @@ from utils.utils_time import get_timestamp, get_date
 from utils.utils_getbody import get_args
 from utils.utils_checklength import checklength
 from utils.utils_checkauthority import CheckAuthority, CheckToken
+from utils.utils_feishu import *
+
 from eam_backend.settings import SECRET_KEY
-from  utils.utils_startup import init_department, init_entity, add_menu, add_users,admin_user, add_category, add_asset, add_request
+from utils.utils_startup import init_department, init_entity, add_menu, add_users,admin_user, add_category, add_asset, add_request
 import jwt
 from django.db.utils import IntegrityError, OperationalError
 
@@ -433,20 +435,25 @@ def feishu_bind(req: HttpRequest):
         body = json.loads(req.body.decode("utf-8"))
         username = json.loads(req.body.decode("utf-8")).get('username')
         mobile = json.loads(req.body.decode("utf-8")).get('mobile')
-        open_id = json.loads(req.body.decode("utf-8")).get('open_id')
-        user_id = json.loads(req.body.decode("utf-8")).get('user_id')
+        # open_id = json.loads(req.body.decode("utf-8")).get('open_id')
+        # user_id = json.loads(req.body.decode("utf-8")).get('user_id')
         user = User.objects.filter(username=username).first()
 
         if user is None:
             return request_failed(2, "用户不存在", 403)
         
         oldbind = UserFeishu.objects.filter(username=username).first()
+        user_id = get_user_id(mobile)
+        open_id = get_open_id(user_id)
+
+        # 如果已经绑定，则直接替换
         if oldbind is not None:
+            oldbind.mobile = mobile
             oldbind.open_id = open_id
             oldbind.user_id = user_id
-            oldbind.mobile = mobile
             oldbind.save()
         
+        # 如果没有绑定，新建绑定
         else:
             userbind = UserFeishu(username=username, mobile=mobile, open_id=open_id, user_id=user_id)
             userbind.save()
@@ -465,9 +472,12 @@ def feishu_bind(req: HttpRequest):
             
             mobile = userbind.mobile
             open_id = userbind.open_id
+            user_id = userbind.user_id
+            
             return_data = {
                 "mobile": mobile,
-                "open_id": open_id
+                "open_id": open_id,
+                "user_id": user_id
             }
             
             return request_success(return_data)

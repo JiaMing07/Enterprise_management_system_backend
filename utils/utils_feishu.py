@@ -161,3 +161,23 @@ def get_feishu_id(feishu_user):
 
     response = requests.request("POST", url, headers=headers, data=payload)
     return response.json()['data']['user_list'][0]['user_id']
+
+def get_user_id(mobile_):
+    mobile = mobile_
+    tenant = get_tenant()
+    url = "https://open.feishu.cn/open-apis/contact/v3/users/batch_get_id?user_id_type=open_id"
+    payload = json.dumps({
+        "mobiles": [
+            mobile
+        ]
+    })
+
+
+    headers = {
+    'Content-Type': 'application/json',
+    'Authorization': f'Bearer {tenant}'
+    }
+
+    response = requests.request("POST", url, headers=headers, data=payload)
+    return response.json()['data']['user_list'][0]['user_id']
+
