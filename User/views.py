@@ -15,6 +15,7 @@ from eam_backend.settings import SECRET_KEY
 from  utils.utils_startup import init_department, init_entity, add_menu, add_users,admin_user, add_category, add_asset, add_request
 import jwt
 from django.db.utils import IntegrityError, OperationalError
+from Asset.models import *
 
 def check_for_user_data(body):
     password = ""
@@ -294,6 +295,17 @@ def user_userName(req: HttpRequest, userName: any):
             return request_failed(1, "user not found", status_code=404)
         if user.system_super:
             return request_failed(2, "禁止删除超级管理员", status_code=403)
+        assets = Asset.objects.filter(owner=user.username)
+        print(assets)
+        asset_super = User.objects.filter(entity=user.entity, department=user.department, asset_super=True).first()
+        if asset_super is None:
+            asset_super = User.objects.filter(entity=user.entity, entity_super = True).first()
+        for ass in assets:
+            ass.owner = asset_super.username
+            ass.state = 'IDLE'
+            ass.operation = 'IDLE'
+            ass.change_time = get_timestamp()
+            ass.save()
         user.delete()
         return request_success()
     else:

@@ -1446,7 +1446,6 @@ def asset_history_query(req: HttpRequest, type: str):
 def asset_list_page(req: HttpRequest, page:int):
     if req.method == 'GET':
         token, decoded = CheckToken(req)
-        print("in")
         assets = []
         page = int(page)
         user = User.objects.filter(username=decoded['username']).first()
@@ -1455,19 +1454,16 @@ def asset_list_page(req: HttpRequest, page:int):
         department_tree = subtree_department(user.department)
         all_assets = all_assets.filter(department__id__in=department_tree)
         length = len(all_assets)
-        print(length)
         if page < 1 or (page != 1 and page > (length-1)/20 + 1):
             return request_failed(-1, "超出页数范围", 403)
         if length % 20 != 0:
             if page == int(length/20) + 1:
                 for i in range(length - (page-1)*20):
-                    print(i)
                     assets.append(all_assets[(int(page)-1)*20+i])
             else:
                 for i in range(20):
                     assets.append(all_assets[(int(page)-1)*20+i])
         else:
-            print(page)
             for i in range(20):
                 assets.append(all_assets[(int(page)-1)*20+i])
         return_data = {
@@ -1476,6 +1472,7 @@ def asset_list_page(req: HttpRequest, page:int):
                                                  "position", "value", "user", "number", "state", "department", 
                                                  "createTime", "life", "image"])
             for asset in assets],
+            "total_count": length
         }
         return request_success(return_data)
     return BAD_METHOD

@@ -308,6 +308,9 @@ class AttributeTests(TestCase):
     def get_asset_history_query(self, type):
         return self.client.get(f"/asset/history/query/{type}")
     
+    def get_asset_list_page(self, page):
+        return self.client.get(f"/asset/list/{page}")
+    
     # Now start testcases. 
     def test_asset_category_add(self):
         user = User.objects.filter(username='test_user').first()
@@ -2305,3 +2308,15 @@ class AttributeTests(TestCase):
         res = self.get_asset_history_query(type)
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
+
+    def test_asset_list_page(self):
+        self.create_token('test_user', 'entity_super')
+        res = self.get_asset_list_page(1)
+        print(Asset.objects.all())
+        print(res)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.get_asset_list_page(0)
+        self.assertEqual(res.json()['info'], '超出页数范围')
+        self.assertEqual(res.json()['code'], -1)
