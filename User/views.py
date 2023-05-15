@@ -491,6 +491,7 @@ def feishu_login(req: HttpRequest):
             "client_secret": "M81ME3LFvgI7T0cIApC7xyTMuNEqbHFy",
             "code": code,
             "redirect_uri": "https://eam-frontend-bughunters.app.secoder.net/feishu"
+            # "redirect_uri": "http://127.0.0.1:8000/feishu"
         }
         response = requests.post(url, headers=headers, data=data)
         # content_type = response.headers.get("Content-Type")
@@ -522,11 +523,12 @@ def feishu_login(req: HttpRequest):
             # mobile的定义究竟是什么
             # mobile = data.get("name")
             mobile = data.get("mobile")
+            print(mobile)
             open_id = data.get("open_id")
             feishuname = data.get("name")
 
             cur_bind = UserFeishu.objects.filter(mobile=mobile).first()
-
+            print(cur_bind)
             if cur_bind is None:
                 return request_failed(1, "Feishu not bind with any name.", 403)
             

@@ -146,7 +146,7 @@ def requests_repair(req: HttpRequest):
                 continue
             request = NormalRequests(initiator=user, asset=asset, type=3, result=0, request_time=get_timestamp(),review_time=0.0)
             request.save()
-            msg = f"{user.username} 维修资产 {asset_name}"
+            msg = f"{request.initiator.username} 维修资产 {asset_name}"
             ids.append("1"+str(request.id) + "1")
             msgs.append(msg)
         if len(err_msg) > 0:
@@ -549,7 +549,7 @@ def requests_disapprove(req: HttpRequest):
                     request.review_time = get_timestamp()
                     request.result = 2
                     request.save()
-                    msg = f"{user.username} 申领资产 {asset_name}"
+                    msg = f"{request.initiator.username} 申领资产 {asset_name}"
                     feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
                     if feishu_user is not None:
                         ids.append("1"+str(request.id) + "1")
@@ -566,7 +566,7 @@ def requests_disapprove(req: HttpRequest):
                     request.review_time = get_timestamp()
                     request.result = 2
                     request.save()
-                    msg = f"{user.username} 退库资产 {asset_name}"
+                    msg = f"{request.initiator.username} 退库资产 {asset_name}"
                     feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
                     if feishu_user is not None:
                         ids.append("1"+str(request.id) + "1")
@@ -583,7 +583,7 @@ def requests_disapprove(req: HttpRequest):
                     request.review_time = get_timestamp()
                     request.result = 2
                     request.save()
-                    msg = f"{user.username} 维修资产 {asset_name}"
+                    msg = f"{request.initiator.username} 维修资产 {asset_name}"
                     feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
                     if feishu_user is not None:
                         ids.append("1"+str(request.id) + "1")
@@ -600,7 +600,7 @@ def requests_disapprove(req: HttpRequest):
                     request.review_time = get_timestamp()
                     request.result = 2
                     request.save()
-                    msg = f"{user.username} 转移资产 {asset_name} 到 {request.participant.department.name} {request.participant.username}"
+                    msg = f"{request.initiator.username} 转移资产 {asset_name} 到 {request.participant.department.name} {request.participant.username}"
                     feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
                     if feishu_user is not None:
                         ids.append("2"+str(request.id) + "2")
