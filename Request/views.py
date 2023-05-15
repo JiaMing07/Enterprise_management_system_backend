@@ -642,6 +642,7 @@ def feishu(req: HttpRequest):
         action = "action"
         user_name = ""
         if instance_id[0] == '1':
+            print(id)
             request = NormalRequests.objects.filter(id=id).first()
             if request is not None:
                 asset = request.asset
@@ -696,5 +697,5 @@ def feishu(req: HttpRequest):
         create_feishu_task([instance_id],'Alice',[msg],tenant, action, status,request.request_time, get_timestamp())
     except Exception as e:
         print(e)
-        return request_failed(-1, e, 400)
+        return request_failed(-1, str(e), 400)
     return request_success()
