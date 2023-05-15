@@ -431,10 +431,10 @@ def feishu_bind(req: HttpRequest):
 
     if req.method == 'POST':
         body = json.loads(req.body.decode("utf-8"))
-        print(body)
         username = json.loads(req.body.decode("utf-8")).get('username')
         mobile = json.loads(req.body.decode("utf-8")).get('mobile')
-        print(mobile)
+        open_id = json.loads(req.body.decode("utf-8")).get('open_id')
+        user_id = json.loads(req.body.decode("utf-8")).get('user_id')
         user = User.objects.filter(username=username).first()
 
         if user is None:
@@ -442,11 +442,13 @@ def feishu_bind(req: HttpRequest):
         
         oldbind = UserFeishu.objects.filter(username=username).first()
         if oldbind is not None:
+            oldbind.open_id = open_id
+            oldbind.user_id = user_id
             oldbind.mobile = mobile
             oldbind.save()
         
         else:
-            userbind = UserFeishu(username=username, mobile=mobile)
+            userbind = UserFeishu(username=username, mobile=mobile, open_id=open_id, user_id=user_id)
             userbind.save()
         
         return request_success()

@@ -617,7 +617,7 @@ def requests_disapprove(req: HttpRequest):
             return request_failed(1, err_msg[:-1], status_code=403)
         if len(ids) > 0:
             tenant = get_tenant()
-            create_feishu_task(ids, user.username, msgs,tenant, "审批完成", "REJECTED", request.request_time, request.review_time)
+            create_feishu_task(ids, request.initiator.username, msgs,tenant, "审批完成", "REJECTED", request.request_time, request.review_time)
         # loop.create_task(create_feishu_task(ids, user.entity.name, msgs,tenant, "申领", "REJECTED"))
         return request_success()
     
@@ -695,4 +695,5 @@ def feishu(req: HttpRequest):
         create_feishu_task([instance_id],'Alice',[msg],tenant, action, status,request.request_time, get_timestamp())
     except Exception as e:
         print(e)
+        return request_failed(-1, e, 400)
     return request_success()

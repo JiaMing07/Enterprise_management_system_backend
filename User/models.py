@@ -89,6 +89,9 @@ class User(models.Model):
             is_asset_super = True
         return is_system_super, is_entity_super, is_asset_super
     
+    class Meta:
+        indexes = [models.Index(fields=['username'])]
+    
 class Menu(models.Model):
     '''
     menu
@@ -143,7 +146,8 @@ class UserFeishu(models.Model):
     username = models.CharField(max_length=50, unique=True)
     mobile = models.CharField(max_length=50)
     feishuname = models.CharField(max_length=50)
-    open_id = models.CharField(max_length=50)
+    open_id = models.CharField(max_length=100,default="")
+    user_id = models.CharField(max_length=100, default = "")
 
 
     def serialize(self):

@@ -110,6 +110,7 @@ class Asset(MPTTModel):
         }
     class Meta:
         unique_together = ['entity', 'name']
+        indexes = [models.Index(fields=['entity', 'department', 'name'])]
 
     def __str__(self):
         return self.name
