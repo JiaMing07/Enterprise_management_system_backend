@@ -431,9 +431,10 @@ def feishu_bind(req: HttpRequest):
 
     if req.method == 'POST':
         body = json.loads(req.body.decode("utf-8"))
+        print(body)
         username = json.loads(req.body.decode("utf-8")).get('username')
-        mobile = json.loads(req.body.decode("utf-8")).get('mobile')
-
+        mobile = json.loads(req.body.decode("utf-8")).get('feishuname')
+        print(mobile)
         user = User.objects.filter(username=username).first()
 
         if user is None:

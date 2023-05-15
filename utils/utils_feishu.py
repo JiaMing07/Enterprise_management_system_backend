@@ -3,12 +3,13 @@ import json
 from User.models import *
 from Department.models import *
 
-async def get_asset_super(entity, status, title):
+def get_asset_super(entity, status, title):
+    print("ass")
     asset_supers = User.objects.filter(entity=entity, asset_super=True)
     tasks = []
     num = 0
     for ass in asset_supers:
-        user = UserFeishu.objects.filter(username=ass.name).afirst()
+        user = UserFeishu.objects.filter(username=ass.username).first()
         if user is not None:
             task = {
                     "action_configs": [
@@ -42,11 +43,15 @@ async def get_asset_super(entity, status, title):
                 }
             tasks.append(task)
             num += 1
+    print("finish")
     return tasks
 
-async def create_feishu_task(ids, initiator, msgs, tenant_access_code, title, status):
+def create_feishu_task(ids, initiator, msgs, tenant_access_code, title, status):
+    print("in")
     url = "https://open.feishu.cn/open-apis/approval/v4/external_instances"
-    tasks = await get_asset_super(initiator.entity,status,title)
+    initiator = User.objects.filter(username=initiator).first()
+    tasks = get_asset_super(initiator.entity,status,title)
+    print("in2")
     for idx,id in enumerate(ids):
         payload = json.dumps({
             "approval_code": "531E32E9-3867-486C-A0DD-378CD5B08CB7",
@@ -95,6 +100,8 @@ async def create_feishu_task(ids, initiator, msgs, tenant_access_code, title, st
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {tenant_access_code}'
         }
+        response = requests.request("POST", url, headers=headers, data=payload)
+        print(response.text)
     return "ok"
 
 def get_tenant():
