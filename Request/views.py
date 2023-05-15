@@ -513,4 +513,37 @@ def feishu(req: HttpRequest):
     print(req.method)
     body = json.loads(req.body.decode("utf-8"))
     print(body)
+    action_type = body.get("action_type", "")
+    instance_id = body.get("instance_id", "")
+    # id = instance_id[1:-1]
+    id = instance_id
+    status = ""
+    if action_type == 'APPROVE':
+        status = "APPROVED"
+    elif action_type == 'REJECT':
+        status = "REJECTED"
+    try:
+        id = int(id)
+        msg = ""
+        action = ""
+        # if instance_id[0] == '1':
+        #     request = NormalRequests.objects.filter(id=id).first()
+        #     type = request.type
+        #     if type == 1:
+        #         action = "申领"
+        #     elif type == 2:
+        #         action = "退库"
+        #     elif type == 3:
+        #         action = "维修"
+        #     initiator = request.initiator
+        #     entity = request.initiator.entity.name
+        #     msg = f"{initiator.username} "
+        # elif instance_id[0] == '2':
+        #     request = TransferRequests.objects.filter(id=id).first()
+        #     action = "转移"
+        tenant = get_tenant()
+        loop = asyncio.get_event_loop()
+        loop.create_task(create_feishu_task([id],'Jas',[msg],tenant, action, status))
+    except:
+        pass
     return request_success()

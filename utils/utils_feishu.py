@@ -38,7 +38,7 @@ async def get_asset_super(entity, status, title):
                     "task_id": str(num+1),
                     "title": title,
                     "update_time": "1638468921000",
-                    "open_id": user.open_id
+                    "open_id": "ou_01e556dbbba824ae03df8547c28f4b6a"
                 }
             tasks.append(task)
             num += 1
@@ -49,7 +49,7 @@ async def create_feishu_task(ids, initiator, msgs, tenant_access_code, title, st
     tasks = await get_asset_super(initiator.entity,status,title)
     for idx,id in enumerate(ids):
         payload = json.dumps({
-            "approval_code": "EC2FD08D-B00C-4D69-965E-F5BA2B181AC5",
+            "approval_code": "531E32E9-3867-486C-A0DD-378CD5B08CB7",
             "end_time": 0,
             "extra": "",
             "form": [
