@@ -12,5 +12,6 @@ urlpatterns = [
     path('department/delete', views.department_delete),
     path('entity/<entity_name>/delete', views.entity_delete),
     path('entity/department/subtree', views.entity_department_subtree),
-    path('log', views.entity_log)
+    path('log', views.entity_log),
+    path('log/list/<page>', views.entity_log_page),
 ]

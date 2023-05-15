@@ -15,5 +15,6 @@ urlpatterns = [
     path('menu/list', views.menu_list),
     path('feishu/bind', views.feishu_bind),
     path('feishu/login', views.feishu_login),
-    path('feishu/sync', views.feishu_sync)
+    path('feishu/sync', views.feishu_sync),
+    path('query/name/<description>', views.user_query),
 ]

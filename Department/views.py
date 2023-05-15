@@ -226,3 +226,38 @@ def entity_log(req: HttpRequest):
             'log': logs
         })
     return BAD_METHOD
+
+@CheckRequire
+def entity_log_page(req: HttpRequest, page:int):
+    if req.method == 'GET':
+        print("in")
+        CheckAuthority(req, ['entity_super'])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        log_list = Log.objects.filter(entity=entity).order_by('id')
+        logs = []
+        length = len(log_list)
+        page = int(page)
+        def get_dic(log):
+            return {
+                'id':log.id,
+                'log_info':log.log
+            }
+        if page < 1 or (page != 1 and page > (length-1)/20 + 1):
+            return request_failed(-1, "超出页数范围", 403)
+        if length % 20 != 0:
+            if page == int(length/20) + 1:
+                for i in range(length - (page-1)*20):
+                    logs.append(get_dic(log_list[(int(page)-1)*20+i]))
+            else:
+                for i in range(20):
+                    logs.append(get_dic(log_list[(int(page)-1)*20+i]))
+        else:
+            for i in range(20):
+                logs.append(get_dic(log_list[(int(page)-1)*20+i]))
+        return request_success({
+            'log': logs,
+            "total_count": length
+        })
+    return BAD_METHOD

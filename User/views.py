@@ -296,7 +296,6 @@ def user_userName(req: HttpRequest, userName: any):
         if user.system_super:
             return request_failed(2, "禁止删除超级管理员", status_code=403)
         assets = Asset.objects.filter(owner=user.username)
-        print(assets)
         asset_super = User.objects.filter(entity=user.entity, department=user.department, asset_super=True).first()
         if asset_super is None:
             asset_super = User.objects.filter(entity=user.entity, entity_super = True).first()
@@ -622,4 +621,24 @@ def feishu_sync(req: HttpRequest):
         
         return request_success()
 
+    return BAD_METHOD
+
+@CheckRequire
+def user_query(req: HttpRequest, description:str):
+    if req.method == 'GET':
+        token, decoded = CheckToken(req)
+        description = str(description)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        users = User.objects.filter(entity=entity, entity_super=False, asset_super=False).filter(username__icontains=description)
+        return_data = []
+        for u in users:
+            return_data.append({
+                'username': u.username,
+                'department': u.department.name
+            })
+        print(return_data)
+        return request_success({
+            'users': return_data
+        })
     return BAD_METHOD 

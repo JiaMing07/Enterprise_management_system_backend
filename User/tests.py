@@ -216,6 +216,9 @@ class UserTests(TestCase):
     
     def get_feishu_bind(self):
         return self.client.get("/user/feishu/bind")
+    
+    def get_user_query(self, description):
+        return self.client.get(f"/user/query/name/{description}")
 
     # Now start testcases. 
 
@@ -871,5 +874,19 @@ class UserTests(TestCase):
 
         res = self.get_feishu_bind()
         self.assertEqual(res.json()['mobile'], "feishu2")
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
+
+    def test_user_query(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("system_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        res = self.get_user_query("test")
         self.assertEqual(res.json()['info'], "Succeed")
         self.assertEqual(res.json()['code'], 0)
