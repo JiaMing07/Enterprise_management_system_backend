@@ -311,6 +311,12 @@ class AttributeTests(TestCase):
     def get_asset_list_page(self, page):
         return self.client.get(f"/asset/list/{page}")
     
+    def get_maintain_list(self):
+        return self.client.get(f"/asset/maintain/list")
+    
+    def post_maintain_use(self, assets_list):
+        return self.client.post(f"/asset/maintain/use")
+    
     # Now start testcases. 
     def test_asset_category_add(self):
         user = User.objects.filter(username='test_user').first()

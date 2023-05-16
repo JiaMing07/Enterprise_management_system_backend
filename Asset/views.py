@@ -1476,3 +1476,43 @@ def asset_list_page(req: HttpRequest, page:int):
         }
         return request_success(return_data)
     return BAD_METHOD
+
+@CheckRequire
+def maintain_list(req: HttpRequest):
+    if req.method == 'GET':
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        assets = Asset.objects.filter(entity=entity, state="IN_MAINTAIN").exclude(name=entity.name).order_by('id')
+        department_tree = subtree_department(user.department)
+        assets = assets.filter(department__id__in=department_tree)
+        return_data = {
+            "assets": [
+                return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
+                                                 "position", "value", "user", "number", "state", "department", 
+                                                 "createTime", "life", "image"])
+            for asset in assets],
+        }
+        return request_success(return_data)
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
+def maintain_to_use(req: HttpRequest):
+    if req.method == 'POST':
+        CheckAuthority(req, ["asset_super"])
+        body = json.loads(req.body.decode("utf-8"))
+        assets_list = get_args(body, ["assets"], ["list"])[0]
+        err_msg = ""
+        for idx, asset in enumerate(assets_list):
+            ass = Asset.objects.filter(name=asset).first()
+            if ass.state == "IN_MAINTAIN":
+                ass.state = 'IN_USE'
+                ass.operation = 'IN_USE'
+                ass.save()
+            else:
+                err_msg = f"第 {idx} 条资产（{asset}）不在维修中，无法解除维修状态"
+        if len(err_msg)>0:
+            return request_failed(-1, err_msg, status_code=403)
+        return request_success
+    return BAD_METHOD
