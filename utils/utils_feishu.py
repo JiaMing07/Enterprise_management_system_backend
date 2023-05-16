@@ -201,7 +201,7 @@ def get_open_id(mobile_):
 
 def get_dep_son(department_id):
     depart_id = department_id
-    url = f"https://open.feishu.cn/open-apis/contact/v3/departments/:{depart_id}/children?fetch_child=true"
+    url = f"https://open.feishu.cn/open-apis/contact/v3/departments/{depart_id}/children?fetch_child=true"
     tenant = get_tenant()
     headers = {
         'Content-Type': 'application/json',
@@ -213,7 +213,7 @@ def get_dep_son(department_id):
 
 def get_one_dep(department_id):
     depart_id = department_id
-    url = f"https://open.feishu.cn/open-apis/contact/v3/departments/:{depart_id}"
+    url = f"https://open.feishu.cn/open-apis/contact/v3/departments/{depart_id}"
     tenant = get_tenant()
     headers = {
         'Content-Type': 'application/json',

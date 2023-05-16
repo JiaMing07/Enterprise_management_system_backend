@@ -748,6 +748,7 @@ def feishu_sync():
 
         # 添加users
         users = get_users(depart_id)
+        print(f"depart_id={depart_id}")
         super_name = ""
         for user in users:
             open_id = user["open_id"]
@@ -794,20 +795,30 @@ scheduler = BackgroundScheduler()
 # 调度器使用默认的DjangoJobStore()
 scheduler.add_jobstore(DjangoJobStore(), 'default')
 
-def test_add_task(request):
-    if request.method == 'POST':
-        content = json.loads(request.body.decode())  # 接收参数
+# def test_add_task(request):
+#     if request.method == 'POST':
+#         content = json.loads(request.body.decode())  # 接收参数
 
-        start_time = content['start_time']  # 用户输入的任务开始时间, '10:00:00'
-        start_time = start_time.split(':')
-        hour = int(start_time[0])
-        minute = int(start_time[1])
-        second = int(start_time[2])
-        # s = content['s']  # 接收执行任务的各种参数
-        # 创建任务
-        scheduler.add_job(feishu_sync, 'cron', hour=hour, minute=minute, second=second)
+#         start_time = content['start_time']  # 用户输入的任务开始时间, '10:00:00'
+#         start_time = start_time.split(':')
+#         hour = int(start_time[0])
+#         minute = int(start_time[1])
+#         second = int(start_time[2])
+#         # s = content['s']  # 接收执行任务的各种参数
+#         # 创建任务
+#         scheduler.add_job(feishu_sync, 'cron', hour=hour, minute=minute, second=second)
         
-        return request_success()
+#         return request_success()
+    
+def test_add_task():
+    # hour = int(start_time[0])
+    # minute = int(start_time[1])
+    # second = int(start_time[2])
+    # s = content['s']  # 接收执行任务的各种参数
+    # 创建任务
+    # scheduler.add_job(feishu_sync, 'cron', hour=22, minute=10, second=0)
+    scheduler.add_job(feishu_sync, 'interval', minutes=5)
+
     
 # 注册定时任务并开始
 register_events(scheduler)
