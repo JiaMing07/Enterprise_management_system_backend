@@ -1500,19 +1500,27 @@ def maintain_list(req: HttpRequest):
 @CheckRequire
 def maintain_to_use(req: HttpRequest):
     if req.method == 'POST':
+        print(req.method)
         CheckAuthority(req, ["asset_super"])
+        print('ok')
         body = json.loads(req.body.decode("utf-8"))
+        print(body)
         assets_list = get_args(body, ["assets"], ["list"])[0]
         err_msg = ""
         for idx, asset in enumerate(assets_list):
+            print(asset)
             ass = Asset.objects.filter(name=asset).first()
+            if ass is None:
+                err_msg = err_msg + f"第 {idx+1} 条资产（{asset}）不存在；"
+                continue
             if ass.state == "IN_MAINTAIN":
                 ass.state = 'IN_USE'
                 ass.operation = 'IN_USE'
                 ass.save()
             else:
-                err_msg = err_msg + f"第 {idx} 条资产（{asset}）不在维修中，无法解除维修状态"
+                err_msg = err_msg + f"第 {idx+1} 条资产（{asset}）不在维修中，无法解除维修状态；"
+                continue
         if len(err_msg)>0:
-            return request_failed(-1, err_msg, status_code=403)
+            return request_failed(-1, err_msg[:-1], status_code=403)
         return request_success()
     return BAD_METHOD

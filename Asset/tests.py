@@ -315,7 +315,11 @@ class AttributeTests(TestCase):
         return self.client.get(f"/asset/maintain/list")
     
     def post_maintain_use(self, assets_list):
-        return self.client.post(f"/asset/maintain/use")
+        payload = {
+            "assets": assets_list
+        }
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.post(f"/asset/maintain/use", data=payload, content_type="application/json")
     
     # Now start testcases. 
     def test_asset_category_add(self):
@@ -2325,4 +2329,28 @@ class AttributeTests(TestCase):
 
         res = self.get_asset_list_page(0)
         self.assertEqual(res.json()['info'], '超出页数范围')
+        self.assertEqual(res.json()['code'], -1)
+
+    def test_maintain_list(self):
+        self.create_token('test_user', 'asset_super')
+        ass = Asset.objects.filter(name='ass').first()
+        asset = Asset.objects.create(name='asset1', entity=ass.entity, owner='Alice', category=ass.category, department=ass.department, value=10, state='IN_MAINTAIN')
+
+        res = self.get_maintain_list()
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+    def test_maintain_to_use(self):
+        self.create_token('test_user', 'asset_super')
+        ass = Asset.objects.filter(name='ass').first()
+        asset1 = Asset.objects.create(name='asset1', entity=ass.entity, owner='Alice', category=ass.category, department=ass.department, value=10, state='IN_MAINTAIN')
+        asset2 = Asset.objects.create(name='asset2', entity=ass.entity, owner='Alice', category=ass.category, department=ass.department, value=10, state='IN_MAINTAIN')
+        assets = ["asset1", "asset2"]
+        res = self.post_maintain_use(assets)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        assets = ["asset1", "assets2"]
+        res = self.post_maintain_use(assets)
+        self.assertEqual(res.json()['info'], '第 1 条资产（asset1）不在维修中，无法解除维修状态；第 2 条资产（assets2）不存在')
         self.assertEqual(res.json()['code'], -1)
