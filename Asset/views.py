@@ -948,9 +948,8 @@ def asset_label(req: HttpRequest):
         CheckAuthority(req, ["entity_super", "asset_super"])
         token, decoded = CheckToken(req)
         user = User.objects.filter(username=decoded['username']).first()
-
-        name = json.loads(req.body.decode("utf-8")).get('name')
-        labels = json.loads(req.body.decode("utf-8")).get('labels')
+        body = json.loads(req.body.decode("utf-8"))
+        name, labels = get_args(body, ['name', 'labels'],['string', 'string'])
         asset_name = False
         entity = False
         category = False

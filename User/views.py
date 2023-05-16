@@ -451,7 +451,7 @@ def department_user_list(req: HttpRequest):
         departments = Department.objects.filter(entity=user.entity).order_by('name')
         users_list = []
         for department in departments:
-            user_department =users.filter(department=department)
+            user_department =users.filter(department=department, system_super=False, asset_super=False, entity_super=False)
             if len(user_department)> 0:
                 dic = {
                     "department": department.name,

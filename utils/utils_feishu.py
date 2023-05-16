@@ -66,7 +66,7 @@ def create_feishu_task(ids, initiator_name, msgs, tenant_access_code, title, sta
             feishu_user.save()
         for idx,id in enumerate(ids):
             payload = json.dumps({
-                "approval_code": "D90D2D8C-EDAE-4797-9CFD-8F48FF8D89EA",
+                "approval_code": "6506F1FB-8749-4173-BAD6-3FE0EC60BFAD",
                 "end_time": end_time,
                 "extra": "",
                 "form": [
