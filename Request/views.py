@@ -508,7 +508,7 @@ def requests_delete(req: HttpRequest):
             return request_failed(1, err_msg[:-1], status_code=403)
         if len(ids) > 0:
             tenant = get_tenant()
-            create_feishu_task(ids, user.username, msgs,tenant, "撤回申请", "DELETED", request.request_time, request.review_time)
+            create_feishu_task(ids, user.username, msgs,tenant, "撤回申请", "DELETED", request.request_time, get_timestamp())
         return request_success()
     
     return BAD_METHOD

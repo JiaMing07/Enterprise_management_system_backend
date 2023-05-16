@@ -54,7 +54,11 @@ def create_feishu_task(ids, initiator_name, msgs, tenant_access_code, title, sta
     initiator = User.objects.filter(username=initiator_name).first()
     if end_time != 0:
         end_time = str(end_time*1000).split('.')[0]
-    tasks = get_asset_super(initiator.department,status,title,start_time,end_time)
+    if status != 'DELETED':
+        tasks = get_asset_super(initiator.department,status,title,start_time,end_time)
+    else:
+        tasks = []
+    print(status)
     feishu_user = UserFeishu.objects.filter(username=initiator_name).first()
     if feishu_user is not None:
         if feishu_user.open_id == "" or feishu_user.open_id is None:
@@ -93,8 +97,8 @@ def create_feishu_task(ids, initiator_name, msgs, tenant_access_code, title, sta
                 ],
                 "instance_id": str(id),
                 "links": {
-                    "mobile_link": "http://applink.feishu.cn/sso/common?redirectUrl=/seeyon/main.do?method=main&client=pc",
-                    "pc_link": "http://applink.feishu.cn/sso/common?redirectUrl=/seeyon/main.do?method=main&client=pc"
+                    "mobile_link": "https://EAM-Frontend-BugHunters.app.secoder.net",
+                    "pc_link": "https://EAM-Frontend-BugHunters.app.secoder.net"
                 },
                 "open_id": f"{feishu_user.open_id}",
                 "start_time": str(start_time*1000).split('.')[0],
