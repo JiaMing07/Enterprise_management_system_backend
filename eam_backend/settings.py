@@ -40,6 +40,7 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'django_apscheduler',
     'django_celery_results',
     'django.contrib.admin',
     'django.contrib.auth',

@@ -219,6 +219,9 @@ class UserTests(TestCase):
     
     def get_user_query(self, description):
         return self.client.get(f"/user/query/name/{description}")
+    
+    def get_user_list_page(self, page):
+        return self.client.get(f"/user/list/{page}")
 
     # Now start testcases. 
 
@@ -888,5 +891,37 @@ class UserTests(TestCase):
         self.client.cookies = c
 
         res = self.get_user_query("test")
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
+
+    def test_user_list_page(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("system_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        res = self.get_user_list_page(1)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.get_user_list_page(0)
+        self.assertEqual(res.json()['info'], "超出页数范围")
+        self.assertEqual(res.json()['code'], -1)
+
+        ent = user.entity
+        dep = user.department
+        password='123'
+        md5 = hashlib.md5()
+        md5.update(password.encode('utf-8'))
+        pwd = md5.hexdigest()
+        for i in range(18):
+            username = 'Alice' + str(i)
+            User.objects.create(username=username, password=pwd, department=dep, entity=ent)
+        
+        res = self.get_user_list_page(1)
         self.assertEqual(res.json()['info'], "Succeed")
         self.assertEqual(res.json()['code'], 0)

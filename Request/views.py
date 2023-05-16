@@ -658,7 +658,11 @@ def feishu(req: HttpRequest):
                 elif type == 2:
                     action = "退库"
                     asset.state = 'IDLE'
-                    open_id = get_open_id(user_id)
+                    user_feishu = UserFeishu.objects.filter(user_id=user_id).first()
+                    if user_feishu is not None and user_feishu.user_id != "":
+                        open_id = user_feishu.open_id
+                    else:
+                        open_id = get_open_id(user_id)
                     feishu_user = UserFeishu.objects.filter(open_id=open_id).first()
                     username = feishu_user.username
                     user = User.objects.filter(username=username).first()

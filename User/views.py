@@ -268,6 +268,39 @@ def user_edit(req: HttpRequest):
         return BAD_METHOD
     
 @CheckRequire
+def user_list_page(req: HttpRequest, page:int):
+    if req.method == 'GET':
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        all_users = User.objects.filter(entity=entity)
+        page = int(page)
+        length = len(all_users)
+        user_list = []
+        def get_dic(u):
+            dic = return_field(u.serialize(), ["username", "department", "active", "authority"])
+            return dic
+        if page < 1 or (page != 1 and page > (length-1)/20 + 1):
+            return request_failed(-1, "超出页数范围", 403)
+        if length % 20 != 0:
+            if page == int(length/20) + 1:
+                for i in range(length - (page-1)*20):
+                    user_list.append(get_dic(all_users[(int(page)-1)*20+i]))
+            else:
+                for i in range(20):
+                    user_list.append(get_dic(all_users[(int(page)-1)*20+i]))
+        else:
+            for i in range(20):
+                user_list.append(get_dic(all_users[(int(page)-1)*20+i]))
+        return_data = {
+            "users": user_list,
+            "total_count": length
+        }
+        return request_success(return_data)
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
 def user_list(req: HttpRequest):
     if req.method == 'GET':
         entities = Entity.objects.all()
