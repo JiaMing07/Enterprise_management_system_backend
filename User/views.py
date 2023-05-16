@@ -684,27 +684,34 @@ def feishu_sync():
         entity.save()
 
         # add entity_super after sync
+        print(11111)
 
         # add root department
         department = Department(name="Ent_Feishu", entity=entity, parent=Department.root())
         department.save()
+        print(22222)
     
     # ent_super = User.objects.filter(entity=entity, entity_super=True).first()
 
     # user common info
+    print(33333)
     entity = Entity.objects.filter(name="Ent_Feishu").first()
     is_system_super = False
     is_entity_super = False
     is_asset_super = False
     
     ## 初始密码都是000
+    print(44444)
     md5 = hashlib.md5()
     md5.update("000".encode('utf-8'))
     pwd = md5.hexdigest()
 
+    print(55555)
     dep_list = get_dep_son(0)
     dep_name_list = [{"id": 0, "name": "Ent_Feishu"}]   # 记录id对应的部门名字，方便寻找父部门
 
+
+    print(66666)
     for dep in dep_list:
         depart_id = dep["department_id"]
         depart_name = dep["name"]
@@ -714,6 +721,8 @@ def feishu_sync():
 
         depart_parent_id = dep["parent_department_id"]
         parent_name = ""
+
+        print(77777)
         for dep in dep_name_list:
             ## 应该父部门会先出现？
             if dep["id"] == depart_parent_id:
@@ -721,7 +730,7 @@ def feishu_sync():
                 break
 
         # 创建部门
-
+        print(88888)
         ## 父部门是dep0
         if depart_parent_id == "0":
             parent_name = "Ent_Feishu"
@@ -729,9 +738,11 @@ def feishu_sync():
             if parent is None:
                 parent = Department(name="Ent_Feishu", entity=entity, parent=Department.root())
                 parent.save()
-
+            print(99999)
+        
         ## 父部门不是dep0
         else:
+            print(111111111)
             parent = Department.objects.filter(entity=entity).filter(name=parent_name).first()
             # 父部门不存在
             if parent is None:
@@ -747,6 +758,7 @@ def feishu_sync():
             log.save()
 
         # 添加users
+        print(22222222)
         users = get_users(depart_id)
         print(f"depart_id={depart_id}")
         super_name = ""
@@ -795,29 +807,25 @@ scheduler = BackgroundScheduler()
 # 调度器使用默认的DjangoJobStore()
 scheduler.add_jobstore(DjangoJobStore(), 'default')
 
-# def test_add_task(request):
-#     if request.method == 'POST':
-#         content = json.loads(request.body.decode())  # 接收参数
+def test_add_task(request):
+    if request.method == 'POST':
+        content = json.loads(request.body.decode())  # 接收参数
 
-#         start_time = content['start_time']  # 用户输入的任务开始时间, '10:00:00'
-#         start_time = start_time.split(':')
-#         hour = int(start_time[0])
-#         minute = int(start_time[1])
-#         second = int(start_time[2])
-#         # s = content['s']  # 接收执行任务的各种参数
-#         # 创建任务
-#         scheduler.add_job(feishu_sync, 'cron', hour=hour, minute=minute, second=second)
+        start_time = content['start_time']  # 用户输入的任务开始时间, '10:00:00'
+        start_time = start_time.split(':')
+        hour = int(start_time[0])
+        minute = int(start_time[1])
+        second = int(start_time[2])
+        # s = content['s']  # 接收执行任务的各种参数
+        # 创建任务
+        scheduler.add_job(feishu_sync, 'cron', hour=hour, minute=minute, second=second)
         
-#         return request_success()
+        return request_success()
     
-def test_add_task():
-    # hour = int(start_time[0])
-    # minute = int(start_time[1])
-    # second = int(start_time[2])
-    # s = content['s']  # 接收执行任务的各种参数
-    # 创建任务
-    # scheduler.add_job(feishu_sync, 'cron', hour=22, minute=10, second=0)
-    scheduler.add_job(feishu_sync, 'interval', minutes=5)
+    return BAD_METHOD()
+    
+# def test_add_task():
+#     scheduler.add_job(feishu_sync, 'interval', minutes=5)
 
     
 # 注册定时任务并开始
