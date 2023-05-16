@@ -668,11 +668,11 @@ def feishu(req: HttpRequest):
                     action = "维修"
                     asset.state = 'IN_MAINTAIN'
                     asset.operation = 'IN_MAINTAIN'
-                initiator = request.initiator
                 entity = request.initiator.entity.name
             elif status == "REJECTED":
                 request.result = 2
                 action = actions[type]
+            initiator = request.initiator
             msg = f"{initiator.username} {action} {request.asset.name}"
             request.review_time = get_timestamp()
             request.save()
@@ -699,6 +699,7 @@ def feishu(req: HttpRequest):
             asset.change_time = get_timestamp()
             asset.change_value = 0
             asset.save()
+            initiator = request.initiator
             msg = f"{initiator.username} 转移 {request.asset.name} 到 {request.participant.department.name} {request.participant.username}"
         tenant = get_tenant()
         create_feishu_task([instance_id],'Alice',[msg],tenant, action, status,request.request_time, get_timestamp())
