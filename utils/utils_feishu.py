@@ -174,10 +174,45 @@ def get_user_id(mobile_):
 
 
     headers = {
-    'Content-Type': 'application/json',
-    'Authorization': f'Bearer {tenant}'
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {tenant}'
     }
 
     response = requests.request("POST", url, headers=headers, data=payload)
     return response.json()['data']['user_list'][0]['user_id']
 
+def get_dep_son(department_id):
+    depart_id = department_id
+    url = "https://open.feishu.cn/open-apis/contact/v3/departments/:{depart_id}/children?fetch_child=true"
+    tenant = get_tenant()
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {tenant}'
+    }
+
+    response = requests.request("GET", url, headers=headers)
+    return response.json()['data']['items']
+
+def get_one_dep(department_id):
+    depart_id = department_id
+    url = "https://open.feishu.cn/open-apis/contact/v3/departments/:{depart_id}"
+    tenant = get_tenant()
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {tenant}'
+    }
+
+    response = requests.request("GET", url, headers=headers)
+    return response.json()['data']['department']
+
+def get_users(department_id):
+    depart_id = department_id
+    url = "https://open.feishu.cn/open-apis/contact/v3/users/find_by_department?department_id={depart_id}"
+    tenant = get_tenant()
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {tenant}'
+    }
+
+    response = requests.request("GET", url, headers=headers)
+    return response.json()['data']['items']
