@@ -681,6 +681,10 @@ def feishu(req: HttpRequest):
             asset.save()
         elif instance_id[0] == '2':
             request = TransferRequests.objects.filter(id=id).first()
+            if request is not None:
+                asset = request.asset
+            else:
+                return request_failed(-2, "没有对应请求", 404)
             action = "转移"
             request.review_time = get_timestamp()
             if status == "APPROVED":
