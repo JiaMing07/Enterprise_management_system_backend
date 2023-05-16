@@ -141,6 +141,8 @@ def get_open_id(user_id):
 
     response = requests.request("GET", url, headers=headers, data=payload)
     body = response.json()
+    open_id = body['data']['user']['open_id']
+    print(f"open_id={open_id}")
     return body['data']['user']['open_id']
 
 def get_feishu_id(feishu_user):
@@ -165,6 +167,25 @@ def get_feishu_id(feishu_user):
 def get_user_id(mobile_):
     mobile = mobile_
     tenant = get_tenant()
+    url = "https://open.feishu.cn/open-apis/contact/v3/users/batch_get_id?user_id_type=user_id"
+    payload = json.dumps({
+        "mobiles": [
+            mobile
+        ]
+    })
+
+
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {tenant}'
+    }
+
+    response = requests.request("POST", url, headers=headers, data=payload)
+    return response.json()['data']['user_list'][0]['user_id']
+
+def get_open_id(mobile_):
+    mobile = mobile_
+    tenant = get_tenant()
     url = "https://open.feishu.cn/open-apis/contact/v3/users/batch_get_id?user_id_type=open_id"
     payload = json.dumps({
         "mobiles": [
@@ -183,7 +204,7 @@ def get_user_id(mobile_):
 
 def get_dep_son(department_id):
     depart_id = department_id
-    url = "https://open.feishu.cn/open-apis/contact/v3/departments/:{depart_id}/children?fetch_child=true"
+    url = f"https://open.feishu.cn/open-apis/contact/v3/departments/:{depart_id}/children?fetch_child=true"
     tenant = get_tenant()
     headers = {
         'Content-Type': 'application/json',
@@ -195,7 +216,7 @@ def get_dep_son(department_id):
 
 def get_one_dep(department_id):
     depart_id = department_id
-    url = "https://open.feishu.cn/open-apis/contact/v3/departments/:{depart_id}"
+    url = f"https://open.feishu.cn/open-apis/contact/v3/departments/:{depart_id}"
     tenant = get_tenant()
     headers = {
         'Content-Type': 'application/json',
@@ -207,7 +228,7 @@ def get_one_dep(department_id):
 
 def get_users(department_id):
     depart_id = department_id
-    url = "https://open.feishu.cn/open-apis/contact/v3/users/find_by_department?department_id={depart_id}"
+    url = f"https://open.feishu.cn/open-apis/contact/v3/users/find_by_department?department_id={depart_id}"
     tenant = get_tenant()
     headers = {
         'Content-Type': 'application/json',

@@ -448,7 +448,9 @@ def feishu_bind(req: HttpRequest):
         
         oldbind = UserFeishu.objects.filter(username=username).first()
         user_id = get_user_id(mobile)
-        open_id = get_open_id(user_id)
+        print(f"user_id={user_id}")
+        open_id = get_open_id(mobile)
+        print(f"open_id={open_id}")
 
         # 如果已经绑定，则直接替换
         if oldbind is not None:
@@ -632,7 +634,7 @@ scheduler = BackgroundScheduler()
 scheduler.add_jobstore(DjangoJobStore(), 'default')
 
 # 每天10:30执行这个任务
-@register_job(scheduler, 'cron', id='feishu_sync', hour=10, minute=30, args=[])
+@register_job(scheduler, 'cron', id='feishu_sync', hour=10, minute=50, args=[])
 def feishu_sync():
         
     # 创建entity

@@ -834,13 +834,13 @@ class UserTests(TestCase):
 
         username = 'test_user'
         # user = User.objects.filter(username=username).first()
-        mobile = 'feishu1'
+        mobile = '18500678029'
         res = self.post_feishu_bind(username, mobile)
         self.assertEqual(res.json()['info'], "Succeed")
         self.assertEqual(res.json()['code'], 0)
         
         username = 'test_user'
-        mobile = 'feishu2'
+        mobile = '18500678029'
         res = self.post_feishu_bind(username, mobile)
         self.assertEqual(res.json()['info'], "Succeed")
         self.assertEqual(res.json()['code'], 0)
@@ -857,19 +857,23 @@ class UserTests(TestCase):
         self.client.cookies = c
 
         username = 'test_user'
-        # user = User.objects.filter(username=username).first()
-        mobile = 'feishu1'
-        res = self.post_feishu_bind(username, mobile)
-        self.assertEqual(res.json()['info'], "Succeed")
-        self.assertEqual(res.json()['code'], 0)
-        
-        username = 'test_user'
-        mobile = 'feishu2'
+        mobile = '18500678029'
         res = self.post_feishu_bind(username, mobile)
         self.assertEqual(res.json()['info'], "Succeed")
         self.assertEqual(res.json()['code'], 0)
 
         res = self.get_feishu_bind()
-        self.assertEqual(res.json()['mobile'], "feishu2")
+        self.assertEqual(res.json()['mobile'], "18500678029")
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
+        
+        username = 'test_user'
+        mobile = '13331098791'
+        res = self.post_feishu_bind(username, mobile)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.get_feishu_bind()
+        self.assertEqual(res.json()['mobile'], "13331098791")
         self.assertEqual(res.json()['info'], "Succeed")
         self.assertEqual(res.json()['code'], 0)
