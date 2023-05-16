@@ -1,6 +1,7 @@
 import json
 import hashlib
 import requests
+import random
 from django.http import HttpRequest, HttpResponse
 
 from User.models import User, Menu, UserFeishu
@@ -11,10 +12,15 @@ from utils.utils_time import get_timestamp, get_date
 from utils.utils_getbody import get_args
 from utils.utils_checklength import checklength
 from utils.utils_checkauthority import CheckAuthority, CheckToken
+from utils.utils_feishu import *
+
 from eam_backend.settings import SECRET_KEY
-from  utils.utils_startup import init_department, init_entity, add_menu, add_users,admin_user, add_category, add_asset, add_request
+from utils.utils_startup import init_department, init_entity, add_menu, add_users,admin_user, add_category, add_asset, add_request
 import jwt
 from django.db.utils import IntegrityError, OperationalError
+from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.schedulers.background import BackgroundScheduler
+from django_apscheduler.jobstores import DjangoJobStore, register_events, register_job
 from Asset.models import *
 
 def check_for_user_data(body):
@@ -477,20 +483,27 @@ def feishu_bind(req: HttpRequest):
         body = json.loads(req.body.decode("utf-8"))
         username = json.loads(req.body.decode("utf-8")).get('username')
         mobile = json.loads(req.body.decode("utf-8")).get('mobile')
-        open_id = json.loads(req.body.decode("utf-8")).get('open_id',"")
-        user_id = json.loads(req.body.decode("utf-8")).get('user_id',"")
+        # open_id = json.loads(req.body.decode("utf-8")).get('open_id')
+        # user_id = json.loads(req.body.decode("utf-8")).get('user_id')
         user = User.objects.filter(username=username).first()
 
         if user is None:
             return request_failed(2, "用户不存在", 403)
         
         oldbind = UserFeishu.objects.filter(username=username).first()
+        user_id = get_user_id(mobile)
+        print(f"user_id={user_id}")
+        open_id = get_open_id(mobile)
+        print(f"open_id={open_id}")
+
+        # 如果已经绑定，则直接替换
         if oldbind is not None:
+            oldbind.mobile = mobile
             oldbind.open_id = open_id
             oldbind.user_id = user_id
-            oldbind.mobile = mobile
             oldbind.save()
         
+        # 如果没有绑定，新建绑定
         else:
             userbind = UserFeishu(username=username, mobile=mobile, open_id=open_id, user_id=user_id)
             userbind.save()
@@ -509,9 +522,12 @@ def feishu_bind(req: HttpRequest):
             
             mobile = userbind.mobile
             open_id = userbind.open_id
+            user_id = userbind.user_id
+
             return_data = {
                 "mobile": mobile,
-                "open_id": open_id
+                "open_id": open_id,
+                "user_id": user_id
             }
             
             return request_success(return_data)
@@ -609,7 +625,7 @@ def feishu_login(req: HttpRequest):
     return BAD_METHOD
 
 @CheckRequire
-def feishu_sync(req: HttpRequest):
+def feishu_sync_click(req: HttpRequest):
 
     if req.method == 'POST':
         body = json.loads(req.body.decode("utf-8"))
@@ -653,8 +669,149 @@ def feishu_sync(req: HttpRequest):
                 log.save()
         
         return request_success()
-
     return BAD_METHOD
+
+
+# 每天10:30执行这个任务
+# @register_job(scheduler, 'cron', id='feishu_sync', hour=10, minute=50, args=[])
+def feishu_sync():
+        
+    # 创建entity
+    entity = Entity.objects.filter(name="Ent_Feishu").first()
+    if entity is None:
+        # add entity
+        entity = Entity(name="Ent_Feishu")
+        entity.save()
+
+        # add entity_super after sync
+
+        # add root department
+        department = Department(name="Ent_Feishu", entity=entity, parent=Department.root())
+        department.save()
+    
+    # ent_super = User.objects.filter(entity=entity, entity_super=True).first()
+
+    # user common info
+    entity = Entity.objects.filter(name="Ent_Feishu").first()
+    is_system_super = False
+    is_entity_super = False
+    is_asset_super = False
+    
+    ## 初始密码都是000
+    md5 = hashlib.md5()
+    md5.update("000".encode('utf-8'))
+    pwd = md5.hexdigest()
+
+    dep_list = get_dep_son(0)
+    dep_name_list = [{"id": 0, "name": "Ent_Feishu"}]   # 记录id对应的部门名字，方便寻找父部门
+
+    for dep in dep_list:
+        depart_id = dep["department_id"]
+        depart_name = dep["name"]
+        dep_name_list.append({"id": depart_id, "name": depart_name})
+
+        super_id = dep["leader_user_id"]
+
+        depart_parent_id = dep["parent_department_id"]
+        parent_name = ""
+        for dep in dep_name_list:
+            ## 应该父部门会先出现？
+            if dep["id"] == depart_parent_id:
+                parent_name = dep["name"]
+                break
+
+        # 创建部门
+
+        ## 父部门是dep0
+        if depart_parent_id == "0":
+            parent_name = "Ent_Feishu"
+            parent = Department.objects.filter(name="Ent_Feishu").first()
+            if parent is None:
+                parent = Department(name="Ent_Feishu", entity=entity, parent=Department.root())
+                parent.save()
+
+        ## 父部门不是dep0
+        else:
+            parent = Department.objects.filter(entity=entity).filter(name=parent_name).first()
+            # 父部门不存在
+            if parent is None:
+                print("Should not be here!")
+                parent = Department(name=parent_name, entity=entity)
+
+            # 创建部门
+            department = Department(name=depart_name, entity=entity, parent=parent)
+            department.save()
+
+            log_info = f"飞书用户{super_id}  在 {get_date()} 新增部门 {department.name}"
+            log = Log(log=log_info, type = 1, entity=entity)
+            log.save()
+
+        # 添加users
+        users = get_users(depart_id)
+        super_name = ""
+        for user in users:
+            open_id = user["open_id"]
+            user_id = user["user_id"]
+            user_name = user["name"]
+            mobile = user["mobile"]
+
+            # 飞书名用户对应的原有用户是否存在
+            staff = UserFeishu.objects.filter(open_id=open_id)
+
+            # 如果未绑定飞书账号
+            if staff is None:
+                # 如果飞书名和原有用户的用户名重复了
+                user = User.objects.filter(username=user_name).first()
+            
+                while user is not None:
+                    random.seed()
+                    user_name = user_name + random.randint(1, 100) # random 1~100
+                    user = User.objects.filter(username=user_name).first()
+                
+                user = User(username=user_name, entity=entity, department=department, password=pwd,
+                            system_super = is_system_super, entity_super = is_entity_super, asset_super = is_asset_super)
+                
+                if open_id == super_id:
+                    super_name = user_name
+                    user.asset_super = True
+                
+                user.save()
+
+                log_info = f"用户{super_name} ({department.name}) 在 {get_date()} 新增用户 {user.username}"
+                log = Log(log=log_info, type = 1, entity=user.entity)
+                log.save()
+
+                # 绑定
+                oldbind = UserFeishu.objects.filter(username=user_name).first()
+        
+                userbind = UserFeishu(username=user_name, mobile=mobile, open_id=open_id, user_id=user_id)
+                userbind.save()
+    
+    return request_success()
+
+# 实例化调度器
+scheduler = BackgroundScheduler()
+# 调度器使用默认的DjangoJobStore()
+scheduler.add_jobstore(DjangoJobStore(), 'default')
+
+def test_add_task(request):
+    if request.method == 'POST':
+        content = json.loads(request.body.decode())  # 接收参数
+
+        start_time = content['start_time']  # 用户输入的任务开始时间, '10:00:00'
+        start_time = start_time.split(':')
+        hour = int(start_time)[0]
+        minute = int(start_time)[1]
+        second = int(start_time)[2]
+        # s = content['s']  # 接收执行任务的各种参数
+        # 创建任务
+        scheduler.add_job(feishu_sync, 'cron', hour=hour, minute=minute, second=second)
+        
+        return request_success()
+    
+# 注册定时任务并开始
+register_events(scheduler)
+scheduler.start()
 
 @CheckRequire
 def user_query(req: HttpRequest, description:str):
