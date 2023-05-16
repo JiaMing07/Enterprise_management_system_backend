@@ -848,6 +848,18 @@ class UserTests(TestCase):
         username = 'test_user'
         mobile = '18500678029'
         res = self.post_feishu_bind(username, mobile)
+        self.assertEqual(res.json()['info'], "此手机号已绑定系统中的用户，无法绑定")
+        self.assertEqual(res.json()['code'], 3)
+
+        username = 'Bob'
+        mobile = '13331098791'
+        res = self.post_feishu_bind(username, mobile)
+        self.assertEqual(res.json()['info'], "用户不存在")
+        self.assertEqual(res.json()['code'], 2)
+
+        username = 'test_user'
+        mobile = '13331098791'
+        res = self.post_feishu_bind(username, mobile)
         self.assertEqual(res.json()['info'], "Succeed")
         self.assertEqual(res.json()['code'], 0)
     

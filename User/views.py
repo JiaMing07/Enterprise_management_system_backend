@@ -489,12 +489,13 @@ def feishu_bind(req: HttpRequest):
 
         if user is None:
             return request_failed(2, "用户不存在", 403)
+        user_feishu = UserFeishu.objects.filter(mobile=mobile).first()
+        if user_feishu is not None:
+            return request_failed(3, "此手机号已绑定系统中的用户，无法绑定", 403)
         
         oldbind = UserFeishu.objects.filter(username=username).first()
         user_id = get_user_id(mobile)
-        print(f"user_id={user_id}")
         open_id = get_open_id(mobile)
-        print(f"open_id={open_id}")
 
         # 如果已经绑定，则直接替换
         if oldbind is not None:
