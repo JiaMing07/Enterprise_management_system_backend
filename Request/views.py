@@ -508,7 +508,7 @@ def requests_delete(req: HttpRequest):
             return request_failed(1, err_msg[:-1], status_code=403)
         if len(ids) > 0:
             tenant = get_tenant()
-            create_feishu_task(ids, user.username, msgs,tenant, "撤回申请", "DELETED", request.request_time, request.review_time, request.request_time, request.review_time)
+            create_feishu_task(ids, user.username, msgs,tenant, "撤回申请", "DELETED", request.request_time, request.review_time)
         return request_success()
     
     return BAD_METHOD
@@ -610,7 +610,6 @@ def requests_disapprove(req: HttpRequest):
                     # log.save()
 
             else:
-                print("nonono")
                 err_msg += f'第{idx+1}条想要处理的资产 {asset_name} 申请不符合要求; '
 
         if len(err_msg) > 0:
@@ -642,11 +641,13 @@ def feishu(req: HttpRequest):
         action = "action"
         user_name = ""
         if instance_id[0] == '1':
-            print(id)
             request = NormalRequests.objects.filter(id=id).first()
             if request is not None:
                 asset = request.asset
+            else:
+                return request_failed(-2, "没有对应请求", 404)
             type = request.type
+            actions = ["", "申领", "退库", "维修"]
             if status == "APPROVED":
                 request.result=1
                 if type == 1:
@@ -669,9 +670,10 @@ def feishu(req: HttpRequest):
                     asset.operation = 'IN_MAINTAIN'
                 initiator = request.initiator
                 entity = request.initiator.entity.name
-                msg = f"{initiator.username} {action} {request.asset.name}"
             elif status == "REJECTED":
                 request.result = 2
+                action = actions[type]
+            msg = f"{initiator.username} {action} {request.asset.name}"
             request.review_time = get_timestamp()
             request.save()
             asset.change_time = get_timestamp()
@@ -687,6 +689,7 @@ def feishu(req: HttpRequest):
                 asset.position = request.position
                 asset.operation = 'MOVE'
             elif status == "REJECTED":
+                action = '拒绝'
                 request.result = 2
             request.save()
             asset.change_time = get_timestamp()

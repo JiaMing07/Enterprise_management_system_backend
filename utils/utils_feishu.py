@@ -6,7 +6,6 @@ from utils.utils_time import *
 
 def get_asset_super(department, status, title, start_time, end_time):
     ancestor_list = department.get_ancestors(include_self=True)
-    print(ancestor_list)
     asset_supers = User.objects.filter(asset_super=True).filter(department__in=ancestor_list)
     tasks = []
     num = 0
@@ -48,7 +47,6 @@ def get_asset_super(department, status, title, start_time, end_time):
                 }
             tasks.append(task)
             num += 1
-    print("finish")
     return tasks
 
 def create_feishu_task(ids, initiator_name, msgs, tenant_access_code, title, status, start_time = get_timestamp(), end_time=0):
@@ -111,7 +109,6 @@ def create_feishu_task(ids, initiator_name, msgs, tenant_access_code, title, sta
                 'Authorization': f'Bearer {tenant_access_code}'
             }
             response = requests.request("POST", url, headers=headers, data=payload)
-            print(response.text)
     return "ok"
 
 def get_tenant():
