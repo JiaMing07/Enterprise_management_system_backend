@@ -647,32 +647,32 @@ def feishu(req: HttpRequest):
             if request is not None:
                 asset = request.asset
             type = request.type
-            if type == 1:
-                action = "申领"
-                asset.owner = request.initiator.username
-                asset.state = 'IN_USE'
-                asset.operation = 'IN_USE'
-            elif type == 2:
-                action = "退库"
-                asset.state = 'IDLE'
-                open_id = get_open_id(user_id)
-                feishu_user = UserFeishu.objects.filter(open_id=open_id).first()
-                username = feishu_user.username
-                user = User.objects.filter(username=username).first()
-                asset.owner = user.username
-                asset.operation = 'IDLE'
-            elif type == 3:
-                action = "维修"
-                asset.state = 'IN_MAINTAIN'
-                asset.operation = 'IN_MAINTAIN'
-            initiator = request.initiator
-            entity = request.initiator.entity.name
-            msg = f"{initiator.username} {action} {request.asset.name}"
-            request.review_time = get_timestamp()
             if status == "APPROVED":
                 request.result=1
+                if type == 1:
+                    action = "申领"
+                    asset.owner = request.initiator.username
+                    asset.state = 'IN_USE'
+                    asset.operation = 'IN_USE'
+                elif type == 2:
+                    action = "退库"
+                    asset.state = 'IDLE'
+                    open_id = get_open_id(user_id)
+                    feishu_user = UserFeishu.objects.filter(open_id=open_id).first()
+                    username = feishu_user.username
+                    user = User.objects.filter(username=username).first()
+                    asset.owner = user.username
+                    asset.operation = 'IDLE'
+                elif type == 3:
+                    action = "维修"
+                    asset.state = 'IN_MAINTAIN'
+                    asset.operation = 'IN_MAINTAIN'
+                initiator = request.initiator
+                entity = request.initiator.entity.name
+                msg = f"{initiator.username} {action} {request.asset.name}"
             elif status == "REJECTED":
                 request.result = 2
+            request.review_time = get_timestamp()
             request.save()
             asset.change_time = get_timestamp()
             asset.change_value = 0
@@ -680,12 +680,12 @@ def feishu(req: HttpRequest):
         elif instance_id[0] == '2':
             request = TransferRequests.objects.filter(id=id).first()
             action = "转移"
-            asset.owner = request.participant.username
-            asset.position = request.position
-            asset.operation = 'MOVE'
             request.review_time = get_timestamp()
             if status == "APPROVED":
                 request.result=1
+                asset.owner = request.participant.username
+                asset.position = request.position
+                asset.operation = 'MOVE'
             elif status == "REJECTED":
                 request.result = 2
             request.save()
