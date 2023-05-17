@@ -64,7 +64,7 @@ def requests_return(req: HttpRequest):
             request = NormalRequests(initiator=user, asset=asset, type=2, result=0, request_time=get_timestamp(),review_time=0.0)
             request.save()
             msg = f"{user.username} 退库资产 {asset_name}"
-            ids.append("1"+str(request.id) + "1")
+            ids.append("1e"+str(request.id) + "1")
             msgs.append(msg)
         if len(err_msg) > 0:
             return request_failed(1, err_msg[:-1], status_code=403)
@@ -147,7 +147,7 @@ def requests_repair(req: HttpRequest):
             request = NormalRequests(initiator=user, asset=asset, type=3, result=0, request_time=get_timestamp(),review_time=0.0)
             request.save()
             msg = f"{request.initiator.username} 维修资产 {asset_name}"
-            ids.append("1"+str(request.id) + "1")
+            ids.append("1e"+str(request.id) + "1")
             msgs.append(msg)
         if len(err_msg) > 0:
             return request_failed(1, err_msg[:-1], status_code=403)
@@ -202,7 +202,7 @@ def request_transfer(req:HttpRequest):
             request = TransferRequests(initiator=user, asset=asset, type=4, result=0, request_time=get_timestamp(),review_time=0.0, participant=participant, position=position)
             request.save()
             msg = f"{user.username} 转移资产 {asset_name} 到 {participant.department.name} {participant.username}"
-            ids.append("2"+str(request.id) + "2")
+            ids.append("2e"+str(request.id) + "2")
             msgs.append(msg)
             
         if len(err_msg) > 0:
@@ -255,7 +255,7 @@ def requests_require(req: HttpRequest):
             request = NormalRequests(initiator=user, asset=asset, type=1, result=0, request_time=get_timestamp(),review_time=0.0)
             request.save()
             msg = f"{user.username} 申领资产 {asset_name}"
-            ids.append("1"+str(request.id) + "1")
+            ids.append("1e"+str(request.id) + "1")
             msgs.append(msg)
         if len(err_msg) > 0:
             return request_failed(1, err_msg[:-1], status_code=403)
@@ -344,7 +344,7 @@ def requests_approve(req: HttpRequest):
                     msg = f"{request.initiator.username} 申领资产 {asset_name}"
                     feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
                     if feishu_user is not None:
-                        ids.append("11"+str(request.id) + "1")
+                        ids.append("1e"+str(request.id) + "1")
                         msgs.append(msg)
                     # log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 同意 {request.initiator.username} 的申领请求 {asset.name}"
                     # log = Log(log=log_info, type = 1, entity=user.entity)
@@ -364,7 +364,7 @@ def requests_approve(req: HttpRequest):
                     msg = f"{request.initiator.username} 退库资产 {asset_name}"
                     feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
                     if feishu_user is not None:
-                        ids.append("11"+str(request.id) + "1")
+                        ids.append("1e"+str(request.id) + "1")
                         msgs.append(msg)
                     # log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 同意 {request.initiator.username} 的退库请求 {asset.name}"
                     # log = Log(log=log_info, type = 1, entity=user.entity)
@@ -383,7 +383,7 @@ def requests_approve(req: HttpRequest):
                     msg = f"{request.initiator.username} 维修资产 {asset_name}"
                     feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
                     if feishu_user is not None:
-                        ids.append("11"+str(request.id) + "1")
+                        ids.append("1e"+str(request.id) + "1")
                         msgs.append(msg)
                     # log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 同意 {request.initiator.username} 的维修请求 {asset.name}"
                     # log = Log(log=log_info, type = 1, entity=user.entity)
@@ -403,7 +403,7 @@ def requests_approve(req: HttpRequest):
                     msg = f"{request.initiator.username} 转移资产 {asset_name} 到 {request.participant.department.name} {request.participant.username}"
                     feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
                     if feishu_user is not None:
-                        ids.append("22"+str(request.id) + "2")
+                        ids.append("2e"+str(request.id) + "2")
                         msgs.append(msg)
                     # log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 同意 {request.initiator.username} 的转移请求：{asset.name}转移至{request.participant.username}（{request.participant.department.name}）"
                     # log = Log(log=log_info, type = 1, entity=user.entity)
@@ -459,7 +459,7 @@ def requests_delete(req: HttpRequest):
                     msg = f"{request.initiator.username} 申领资产 {asset_name}"
                     feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
                     if feishu_user is not None:
-                        ids.append("11"+str(request.id) + "1")
+                        ids.append("1e"+str(request.id) + "1")
                         msgs.append(msg)
 
             elif type == "2": # 退库
@@ -472,7 +472,7 @@ def requests_delete(req: HttpRequest):
                     msg = f"{request.initiator.username} 退库资产 {asset_name}"
                     feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
                     if feishu_user is not None:
-                        ids.append("11"+str(request.id) + "1")
+                        ids.append("1e"+str(request.id) + "1")
                         msgs.append(msg)
 
             elif type == "3": # 维修
@@ -485,7 +485,7 @@ def requests_delete(req: HttpRequest):
                     msg = f"{request.initiator.username} 维修资产 {asset_name}"
                     feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
                     if feishu_user is not None:
-                        ids.append("11"+str(request.id) + "1")
+                        ids.append("1e"+str(request.id) + "1")
                         msgs.append(msg)
 
             elif type == "4": # 转移
@@ -498,7 +498,7 @@ def requests_delete(req: HttpRequest):
                     msg = f"{request.initiator.username} 转移资产 {asset_name} 到 {request.participant.department.name} {request.participant.username}"
                     feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
                     if feishu_user is not None:
-                        ids.append("22"+str(request.id) + "2")
+                        ids.append("2e"+str(request.id) + "2")
                         msgs.append(msg)
 
             else:
@@ -552,7 +552,7 @@ def requests_disapprove(req: HttpRequest):
                     msg = f"{request.initiator.username} 申领资产 {asset_name}"
                     feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
                     if feishu_user is not None:
-                        ids.append("11"+str(request.id) + "1")
+                        ids.append("1e"+str(request.id) + "1")
                         msgs.append(msg)
                     # log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 拒绝 {request.initiator.username} 的申领请求 {asset.name}"
                     # log = Log(log=log_info, type = 1, entity=user.entity)
@@ -569,7 +569,7 @@ def requests_disapprove(req: HttpRequest):
                     msg = f"{request.initiator.username} 退库资产 {asset_name}"
                     feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
                     if feishu_user is not None:
-                        ids.append("11"+str(request.id) + "1")
+                        ids.append("1e"+str(request.id) + "1")
                         msgs.append(msg)
                     # log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 拒绝 {request.initiator.username} 的退库请求 {asset.name}"
                     # log = Log(log=log_info, type = 1, entity=user.entity)
@@ -586,7 +586,7 @@ def requests_disapprove(req: HttpRequest):
                     msg = f"{request.initiator.username} 维修资产 {asset_name}"
                     feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
                     if feishu_user is not None:
-                        ids.append("11"+str(request.id) + "1")
+                        ids.append("1e"+str(request.id) + "1")
                         msgs.append(msg)
                     # log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 拒绝 {request.initiator.username} 的维修请求 {asset.name}"
                     # log = Log(log=log_info, type = 1, entity=user.entity)
@@ -603,7 +603,7 @@ def requests_disapprove(req: HttpRequest):
                     msg = f"{request.initiator.username} 转移资产 {asset_name} 到 {request.participant.department.name} {request.participant.username}"
                     feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
                     if feishu_user is not None:
-                        ids.append("22"+str(request.id) + "2")
+                        ids.append("2e"+str(request.id) + "2")
                         msgs.append(msg)
                     # log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 拒绝 {request.initiator.username} 的转移请求 {asset.name}"
                     # log = Log(log=log_info, type = 1, entity=user.entity)

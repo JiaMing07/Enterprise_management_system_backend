@@ -229,6 +229,9 @@ class AttributeTests(TestCase):
     def get_asset_query(self, type, description, attribute):
         return self.client.get(f'/asset/query/{type}/{description}/{attribute}')
     
+    def get_asset_query_page(self, type, description, attribute, page):
+        return self.client.get(f'/asset/query/{type}/{description}/{attribute}/{page}')
+    
     def get_asset_user_query(self):
         return self.client.get(f'/asset/user') 
     
@@ -243,9 +246,6 @@ class AttributeTests(TestCase):
     
     def get_category_is_number(self,category_name):
         return self.client.get(f'/asset/category/{category_name}/number')
-    
-    def get_asset_query(self, type, description, attribute):
-        return self.client.get(f'/asset/query/{type}/{description}/{attribute}')
     
     def get_asset_user_query(self):
         return self.client.get(f'/asset/user')
@@ -310,6 +310,9 @@ class AttributeTests(TestCase):
     
     def get_asset_list_page(self, page):
         return self.client.get(f"/asset/list/{page}")
+    
+    def get_unretired_list_page(self, page):
+        return self.client.get(f"/asset/unretired/{page}")
     
     def get_maintain_list(self):
         return self.client.get(f"/asset/maintain/list")
@@ -2322,8 +2325,7 @@ class AttributeTests(TestCase):
     def test_asset_list_page(self):
         self.create_token('test_user', 'entity_super')
         res = self.get_asset_list_page(1)
-        print(Asset.objects.all())
-        print(res)
+
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
 
@@ -2353,4 +2355,107 @@ class AttributeTests(TestCase):
         assets = ["asset1", "assets2"]
         res = self.post_maintain_use(assets)
         self.assertEqual(res.json()['info'], '第 1 条资产（asset1）不在维修中，无法解除维修状态；第 2 条资产（assets2）不存在')
+        self.assertEqual(res.json()['code'], -1)
+
+    def test_asset_query_page(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+        
+        # type = "asset_name"
+        type = "asset_name"
+        description = "a"
+        attribute = "1"
+        page = 1
+
+        res = self.get_asset_query_page(type, description, attribute, page)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        # type = "asset_description"
+        type = "asset_description"
+        description = "a"
+        attribute = "1"
+
+        res = self.get_asset_query_page(type, description, attribute, page)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        
+        # type = "asset_position"
+        type = "asset_position"
+        description = "a"
+        attribute = "1"
+
+        res = self.get_asset_query_page(type, description, attribute, page)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        # type = "asset_type"
+        type = "asset_type"
+        description = "a"
+        attribute = "1"
+
+        res = self.get_asset_query_page(type, description, attribute, page)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        # type = "asset_status"
+        type = "asset_status"
+        description = "a"
+        attribute = "1"
+
+        res = self.get_asset_query_page(type, description, attribute, page)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+        
+        # type = "asset_department"
+        type = "asset_department"
+        description = "a"
+        attribute = "1"
+
+        res = self.get_asset_query_page(type, description, attribute, page)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        # type = "asset_department"
+        type = "asset_owner"
+        description = "a"
+        attribute = "1"
+
+        res = self.get_asset_query_page(type, description, attribute, page)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        # error_type
+        type = "department"
+        description = "a"
+        attribute = "1"
+
+        res = self.get_asset_query_page(type, description, attribute, page)
+        self.assertEqual(res.json()['code'], 1)
+        self.assertEqual(res.json()['info'], '此搜索类型不存在')
+
+        # error page
+        type = "asset_owner"
+        description = "a"
+        attribute = "1"
+        page = 0
+        res = self.get_asset_query_page(type, description, attribute, page)
+        self.assertEqual(res.json()['code'], -1)
+        self.assertEqual(res.json()['info'], '超出页数范围')
+
+    def test_unretired_list_page(self):
+        self.create_token('test_user', 'entity_super')
+        res = self.get_unretired_list_page(1)
+
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.get_unretired_list_page(0)
+        self.assertEqual(res.json()['info'], '超出页数范围')
         self.assertEqual(res.json()['code'], -1)
