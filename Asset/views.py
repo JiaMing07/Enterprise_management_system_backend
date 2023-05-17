@@ -210,6 +210,8 @@ def asset_add(req: HttpRequest):
         ancestor_list = department.get_ancestors(include_self=True)
         if user.department not in ancestor_list:
             return request_failed(5, "部门不在管理范围内", status_code=403)
+        if number > 1 and category.is_number ==False:
+            number = 1
         asset = Asset(name=name, description=description, position=position, value=value, owner=owner.username, number=number,
                       category=category, entity=entity, department=department, parent=parent, life=life, image_url=image_url)
         asset.save()
@@ -275,6 +277,12 @@ def asset_edit(req: HttpRequest):
         if parent is None:
             return request_failed(7, "父资产不存在", status_code=404)
         
+        asset.operation = 'edit'
+        asset.change_value = value - asset.value
+        if asset.owner != owner:
+            asset.operation = 'MOVE'
+        if asset.state != state:
+            asset.operation = state
         asset.name = assetName
         asset.parent = parent
         asset.description = description
@@ -287,6 +295,7 @@ def asset_edit(req: HttpRequest):
         asset.department = department
         asset.image_url = image_url
         asset.life = life
+        asset.change_time = get_timestamp()
         asset.save()
         return request_success()
     else:
@@ -364,7 +373,6 @@ def asset_add_list(req:HttpRequest):
                 continue
             asset = Asset(name=name, description=description, position=position, value=value, owner=owner.username, number=number,
                         category=category, entity=entity, department=department, parent=parent, life=life, image_url=image_url,state=state)
-            print(asset)
             asset.save()
         if len(err_msg)>0:
             return request_failed(1, err_msg[:-1], status_code=403)
@@ -397,11 +405,17 @@ def asset_retire(req: HttpRequest):
                 continue
             
             asset.state = "RETIRED"
+            asset.change_value = -asset.value
             asset.value = 0
             children_list = asset.get_children()
             for child in children_list:
                 child.parent = Asset.objects.filter(name = asset.entity.name).first()
+                child.operation = 'edit'
+                child.change_value = 0
+                child.change_time = get_timestamp()
                 child.save()
+            asset.operation = 'RETIRED'
+            asset.change_time = get_timestamp()
             asset.save()
         if len(err_msg) > 0:
             return request_failed(1, err_msg[:-1], status_code=403)
@@ -609,15 +623,13 @@ def attribute_edit(req: HttpRequest):
     
 @CheckRequire    
 def asset_attribute(req: HttpRequest):
-    print(req.method)
     if req.method == 'POST':
-        print(1)
         # check format
         body = json.loads(req.body.decode("utf-8"))
-        asset_name, attribute_name, description = get_args(body, ['asset', 'attribute', 'description'], ['string','string','string'])
-        checklength(asset_name, 0, 50, "asset")
-        checklength(attribute_name, 0, 50, "attribute")
-        checklength(description, 0, 300, "description")
+        asset_name, attributes_list = get_args(body, ['asset_name', 'attributes'], ['string','list'])
+        checklength(asset_name, 0, 50, "asset_name")
+        # checklength(attribute_name, 0, 50, "attribute")
+        # checklength(description, 0, 300, "description")
 
         # check token and get entity
         CheckAuthority(req, ["entity_super", "asset_super"])
@@ -627,19 +639,38 @@ def asset_attribute(req: HttpRequest):
 
         # get asset and attribute
         asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
-        attribute = Attribute.objects.filter(name=attribute_name, entity=user.entity).first()
 
         # filter whether exist
         if asset is None:
             return request_failed(1, "资产不存在", status_code=403)
-        if attribute is None:
-            return request_failed(1, "自定义属性不存在", status_code=403)
+        
+        # 注意删除的过程
+        old_attri = AssetAttribute.objects.filter(asset=asset).first()
+        while old_attri is not None:
+            old_attri.delete()
+            old_attri = AssetAttribute.objects.filter(asset=asset).first()
 
-        # save
-        else:
-            new_pair = AssetAttribute(asset=asset, attribute=attribute, description=description)
+        new_list = []
+        for new_attri in attributes_list:
+            attri_name = new_attri["key"]
+            attri_description = new_attri["value"]
+
+            attribute = Attribute.objects.filter(name=attri_name, entity=user.entity).first()
+            
+            # 判断自定义属性是否存在
+            if attribute is None:
+                return request_failed(1, "自定义属性不存在", status_code=403)
+            
+            # 判断重复
+            if attri_name in new_list:
+                return request_failed(1, "自定义属性与前面重复", status_code=403)
+            new_list.append(attri_name)
+            
+            # save
+            new_pair = AssetAttribute(asset=asset, attribute=attribute, description=attri_description)
             new_pair.save()
-            return request_success()
+        
+        return request_success()
 
     if req.method == 'DELETE':
         body = json.loads(req.body.decode("utf-8"))
@@ -778,6 +809,7 @@ def asset_tree(req: HttpRequest):
         return_data = {
             "assets": return_list
         }
+        print(return_data)
         return request_success(return_data)
     return BAD_METHOD
 
@@ -788,7 +820,7 @@ def asset_category_number(req: HttpRequest, category_name: str):
         user = User.objects.filter(username=decoded['username']).first()
         category = AssetCategory.objects.filter(entity=user.entity, name=category_name).first()
         if category is None:
-            return request_failed(1, "不存在此资产", status_code=404)
+            return request_failed(1, "不存在此资产类型", status_code=404)
         is_number = category.is_number
         return request_success({
             "is_number": is_number
@@ -916,9 +948,8 @@ def asset_label(req: HttpRequest):
         CheckAuthority(req, ["entity_super", "asset_super"])
         token, decoded = CheckToken(req)
         user = User.objects.filter(username=decoded['username']).first()
-
-        name = json.loads(req.body.decode("utf-8")).get('name')
-        labels = json.loads(req.body.decode("utf-8")).get('labels')
+        body = json.loads(req.body.decode("utf-8"))
+        name, labels = get_args(body, ['name', 'labels'],['string', 'string'])
         asset_name = False
         entity = False
         category = False
@@ -1053,6 +1084,9 @@ def asset_allocate(req: HttpRequest):
                 err_msg += f"第{idx+1}条资产 {ass} 不在管辖范围内，无法调拨；"
             asset.owner = asset_super.username
             asset.department = asset_super.department
+            asset.operation = 'MOVE'
+            asset.change_value = 0
+            asset.change_time = get_timestamp()
             asset.save()
         if len(err_msg) > 0:
             return request_failed(1, err_msg[:-1], status_code=403)
@@ -1173,6 +1207,7 @@ def asset_warning_message(req: HttpRequest):
             dep_children = department.get_children()
             for child in dep_children:
                 departments.append(child)
+        print(messages)
         return_data = {
             'messages': messages,
         }
@@ -1208,7 +1243,8 @@ def asset_assetName_history(req: HttpRequest, assetName: str):
                 "state": history.state,
                 "department": history.department.name,
                 "life": history.life,
-                "changeTime": history.history_date,
+                "changeTime": history.change_time,
+                "operation": history.operation,
             }
             all_record.append(record)
             
@@ -1239,4 +1275,251 @@ def asset_id(req: HttpRequest, id: int):
             "property": property,
         }
         return request_success(return_data)
+    return BAD_METHOD
+
+@CheckRequire
+def asset_history(req: HttpRequest):
+    if req.method == 'GET':
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+
+        assets = []
+        departments = []
+        departments.append(user.department)
+        while (len(departments) != 0):
+            department = departments.pop(0)
+            dep_assets = Asset.objects.filter(entity=entity, department=department)
+            for asset in dep_assets:
+                assets.append(asset)
+            dep_children = department.get_children()
+            for child in dep_children:
+                departments.append(child)
+
+        historys = []
+        for asset in assets:
+            for history in asset.history.all():
+                historys.append(history)
+        historys = sorted(historys, key=lambda x:x.change_time, reverse=True)
+        history_data = []
+        for history in historys:
+            history_data.append({
+                'type': history.operation,
+                "assetName": history.name, 
+                "category": history.category.name, 
+                "user": history.owner, 
+                "department": history.department.name, 
+                "changeTime": history.change_time,
+            })
+        return_data = {
+            'history': history_data,
+        }
+        return request_success(return_data)
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
+def asset_statics(req: HttpRequest):
+    if req.method == 'GET':
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+
+        assets = []
+        departments = []
+        department_number = []
+        departments.append(user.department)
+        while (len(departments) != 0):
+            department = departments.pop(0)
+            dep_assets = Asset.objects.filter(entity=entity, department=department)
+            department_number.append({
+                "departmentName": department.name,
+                "number": len(dep_assets),
+            })
+            for asset in dep_assets:
+                assets.append(asset)
+            dep_children = department.get_children()
+            for child in dep_children:
+                departments.append(child)
+        total_number = len(assets)
+
+        idle_number = 0
+        in_use_number = 0
+        in_maintain_number = 0
+        retired_number = 0
+        for asset in assets:
+            if asset.state == 'IDLE':
+                idle_number += 1
+            elif asset.state == 'IN_USE':
+                in_use_number += 1
+            elif asset.state == 'IN_MAINTAIN':
+                in_maintain_number += 1
+            elif asset.state == 'RETIRED':
+                retired_number += 1
+        status_number = {
+            "idle": idle_number,
+            "in_use": in_use_number,
+            "in_maintain": in_maintain_number,
+            "retired": retired_number,
+        }
+
+        total_value = 0
+        historys = []
+        value_time = []
+        for asset in assets:
+            total_value += asset.value
+            for history in asset.history.all():
+                historys.append(history)
+        value_time.append({
+            "time": get_timestamp(),
+            "value": total_value,
+        })
+        historys = sorted(historys, key=lambda x:x.change_time, reverse=True)
+        for history in historys:
+            value_time.append({
+                "time": history.change_time,
+                "value": total_value,
+            })
+            if history.operation != 'add':
+                total_value -= history.change_value
+            else:
+                total_value -= history.value
+        return_data = {
+            "total_number": total_number,
+            "department_number": department_number,
+            "status_number": status_number,
+            "value_time": value_time,
+        }
+        return request_success(return_data)
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
+def asset_history_query(req: HttpRequest, type: str):
+    if req.method == 'GET':
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+
+        if type not in ['add', 'edit', 'IDLE', 'IN_USE', 'IN_MAINTAIN', 'RETIRED', 'MOVE']:
+            return request_failed(1, "查询类型错误", status_code=403)
+
+        assets = []
+        departments = []
+        departments.append(user.department)
+        while (len(departments) != 0):
+            department = departments.pop(0)
+            dep_assets = Asset.objects.filter(entity=entity, department=department)
+            for asset in dep_assets:
+                assets.append(asset)
+            dep_children = department.get_children()
+            for child in dep_children:
+                departments.append(child)
+
+        historys = []
+        for asset in assets:
+            for history in asset.history.all():
+                historys.append(history)
+        historys = sorted(historys, key=lambda x:x.change_time, reverse=True)
+        history_data = []
+        for history in historys:
+            if history.operation == type:
+                history_data.append({
+                    "assetName": history.name, 
+                    "category": history.category.name, 
+                    "user": history.owner, 
+                    "department": history.department.name, 
+                    "changeTime": history.change_time,
+                })
+        return_data = {
+            'history': history_data,
+        }
+        return request_success(return_data)
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
+def asset_list_page(req: HttpRequest, page:int):
+    if req.method == 'GET':
+        token, decoded = CheckToken(req)
+        assets = []
+        page = int(page)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        all_assets = Asset.objects.filter(entity=entity).exclude(name=entity.name).order_by('id')
+        department_tree = subtree_department(user.department)
+        all_assets = all_assets.filter(department__id__in=department_tree)
+        length = len(all_assets)
+        if page < 1 or (page != 1 and page > (length-1)/20 + 1):
+            return request_failed(-1, "超出页数范围", 403)
+        if length % 20 != 0:
+            if page == int(length/20) + 1:
+                for i in range(length - (page-1)*20):
+                    assets.append(all_assets[(int(page)-1)*20+i])
+            else:
+                for i in range(20):
+                    assets.append(all_assets[(int(page)-1)*20+i])
+        else:
+            for i in range(20):
+                assets.append(all_assets[(int(page)-1)*20+i])
+        return_data = {
+            "assets": [
+                return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
+                                                 "position", "value", "user", "number", "state", "department", 
+                                                 "createTime", "life", "image"])
+            for asset in assets],
+            "total_count": length
+        }
+        return request_success(return_data)
+    return BAD_METHOD
+
+@CheckRequire
+def maintain_list(req: HttpRequest):
+    if req.method == 'GET':
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        assets = Asset.objects.filter(entity=entity, state="IN_MAINTAIN").exclude(name=entity.name).order_by('id')
+        department_tree = subtree_department(user.department)
+        assets = assets.filter(department__id__in=department_tree)
+        return_data = {
+            "assets": [
+                return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
+                                                 "position", "value", "user", "number", "state", "department", 
+                                                 "createTime", "life", "image"])
+            for asset in assets],
+        }
+        return request_success(return_data)
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
+def maintain_to_use(req: HttpRequest):
+    if req.method == 'POST':
+        print(req.method)
+        CheckAuthority(req, ["asset_super"])
+        print('ok')
+        body = json.loads(req.body.decode("utf-8"))
+        print(body)
+        assets_list = get_args(body, ["assets"], ["list"])[0]
+        err_msg = ""
+        for idx, asset in enumerate(assets_list):
+            print(asset)
+            ass = Asset.objects.filter(name=asset).first()
+            if ass is None:
+                err_msg = err_msg + f"第 {idx+1} 条资产（{asset}）不存在；"
+                continue
+            if ass.state == "IN_MAINTAIN":
+                ass.state = 'IN_USE'
+                ass.operation = 'IN_USE'
+                ass.save()
+            else:
+                err_msg = err_msg + f"第 {idx+1} 条资产（{asset}）不在维修中，无法解除维修状态；"
+                continue
+        if len(err_msg)>0:
+            return request_failed(-1, err_msg[:-1], status_code=403)
+        return request_success()
     return BAD_METHOD

@@ -8,6 +8,7 @@ from utils.utils_time import get_timestamp, get_date
 from utils.utils_getbody import get_args
 from utils.utils_checklength import checklength
 from utils.utils_checkauthority import CheckAuthority, CheckToken
+from utils.utils_feishu import *
 
 from User.models import User, Menu
 from Department.models import Department, Entity, Log
@@ -16,6 +17,7 @@ from .models import NormalRequests, TransferRequests
 
 from eam_backend.settings import SECRET_KEY
 import jwt
+import asyncio
 
 def subtree_department(department: Department):
     children_list = [department.id]
@@ -33,6 +35,12 @@ def requests_return(req: HttpRequest):
         body = json.loads(req.body.decode("utf-8"))
         assets_list = get_args(body, ["assets"], ["list"])[0]
         err_msg = ""
+        ids = []
+        msgs = []
+        flag = False
+        feishu_user = UserFeishu.objects.filter(username=user.username).first()
+        if feishu_user is not None:
+            flag = True
         for idx, asset_name in enumerate(assets_list):
             asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
             if asset is None:
@@ -55,8 +63,14 @@ def requests_return(req: HttpRequest):
                 continue
             request = NormalRequests(initiator=user, asset=asset, type=2, result=0, request_time=get_timestamp(),review_time=0.0)
             request.save()
+            msg = f"{user.username} 退库资产 {asset_name}"
+            ids.append("1"+str(request.id) + "1")
+            msgs.append(msg)
         if len(err_msg) > 0:
             return request_failed(1, err_msg[:-1], status_code=403)
+        if flag:
+            tenant = get_tenant()
+            create_feishu_task(ids, user.username, msgs,tenant, "退库", "PENDING", request.request_time, 0)
         return request_success()
     return BAD_METHOD
 
@@ -104,6 +118,12 @@ def requests_repair(req: HttpRequest):
         body = json.loads(req.body.decode("utf-8"))
         assets_list = get_args(body, ["assets"], ["list"])[0]
         err_msg = ""
+        ids = []
+        msgs = []
+        flag = False
+        feishu_user = UserFeishu.objects.filter(username=user.username).first()
+        if feishu_user is not None:
+            flag = True
         for idx, asset_name in enumerate(assets_list):
             asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
             if asset is None:
@@ -126,8 +146,14 @@ def requests_repair(req: HttpRequest):
                 continue
             request = NormalRequests(initiator=user, asset=asset, type=3, result=0, request_time=get_timestamp(),review_time=0.0)
             request.save()
+            msg = f"{request.initiator.username} 维修资产 {asset_name}"
+            ids.append("1"+str(request.id) + "1")
+            msgs.append(msg)
         if len(err_msg) > 0:
             return request_failed(1, err_msg[:-1], status_code=403)
+        if flag:
+            tenant = get_tenant()
+            create_feishu_task(ids, user.username, msgs,tenant, "维修", "PENDING", request.request_time, 0)
         return request_success()
     return BAD_METHOD
 
@@ -147,6 +173,12 @@ def request_transfer(req:HttpRequest):
         if participant is None:
             return request_failed(3, "想要转移到的员工不存在", status_code=403)
         err_msg = ""
+        ids=[]
+        msgs = []
+        flag = False
+        feishu_user = UserFeishu.objects.filter(username=user.username).first()
+        if feishu_user is not None:
+            flag = True
         for idx, asset_name in enumerate(assets):
             asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
             if asset is None:
@@ -169,8 +201,15 @@ def request_transfer(req:HttpRequest):
                 continue
             request = TransferRequests(initiator=user, asset=asset, type=4, result=0, request_time=get_timestamp(),review_time=0.0, participant=participant, position=position)
             request.save()
+            msg = f"{user.username} 转移资产 {asset_name} 到 {participant.department.name} {participant.username}"
+            ids.append("2"+str(request.id) + "2")
+            msgs.append(msg)
+            
         if len(err_msg) > 0:
             return request_failed(1, err_msg[:-1], status_code=403)
+        if flag:
+            tenant = get_tenant()
+            create_feishu_task(ids, user.username, msgs,tenant, "转移", "PENDING", request.request_time, 0)
         return request_success()
     return BAD_METHOD
 
@@ -186,6 +225,12 @@ def requests_require(req: HttpRequest):
         body = json.loads(req.body.decode("utf-8"))
         assets_list = get_args(body, ["assets"], ["list"])[0]
         err_msg = ""
+        ids = []
+        msgs = []
+        flag = False
+        feishu_user = UserFeishu.objects.filter(username=user.username).first()
+        if feishu_user is not None:
+            flag = True
         for idx, asset_name in enumerate(assets_list):
             asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
             if asset is None:
@@ -209,8 +254,14 @@ def requests_require(req: HttpRequest):
                 continue
             request = NormalRequests(initiator=user, asset=asset, type=1, result=0, request_time=get_timestamp(),review_time=0.0)
             request.save()
+            msg = f"{user.username} 申领资产 {asset_name}"
+            ids.append("1"+str(request.id) + "1")
+            msgs.append(msg)
         if len(err_msg) > 0:
             return request_failed(1, err_msg[:-1], status_code=403)
+        if flag:
+            tenant = get_tenant()
+            create_feishu_task(ids, user.username, msgs,tenant, "申领", "PENDING", request.request_time, 0)
         return request_success()
     return BAD_METHOD
 
@@ -272,6 +323,8 @@ def requests_approve(req: HttpRequest):
         transfer_list = TransferRequests.objects.filter(asset__department__id__in=department_list).filter(result=0)
         
         err_msg = ""
+        ids = []
+        msgs = []
         for idx, (asset_name, type) in enumerate(zip(assets_list, type_list)):
             asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
             # if asset is None:
@@ -283,9 +336,16 @@ def requests_approve(req: HttpRequest):
                     err_msg += f'第{idx+1}条想要申领的资产 {asset_name} 不在申请list中; '
                 else:
                     asset.owner = request.initiator.username
+                    asset.state = 'IN_USE'
+                    asset.operation = 'IN_USE'
                     request.review_time = get_timestamp()
                     request.result = 1
                     request.save()
+                    msg = f"{request.initiator.username} 申领资产 {asset_name}"
+                    feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
+                    if feishu_user is not None:
+                        ids.append("11"+str(request.id) + "1")
+                        msgs.append(msg)
                     # log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 同意 {request.initiator.username} 的申领请求 {asset.name}"
                     # log = Log(log=log_info, type = 1, entity=user.entity)
                     # log.save()
@@ -297,9 +357,15 @@ def requests_approve(req: HttpRequest):
                 else:
                     asset.state = 'IDLE'
                     asset.owner = user.username
+                    asset.operation = 'IDLE'
                     request.review_time = get_timestamp()
                     request.result = 1
                     request.save()
+                    msg = f"{request.initiator.username} 退库资产 {asset_name}"
+                    feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
+                    if feishu_user is not None:
+                        ids.append("11"+str(request.id) + "1")
+                        msgs.append(msg)
                     # log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 同意 {request.initiator.username} 的退库请求 {asset.name}"
                     # log = Log(log=log_info, type = 1, entity=user.entity)
                     # log.save()
@@ -310,9 +376,15 @@ def requests_approve(req: HttpRequest):
                     err_msg += f'第{idx+1}条想要维修的资产 {asset_name} 不在申请list中; '
                 else:
                     asset.state = 'IN_MAINTAIN'
+                    asset.operation = 'IN_MAINTAIN'
                     request.review_time = get_timestamp()
                     request.result = 1
                     request.save()
+                    msg = f"{request.initiator.username} 维修资产 {asset_name}"
+                    feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
+                    if feishu_user is not None:
+                        ids.append("11"+str(request.id) + "1")
+                        msgs.append(msg)
                     # log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 同意 {request.initiator.username} 的维修请求 {asset.name}"
                     # log = Log(log=log_info, type = 1, entity=user.entity)
                     # log.save()
@@ -324,9 +396,15 @@ def requests_approve(req: HttpRequest):
                 else:
                     asset.owner = request.participant.username
                     asset.position = request.position
+                    asset.operation = 'MOVE'
                     request.review_time = get_timestamp()
                     request.result = 1
                     request.save()
+                    msg = f"{request.initiator.username} 转移资产 {asset_name} 到 {request.participant.department.name} {request.participant.username}"
+                    feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
+                    if feishu_user is not None:
+                        ids.append("22"+str(request.id) + "2")
+                        msgs.append(msg)
                     # log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 同意 {request.initiator.username} 的转移请求：{asset.name}转移至{request.participant.username}（{request.participant.department.name}）"
                     # log = Log(log=log_info, type = 1, entity=user.entity)
                     # log.save()
@@ -334,11 +412,16 @@ def requests_approve(req: HttpRequest):
             else:
                 err_msg += f'第{idx+1}条想要处理的资产 {asset_name} 申请不符合要求; '
 
+            asset.change_time = get_timestamp()
+            asset.change_value = 0
             asset.save()
 
         if len(err_msg) > 0:
             return request_failed(1, err_msg[:-1], status_code=403)
-        
+        if len(ids)>0:
+            tenant = get_tenant()
+            create_feishu_task(ids, user.username, msgs,tenant, "审批完成", "APPROVED", request.request_time, request.review_time)
+
         return request_success()
     
     return BAD_METHOD
@@ -361,6 +444,8 @@ def requests_delete(req: HttpRequest):
         transfer_list = TransferRequests.objects.filter(initiator=user)
 
         err_msg = ""
+        ids = []
+        msgs = []
         for idx, (asset_name, type) in enumerate(zip(assets_list, type_list)):
             asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
             
@@ -371,6 +456,11 @@ def requests_delete(req: HttpRequest):
                 else:
                     request.result = 3
                     request.save()
+                    msg = f"{request.initiator.username} 申领资产 {asset_name}"
+                    feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
+                    if feishu_user is not None:
+                        ids.append("11"+str(request.id) + "1")
+                        msgs.append(msg)
 
             elif type == "2": # 退库
                 request = NormalRequests.objects.filter(initiator=user, asset=asset, type=2, result=0).first()
@@ -379,6 +469,11 @@ def requests_delete(req: HttpRequest):
                 else:
                     request.result = 3
                     request.save()
+                    msg = f"{request.initiator.username} 退库资产 {asset_name}"
+                    feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
+                    if feishu_user is not None:
+                        ids.append("11"+str(request.id) + "1")
+                        msgs.append(msg)
 
             elif type == "3": # 维修
                 request = NormalRequests.objects.filter(initiator=user, asset=asset, type=3, result=0).first()
@@ -387,6 +482,11 @@ def requests_delete(req: HttpRequest):
                 else:
                     request.result = 3
                     request.save()
+                    msg = f"{request.initiator.username} 维修资产 {asset_name}"
+                    feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
+                    if feishu_user is not None:
+                        ids.append("11"+str(request.id) + "1")
+                        msgs.append(msg)
 
             elif type == "4": # 转移
                 request = TransferRequests.objects.filter(initiator=user, asset=asset, type=4, result=0).first()
@@ -395,13 +495,20 @@ def requests_delete(req: HttpRequest):
                 else:
                     request.result = 3
                     request.save()
+                    msg = f"{request.initiator.username} 转移资产 {asset_name} 到 {request.participant.department.name} {request.participant.username}"
+                    feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
+                    if feishu_user is not None:
+                        ids.append("22"+str(request.id) + "2")
+                        msgs.append(msg)
 
             else:
                 err_msg += f'第{idx+1}条想要处理的资产 {asset_name} 申请不符合要求; '
 
         if len(err_msg) > 0:
             return request_failed(1, err_msg[:-1], status_code=403)
-        
+        if len(ids) > 0:
+            tenant = get_tenant()
+            create_feishu_task(ids, user.username, msgs,tenant, "撤回申请", "DELETED", request.request_time, get_timestamp())
         return request_success()
     
     return BAD_METHOD
@@ -427,6 +534,8 @@ def requests_disapprove(req: HttpRequest):
         transfer_list = TransferRequests.objects.filter(asset__department__id__in=department_list).filter(result=0)
         
         err_msg = ""
+        ids = []
+        msgs = []
         for idx, (asset_name, type) in enumerate(zip(assets_list, type_list)):
             asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
             # if asset is None:
@@ -440,6 +549,11 @@ def requests_disapprove(req: HttpRequest):
                     request.review_time = get_timestamp()
                     request.result = 2
                     request.save()
+                    msg = f"{request.initiator.username} 申领资产 {asset_name}"
+                    feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
+                    if feishu_user is not None:
+                        ids.append("11"+str(request.id) + "1")
+                        msgs.append(msg)
                     # log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 拒绝 {request.initiator.username} 的申领请求 {asset.name}"
                     # log = Log(log=log_info, type = 1, entity=user.entity)
                     # log.save()
@@ -452,6 +566,11 @@ def requests_disapprove(req: HttpRequest):
                     request.review_time = get_timestamp()
                     request.result = 2
                     request.save()
+                    msg = f"{request.initiator.username} 退库资产 {asset_name}"
+                    feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
+                    if feishu_user is not None:
+                        ids.append("11"+str(request.id) + "1")
+                        msgs.append(msg)
                     # log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 拒绝 {request.initiator.username} 的退库请求 {asset.name}"
                     # log = Log(log=log_info, type = 1, entity=user.entity)
                     # log.save()
@@ -464,6 +583,11 @@ def requests_disapprove(req: HttpRequest):
                     request.review_time = get_timestamp()
                     request.result = 2
                     request.save()
+                    msg = f"{request.initiator.username} 维修资产 {asset_name}"
+                    feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
+                    if feishu_user is not None:
+                        ids.append("11"+str(request.id) + "1")
+                        msgs.append(msg)
                     # log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 拒绝 {request.initiator.username} 的维修请求 {asset.name}"
                     # log = Log(log=log_info, type = 1, entity=user.entity)
                     # log.save()
@@ -476,17 +600,113 @@ def requests_disapprove(req: HttpRequest):
                     request.review_time = get_timestamp()
                     request.result = 2
                     request.save()
+                    msg = f"{request.initiator.username} 转移资产 {asset_name} 到 {request.participant.department.name} {request.participant.username}"
+                    feishu_user = UserFeishu.objects.filter(username=request.initiator.username).first()
+                    if feishu_user is not None:
+                        ids.append("22"+str(request.id) + "2")
+                        msgs.append(msg)
                     # log_info = f"用户{user.username} ({user.department.name}) 在 {get_date()} 拒绝 {request.initiator.username} 的转移请求 {asset.name}"
                     # log = Log(log=log_info, type = 1, entity=user.entity)
                     # log.save()
 
             else:
-                print("nonono")
                 err_msg += f'第{idx+1}条想要处理的资产 {asset_name} 申请不符合要求; '
 
         if len(err_msg) > 0:
             return request_failed(1, err_msg[:-1], status_code=403)
-        
+        if len(ids) > 0:
+            tenant = get_tenant()
+            create_feishu_task(ids, request.initiator.username, msgs,tenant, "审批完成", "REJECTED", request.request_time, request.review_time)
+        # loop.create_task(create_feishu_task(ids, user.entity.name, msgs,tenant, "申领", "REJECTED"))
         return request_success()
     
     return BAD_METHOD
+
+@CheckRequire
+def feishu(req: HttpRequest):
+    body = json.loads(req.body.decode("utf-8"))
+    action_type = body.get("action_type", "")
+    instance_id = body.get("instance_id", "")
+    user_id = body.get("user_id", "")
+    id = instance_id[2:-1]
+    status = ""
+    if action_type == 'APPROVE':
+        status = "APPROVED"
+    elif action_type == 'REJECT':
+        status = "REJECTED"
+    try:
+        id = int(id)
+        msg = ""
+        action = "action"
+        user_name = ""
+        if instance_id[0] == '1':
+            request = NormalRequests.objects.filter(id=id).first()
+            if request is not None:
+                asset = request.asset
+            else:
+                return request_failed(-2, "没有对应请求", 404)
+            type = request.type
+            actions = ["", "申领", "退库", "维修"]
+            if status == "APPROVED":
+                request.result=1
+                if type == 1:
+                    action = "申领"
+                    asset.owner = request.initiator.username
+                    asset.state = 'IN_USE'
+                    asset.operation = 'IN_USE'
+                elif type == 2:
+                    action = "退库"
+                    asset.state = 'IDLE'
+                    user_feishu = UserFeishu.objects.filter(user_id=user_id).first()
+                    if user_feishu is not None and user_feishu.user_id != "":
+                        open_id = user_feishu.open_id
+                    else:
+                        open_id = get_open_id(user_id)
+                    feishu_user = UserFeishu.objects.filter(open_id=open_id).first()
+                    username = feishu_user.username
+                    user = User.objects.filter(username=username).first()
+                    asset.owner = user.username
+                    asset.operation = 'IDLE'
+                elif type == 3:
+                    action = "维修"
+                    asset.state = 'IN_MAINTAIN'
+                    asset.operation = 'IN_MAINTAIN'
+                entity = request.initiator.entity.name
+            elif status == "REJECTED":
+                request.result = 2
+                action = actions[type]
+            initiator = request.initiator
+            msg = f"{initiator.username} {action} {request.asset.name}"
+            request.review_time = get_timestamp()
+            request.save()
+            asset.change_time = get_timestamp()
+            asset.change_value = 0
+            asset.save()
+        elif instance_id[0] == '2':
+            request = TransferRequests.objects.filter(id=id).first()
+            if request is not None:
+                asset = request.asset
+            else:
+                return request_failed(-2, "没有对应请求", 404)
+            action = "转移"
+            request.review_time = get_timestamp()
+            if status == "APPROVED":
+                request.result=1
+                asset.owner = request.participant.username
+                asset.position = request.position
+                asset.operation = 'MOVE'
+            elif status == "REJECTED":
+                action = '拒绝'
+                request.result = 2
+            request.save()
+            asset.change_time = get_timestamp()
+            asset.change_value = 0
+            asset.save()
+            initiator = request.initiator
+            msg = f"{initiator.username} 转移 {request.asset.name} 到 {request.participant.department.name} {request.participant.username}"
+        tenant = get_tenant()
+        create_feishu_task([instance_id],'Alice',[msg],tenant, action, status,request.request_time, get_timestamp())
+    except Exception as e:
+        print(e)
+        return request_failed(-1, str(e), 400)
+    return request_success()

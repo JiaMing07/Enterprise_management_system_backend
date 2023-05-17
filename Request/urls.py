@@ -13,4 +13,5 @@ urlpatterns = [
     path('disapprove', views.requests_disapprove),
     path('delete', views.requests_delete),
     path('number', views.requests_number),
+    path('feishu', views.feishu),
 ]

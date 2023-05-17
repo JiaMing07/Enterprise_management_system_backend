@@ -108,6 +108,9 @@ class DepartmentTests(TestCase):
     def get_entity_log(self):
         return self.client.get(f"/log")
     
+    def get_entity_log_page(self, page):
+        return self.client.get(f'/log/list/{page}')
+    
     def test_entity_add(self):
         user = User.objects.filter(username='test_user').first()
         user.token = user.generate_token()
@@ -475,3 +478,28 @@ class DepartmentTests(TestCase):
         res = self.get_entity_log()
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
+
+    def test_entity_log_page(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("entity_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+        # create add department log
+        department = 'de1'
+        entity = 'en'
+        parent = ''
+        res = self.post_department_add(department, entity, parent)
+
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.get_entity_log_page(1)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.get_entity_log_page(0)
+        self.assertEqual(res.json()['info'], '超出页数范围')
+        self.assertEqual(res.json()['code'], -1)

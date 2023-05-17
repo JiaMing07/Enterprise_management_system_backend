@@ -35,7 +35,7 @@ class AttributeTests(TestCase):
         User.objects.create(username='test_attribute', password=pwd, department=dep, entity=ent)
         user = User.objects.create(username='test_user', password=pwd, department=dep, entity=ent)
         category = AssetCategory.objects.create(name='cate', entity=ent)
-        Asset.objects.create(name='ass', entity=ent, owner=user.username, category=category, department=dep)
+        Asset.objects.create(name='ass', entity=ent, owner=user.username, category=category, department=dep, value=10)
         Attribute.objects.create(id=1, name="attri_0", entity=ent, department=dep_ent)
         
     # Utility functions  
@@ -94,11 +94,10 @@ class AttributeTests(TestCase):
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post("/asset/add/list", data=payload, content_type="application/json")
     
-    def post_asset_attribute_add(self, asset, attribute, description):
+    def post_asset_attribute_add(self, asset, attributes_list):
         payload = {
-            'asset': asset,
-            'attribute': attribute,
-            'description': description
+            'asset_name': asset,
+            'attributes': attributes_list
         }
 
         payload = {k: v for k, v in payload.items() if v is not None}
@@ -299,6 +298,28 @@ class AttributeTests(TestCase):
     
     def get_asset_assetName_history(self, assetName):
         return self.client.get(f"/asset/{assetName}/history")
+    
+    def get_asset_history(self):
+        return self.client.get("/asset/history")
+    
+    def get_asset_statics(self):
+        return self.client.get("/asset/statics")
+    
+    def get_asset_history_query(self, type):
+        return self.client.get(f"/asset/history/query/{type}")
+    
+    def get_asset_list_page(self, page):
+        return self.client.get(f"/asset/list/{page}")
+    
+    def get_maintain_list(self):
+        return self.client.get(f"/asset/maintain/list")
+    
+    def post_maintain_use(self, assets_list):
+        payload = {
+            "assets": assets_list
+        }
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self.client.post(f"/asset/maintain/use", data=payload, content_type="application/json")
     
     # Now start testcases. 
     def test_asset_category_add(self):
@@ -899,21 +920,21 @@ class AttributeTests(TestCase):
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
 
-        # asset length 50, Bad length of []
-        asset = "123456789012345678901234567890123456789012345678901234567890"
-        attribute = "attri_1"
-        description = "This is a description."
-        res = self.post_asset_attribute_add(asset, attribute, description)
-        # self.assertEqual(res.json()['code'], 0)
-        self.assertEqual(res.json()['info'], 'Bad length of [asset]')
+        # # asset length 50, Bad length of []
+        # asset = "123456789012345678901234567890123456789012345678901234567890"
+        # attribute = "attri_1"
+        # description = "This is a description."
+        # res = self.post_asset_attribute_add(asset, attribute, description)
+        # # self.assertEqual(res.json()['code'], 0)
+        # self.assertEqual(res.json()['info'], 'Bad length of [asset]')
 
-        # attribute length 50, Bad length of []
-        asset = "1"
-        attribute = "123456789012345678901234567890123456789012345678901234567890"
-        description = "This is a description."
-        res = self.post_asset_attribute_add(asset, attribute, description)
-        # self.assertEqual(res.json()['code'], 0)
-        self.assertEqual(res.json()['info'], 'Bad length of [attribute]')
+        # # attribute length 50, Bad length of []
+        # asset = "1"
+        # attribute = "123456789012345678901234567890123456789012345678901234567890"
+        # description = "This is a description."
+        # res = self.post_asset_attribute_add(asset, attribute, description)
+        # # self.assertEqual(res.json()['code'], 0)
+        # self.assertEqual(res.json()['info'], 'Bad length of [attribute]')
 
         # description length 300, Bad length of []
         # asset = "1"
@@ -928,9 +949,9 @@ class AttributeTests(TestCase):
         user.save()
 
         asset = "1"
-        attribute = "2"
-        description = "This is a description."
-        res = self.post_asset_attribute_add(asset, attribute, description)
+        attributes_list = []
+        # description = "This is a description."
+        res = self.post_asset_attribute_add(asset, attributes_list)
         self.assertEqual(res.json()['code'], -2)
         # self.assertEqual(res.json()['info'], "只有资产管理员可为资产添加属性")
 
@@ -939,25 +960,40 @@ class AttributeTests(TestCase):
         user.save()
 
         asset = "bss"
-        attribute = "attri_1"
-        description = "This is a description."
-        res = self.post_asset_attribute_add(asset, attribute, description)
-        self.assertEqual(res.json()['code'], 1)
+        attributes_list = [
+            {
+                "key":"attri_1", 
+                "value": "This is a description."
+            }
+        ]
+        # description = "This is a description."
+        res = self.post_asset_attribute_add(asset, attributes_list)
         self.assertEqual(res.json()['info'], "资产不存在")
+        self.assertEqual(res.json()['code'], 1)
 
         # attribute not exist, 1, "自定义属性不存在"
         asset = "ass"
-        attribute = "attri_111"
-        description = "This is a description."
-        res = self.post_asset_attribute_add(asset, attribute, description)
+        attributes_list = [
+            {
+                "key":"attri_111", 
+                "value": "This is a description."
+            }
+        ]
+        # description = "This is a description."
+        res = self.post_asset_attribute_add(asset, attributes_list)
         self.assertEqual(res.json()['code'], 1)
         self.assertEqual(res.json()['info'], "自定义属性不存在")
 
         # success, 0
         asset = "ass"
-        attribute = "attri_1"
-        description = "This is a description."
-        res = self.post_asset_attribute_add(asset, attribute, description)
+        attributes_list = [
+            {
+                "key":"attri_1", 
+                "value": "This is a description."
+            }
+        ]
+        # description = "This is a description."
+        res = self.post_asset_attribute_add(asset, attributes_list)
         # self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], "Succeed")
 
@@ -1216,25 +1252,52 @@ class AttributeTests(TestCase):
 
         # success, 0
         asset = "ass"
-        attribute = "attri_1"
-        description = "This is a description."
-        res = self.post_asset_attribute_add(asset, attribute, description)
+        attributes_list = [
+            {
+                "key":"attri_1", 
+                "value": "This is a description."
+            }
+        ]
+        # description = "This is a description."
+        res = self.post_asset_attribute_add(asset, attributes_list)
         # self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], "Succeed")
 
         # success, 0
         asset = "ass"
-        attribute = "attri_2"
-        description = "This is a description 2."
-        res = self.post_asset_attribute_add(asset, attribute, description)
+        attributes_list = [
+            {
+                "key":"attri_1", 
+                "value": "This is a description."
+            },
+            {
+                "key":"attri_2", 
+                "value": "This is a description."
+            }
+        ]
+        # description = "This is a description."
+        res = self.post_asset_attribute_add(asset, attributes_list)
         # self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], "Succeed")
 
         # success, 0
+
         asset = "ass"
-        attribute = "attri_3"
-        description = "This is a description 3."
-        res = self.post_asset_attribute_add(asset, attribute, description)
+        attributes_list = [
+            {
+                "key":"attri_1", 
+                "value": "This is a description."
+            },
+            {
+                "key":"attri_2", 
+                "value": "This is a description."
+            },
+            {
+                "key":"attri_3", 
+                "value": "This is a description."
+            }
+        ]
+        res = self.post_asset_attribute_add(asset, attributes_list)
         # self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], "Succeed")
 
@@ -1292,25 +1355,51 @@ class AttributeTests(TestCase):
 
         # success, 0
         asset = "ass"
-        attribute = "attri_1"
-        description = "This is a description."
-        res = self.post_asset_attribute_add(asset, attribute, description)
+        attributes_list = [
+            {
+                "key":"attri_1", 
+                "value": "This is a description."
+            }
+        ]
+        res = self.post_asset_attribute_add(asset, attributes_list)
         # self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], "Succeed")
 
         # success, 0
         asset = "ass"
-        attribute = "attri_2"
-        description = "This is a description 2."
-        res = self.post_asset_attribute_add(asset, attribute, description)
+        attributes_list = [
+            {
+                "key":"attri_1", 
+                "value": "This is a description."
+            },
+            {
+                "key":"attri_2", 
+                "value": "This is a description."
+            }
+        ]
+        # attribute = "attri_2"
+        # description = "This is a description 2."
+        res = self.post_asset_attribute_add(asset, attributes_list)
         # self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], "Succeed")
 
         # success, 0
         asset = "ass"
-        attribute = "attri_3"
-        description = "This is a description 3."
-        res = self.post_asset_attribute_add(asset, attribute, description)
+        attributes_list = [
+            {
+                "key":"attri_1", 
+                "value": "This is a description."
+            },
+            {
+                "key":"attri_2", 
+                "value": "This is a description."
+            },
+            {
+                "key":"attri_3", 
+                "value": "This is a description."
+            }
+        ]
+        res = self.post_asset_attribute_add(asset, attributes_list)
         # self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], "Succeed")
 
@@ -1420,9 +1509,13 @@ class AttributeTests(TestCase):
         self.assertEqual(res.json()['info'], 'Succeed')
 
         assetName = "computer"
-        attributeName = "GPU"
-        description = "RTX4090"
-        res = self.post_asset_attribute_add(assetName, attributeName, description)
+        attributes_list = [
+            {
+                "key":"GPU", 
+                "value": "RTX4090"
+            }
+        ]
+        res = self.post_asset_attribute_add(assetName, attributes_list)
         self.assertEqual(res.json()['info'], "Succeed")
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], "Succeed")
@@ -1469,7 +1562,7 @@ class AttributeTests(TestCase):
         category_name = 'c_1'
         res = self.get_category_is_number(category_name)
         self.assertEqual(res.json()['code'], 1)
-        self.assertEqual(res.json()['info'], "不存在此资产")
+        self.assertEqual(res.json()['info'], "不存在此资产类型")
 
     def test_asset_query(self):
         user = User.objects.filter(username='test_user').first()
@@ -2021,6 +2114,86 @@ class AttributeTests(TestCase):
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
 
+    def test_asset_assetName_history(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("asset_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        assetName = 'computer'
+        parentName = 'ass'
+        description = 'des'
+        position = 'pos'
+        value = '1000'
+        department = 'dep'
+        number = 3
+        categoryName = 'cate'
+        life = 3
+        image = '127.0.0.1'
+        
+        res = self.post_asset_add(assetName, parentName, description, position, 
+                                           value, department, number, categoryName, life, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.put_asset_edit(assetName, assetName, parentName, description, position, 
+                                           value, 'Alice', number, 'IDLE', categoryName, life, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.put_asset_edit(assetName, assetName, parentName, description, position, 
+                                           value, 'Alice', number, 'IN_USE', categoryName, life, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.put_asset_edit(assetName, assetName, parentName, description, position, 
+                                           value, 'Alice', number, 'IN_MAINTAIN', categoryName, life, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.put_asset_edit(assetName, assetName, parentName, description, position, 
+                                           value, 'test_user', number, 'IDLE', categoryName, life, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.put_asset_edit(assetName, assetName, parentName, description, position, 
+                                           0, 'test_user', number, 'RETIRED', categoryName, life, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.get_asset_assetName_history(assetName)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(len(res.json()['history']), 6)
+        
+    def test_asset_id(self):
+        entity = Entity.objects.create(name="entity_id")
+        department = Department.objects.create(name='dep_id', entity=entity)
+        password='123'
+        md5 = hashlib.md5()
+        md5.update(password.encode('utf-8'))
+        pwd = md5.hexdigest()
+        user = User.objects.create(username='test_id', password=pwd, department=department, entity=entity)
+        category = AssetCategory.objects.create(name='cate', entity=entity)
+        ass = Asset.objects.create(name='ass', entity=entity, owner=user.username, category=category, department=department)
+        id = ass.id
+
+        res = self.get_asset_id(id)
+        # ass = Asset.objects.filter(id=1).first()
+        # print(ass.name)
+        # print(id)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        id = id+2
+        res = self.get_asset_id(id)
+        self.assertEqual(res.json()['code'], 1)
+        self.assertEqual(res.json()['info'], 'asset not found')
+
     def test_asset_history(self):
         user = User.objects.filter(username='test_user').first()
         user.token = user.generate_token()
@@ -2072,31 +2245,112 @@ class AttributeTests(TestCase):
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
 
-        res = self.get_asset_assetName_history(assetName)
+        res = self.get_asset_history()
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
-        self.assertEqual(len(res.json()['history']), 6)
+        self.assertEqual(len(res.json()['history']), 7)
+
+    def test_asset_history_query(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("asset_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        assetName = 'computer'
+        parentName = 'ass'
+        description = 'des'
+        position = 'pos'
+        value = '1000'
+        department = 'dep'
+        number = 3
+        categoryName = 'cate'
+        life = 3
+        image = '127.0.0.1'
         
-    def test_asset_id(self):
-        entity = Entity.objects.create(name="entity_id")
-        department = Department.objects.create(name='dep_id', entity=entity)
-        password='123'
-        md5 = hashlib.md5()
-        md5.update(password.encode('utf-8'))
-        pwd = md5.hexdigest()
-        user = User.objects.create(username='test_id', password=pwd, department=department, entity=entity)
-        category = AssetCategory.objects.create(name='cate', entity=entity)
-        ass = Asset.objects.create(name='ass', entity=entity, owner=user.username, category=category, department=department)
-        id = ass.id
-
-        res = self.get_asset_id(id)
-        # ass = Asset.objects.filter(id=1).first()
-        # print(ass.name)
-        # print(id)
+        res = self.post_asset_add(assetName, parentName, description, position, 
+                                           value, department, number, categoryName, life, image)
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
 
-        id = id+2
-        res = self.get_asset_id(id)
+        res = self.put_asset_edit(assetName, assetName, parentName, description, position, 
+                                           value, 'Alice', number, 'IDLE', categoryName, life, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.put_asset_edit(assetName, assetName, parentName, description, position, 
+                                           value, 'Alice', number, 'IN_USE', categoryName, life, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.put_asset_edit(assetName, assetName, parentName, description, position, 
+                                           value, 'Alice', number, 'IN_MAINTAIN', categoryName, life, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.put_asset_edit(assetName, assetName, parentName, description, position, 
+                                           value, 'test_user', number, 'IDLE', categoryName, life, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.put_asset_edit(assetName, assetName, parentName, description, position, 
+                                           100, 'test_user', number, 'IDLE', categoryName, life, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.put_asset_edit(assetName, assetName, parentName, description, position, 
+                                           0, 'test_user', number, 'RETIRED', categoryName, life, image)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.get_asset_statics()
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        type = 'idle'
+        res = self.get_asset_history_query(type)
         self.assertEqual(res.json()['code'], 1)
-        self.assertEqual(res.json()['info'], 'asset not found')
+
+        type = 'IN_USE'
+        res = self.get_asset_history_query(type)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+    def test_asset_list_page(self):
+        self.create_token('test_user', 'entity_super')
+        res = self.get_asset_list_page(1)
+        print(Asset.objects.all())
+        print(res)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.get_asset_list_page(0)
+        self.assertEqual(res.json()['info'], '超出页数范围')
+        self.assertEqual(res.json()['code'], -1)
+
+    def test_maintain_list(self):
+        self.create_token('test_user', 'asset_super')
+        ass = Asset.objects.filter(name='ass').first()
+        asset = Asset.objects.create(name='asset1', entity=ass.entity, owner='Alice', category=ass.category, department=ass.department, value=10, state='IN_MAINTAIN')
+
+        res = self.get_maintain_list()
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+    def test_maintain_to_use(self):
+        self.create_token('test_user', 'asset_super')
+        ass = Asset.objects.filter(name='ass').first()
+        asset1 = Asset.objects.create(name='asset1', entity=ass.entity, owner='Alice', category=ass.category, department=ass.department, value=10, state='IN_MAINTAIN')
+        asset2 = Asset.objects.create(name='asset2', entity=ass.entity, owner='Alice', category=ass.category, department=ass.department, value=10, state='IN_MAINTAIN')
+        assets = ["asset1", "asset2"]
+        res = self.post_maintain_use(assets)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        assets = ["asset1", "assets2"]
+        res = self.post_maintain_use(assets)
+        self.assertEqual(res.json()['info'], '第 1 条资产（asset1）不在维修中，无法解除维修状态；第 2 条资产（assets2）不存在')
+        self.assertEqual(res.json()['code'], -1)

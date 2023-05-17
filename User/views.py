@@ -1,6 +1,7 @@
 import json
 import hashlib
 import requests
+import random
 from django.http import HttpRequest, HttpResponse
 
 from User.models import User, Menu, UserFeishu
@@ -11,10 +12,16 @@ from utils.utils_time import get_timestamp, get_date
 from utils.utils_getbody import get_args
 from utils.utils_checklength import checklength
 from utils.utils_checkauthority import CheckAuthority, CheckToken
+from utils.utils_feishu import *
+
 from eam_backend.settings import SECRET_KEY
-from  utils.utils_startup import init_department, init_entity, add_menu, add_users,admin_user, add_category, add_asset, add_request
+from utils.utils_startup import init_department, init_entity, add_menu, add_users,admin_user, add_category, add_asset, add_request
 import jwt
 from django.db.utils import IntegrityError, OperationalError
+from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.schedulers.background import BackgroundScheduler
+from django_apscheduler.jobstores import DjangoJobStore, register_events, register_job
+from Asset.models import *
 
 def check_for_user_data(body):
     password = ""
@@ -267,6 +274,39 @@ def user_edit(req: HttpRequest):
         return BAD_METHOD
     
 @CheckRequire
+def user_list_page(req: HttpRequest, page:int):
+    if req.method == 'GET':
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        all_users = User.objects.filter(entity=entity)
+        page = int(page)
+        length = len(all_users)
+        user_list = []
+        def get_dic(u):
+            dic = return_field(u.serialize(), ["username", "department", "active", "authority"])
+            return dic
+        if page < 1 or (page != 1 and page > (length-1)/20 + 1):
+            return request_failed(-1, "超出页数范围", 403)
+        if length % 20 != 0:
+            if page == int(length/20) + 1:
+                for i in range(length - (page-1)*20):
+                    user_list.append(get_dic(all_users[(int(page)-1)*20+i]))
+            else:
+                for i in range(20):
+                    user_list.append(get_dic(all_users[(int(page)-1)*20+i]))
+        else:
+            for i in range(20):
+                user_list.append(get_dic(all_users[(int(page)-1)*20+i]))
+        return_data = {
+            "users": user_list,
+            "total_count": length
+        }
+        return request_success(return_data)
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
 def user_list(req: HttpRequest):
     if req.method == 'GET':
         entities = Entity.objects.all()
@@ -294,6 +334,16 @@ def user_userName(req: HttpRequest, userName: any):
             return request_failed(1, "user not found", status_code=404)
         if user.system_super:
             return request_failed(2, "禁止删除超级管理员", status_code=403)
+        assets = Asset.objects.filter(owner=user.username)
+        asset_super = User.objects.filter(entity=user.entity, department=user.department, asset_super=True).first()
+        if asset_super is None:
+            asset_super = User.objects.filter(entity=user.entity, entity_super = True).first()
+        for ass in assets:
+            ass.owner = asset_super.username
+            ass.state = 'IDLE'
+            ass.operation = 'IDLE'
+            ass.change_time = get_timestamp()
+            ass.save()
         user.delete()
         return request_success()
     else:
@@ -401,7 +451,7 @@ def department_user_list(req: HttpRequest):
         departments = Department.objects.filter(entity=user.entity).order_by('name')
         users_list = []
         for department in departments:
-            user_department =users.filter(department=department)
+            user_department =users.filter(department=department, system_super=False, asset_super=False, entity_super=False)
             if len(user_department)> 0:
                 dic = {
                     "department": department.name,
@@ -433,19 +483,30 @@ def feishu_bind(req: HttpRequest):
         body = json.loads(req.body.decode("utf-8"))
         username = json.loads(req.body.decode("utf-8")).get('username')
         mobile = json.loads(req.body.decode("utf-8")).get('mobile')
-
+        # open_id = json.loads(req.body.decode("utf-8")).get('open_id')
+        # user_id = json.loads(req.body.decode("utf-8")).get('user_id')
         user = User.objects.filter(username=username).first()
 
         if user is None:
             return request_failed(2, "用户不存在", 403)
+        user_feishu = UserFeishu.objects.filter(mobile=mobile).first()
+        if user_feishu is not None:
+            return request_failed(3, "此手机号已绑定系统中的用户，无法绑定", 403)
         
         oldbind = UserFeishu.objects.filter(username=username).first()
+        user_id = get_user_id(mobile)
+        open_id = get_open_id(mobile)
+
+        # 如果已经绑定，则直接替换
         if oldbind is not None:
             oldbind.mobile = mobile
+            oldbind.open_id = open_id
+            oldbind.user_id = user_id
             oldbind.save()
         
+        # 如果没有绑定，新建绑定
         else:
-            userbind = UserFeishu(username=username, mobile=mobile)
+            userbind = UserFeishu(username=username, mobile=mobile, open_id=open_id, user_id=user_id)
             userbind.save()
         
         return request_success()
@@ -461,8 +522,13 @@ def feishu_bind(req: HttpRequest):
                 return request_failed(1, "用户未绑定飞书账户", 403)
             
             mobile = userbind.mobile
+            open_id = userbind.open_id
+            user_id = userbind.user_id
+
             return_data = {
-                "mobile": mobile
+                "mobile": mobile,
+                "open_id": open_id,
+                "user_id": user_id
             }
             
             return request_success(return_data)
@@ -488,6 +554,7 @@ def feishu_login(req: HttpRequest):
             "client_secret": "M81ME3LFvgI7T0cIApC7xyTMuNEqbHFy",
             "code": code,
             "redirect_uri": "https://eam-frontend-bughunters.app.secoder.net/feishu"
+            # "redirect_uri": "http://127.0.0.1:8000/feishu"
         }
         response = requests.post(url, headers=headers, data=data)
         # content_type = response.headers.get("Content-Type")
@@ -519,11 +586,12 @@ def feishu_login(req: HttpRequest):
             # mobile的定义究竟是什么
             # mobile = data.get("name")
             mobile = data.get("mobile")
+            print(mobile)
             open_id = data.get("open_id")
             feishuname = data.get("name")
 
             cur_bind = UserFeishu.objects.filter(mobile=mobile).first()
-
+            print(cur_bind)
             if cur_bind is None:
                 return request_failed(1, "Feishu not bind with any name.", 403)
             
@@ -556,3 +624,189 @@ def feishu_login(req: HttpRequest):
         # print(json_data)
 
     return BAD_METHOD
+
+@CheckRequire
+def feishu_sync_click(req: HttpRequest):
+
+    if req.method == 'POST':
+        body = json.loads(req.body.decode("utf-8"))
+        users = json.loads(req.body.decode("utf-8")).get('users')
+
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        token, decoded = CheckToken(req)
+        creator = User.objects.filter(username=decoded['username']).first()
+
+        entity= creator.entity
+        department = creator.department
+        is_system_super = False
+        is_entity_super = False
+        is_asset_super = False
+
+        # 检查每一个员工，如果open_id在userfeishu内存在object，不作操作
+        for one in users:
+            user_name = one["name"]
+            open_id = one["open_id"]
+            staff = UserFeishu.objects.filter(open_id=open_id)
+
+            # 如果未绑定飞书账号
+            if staff is None:
+                # 如果飞书名和原有用户的用户名重复了
+                user = User.objects.filter(username=user_name).first()
+                while user is not None:
+                    user_name = user_name + "OA"
+                    user = User.objects.filter(username=user_name).first()
+            
+                # 初始密码都是000
+                md5 = hashlib.md5()
+                md5.update("000".encode('utf-8'))
+                pwd = md5.hexdigest()
+                    
+                user = User(username=user_name, entity=entity, department=department, password=pwd,
+                            system_super = is_system_super, entity_super = is_entity_super, asset_super = is_asset_super)
+                user.save()
+                
+                log_info = f"用户{creator.username} ({creator.department.name}) 在 {get_date()} 新增用户 {user.username}"
+                log = Log(log=log_info, type = 1, entity=user.entity)
+                log.save()
+        
+        return request_success()
+    return BAD_METHOD
+
+
+# 每天10:30执行这个任务
+# @register_job(scheduler, 'cron', id='feishu_sync', hour=10, minute=50, args=[])
+def feishu_sync():
+        
+    # 创建entity
+    entity = Entity.objects.filter(name="Ent_Feishu").first()
+    if entity is None:
+        # add entity
+        entity = Entity(name="Ent_Feishu")
+        entity.save()
+
+        # add entity_super after sync
+
+        # add root department
+        department = Department(name="Ent_Feishu", entity=entity, parent=Department.root())
+        department.save()
+    
+    # ent_super = User.objects.filter(entity=entity, entity_super=True).first()
+
+    # user common info
+    entity = Entity.objects.filter(name="Ent_Feishu").first()
+    is_system_super = False
+    is_entity_super = False
+    is_asset_super = False
+    
+    ## 初始密码都是000
+    md5 = hashlib.md5()
+    md5.update("000".encode('utf-8'))
+    pwd = md5.hexdigest()
+
+    dep_list = get_dep_son(0)
+    dep_name_list = [{"id": 0, "name": "Ent_Feishu"}]   # 记录id对应的部门名字，方便寻找父部门
+
+    for dep in dep_list:
+        depart_id = dep["department_id"]
+        depart_name = dep["name"]
+        dep_name_list.append({"id": depart_id, "name": depart_name})
+
+        super_id = dep["leader_user_id"]
+
+        depart_parent_id = dep["parent_department_id"]
+        parent_name = ""
+        for dep in dep_name_list:
+            ## 应该父部门会先出现？
+            if dep["id"] == depart_parent_id:
+                parent_name = dep["name"]
+                break
+
+        # 创建部门
+
+        ## 父部门是dep0
+        if depart_parent_id == "0":
+            parent_name = "Ent_Feishu"
+            parent = Department.objects.filter(name="Ent_Feishu").first()
+            if parent is None:
+                parent = Department(name="Ent_Feishu", entity=entity, parent=Department.root())
+                parent.save()
+
+        ## 父部门不是dep0
+        else:
+            parent = Department.objects.filter(entity=entity).filter(name=parent_name).first()
+            # 父部门不存在
+            if parent is None:
+                print("Should not be here!")
+                parent = Department(name=parent_name, entity=entity)
+
+            # 创建部门
+            department = Department(name=depart_name, entity=entity, parent=parent)
+            department.save()
+
+            log_info = f"飞书用户{super_id}  在 {get_date()} 新增部门 {department.name}"
+            log = Log(log=log_info, type = 1, entity=entity)
+            log.save()
+
+        # 添加users
+        users = get_users(depart_id)
+        super_name = ""
+        for user in users:
+            open_id = user["open_id"]
+            user_id = user["user_id"]
+            user_name = user["name"]
+            mobile = user["mobile"]
+
+            # 飞书名用户对应的原有用户是否存在
+            staff = UserFeishu.objects.filter(open_id=open_id)
+
+            # 如果未绑定飞书账号
+            if staff is None:
+                # 如果飞书名和原有用户的用户名重复了
+                user = User.objects.filter(username=user_name).first()
+            
+                while user is not None:
+                    random.seed()
+                    user_name = user_name + random.randint(1, 100) # random 1~100
+                    user = User.objects.filter(username=user_name).first()
+                
+                user = User(username=user_name, entity=entity, department=department, password=pwd,
+                            system_super = is_system_super, entity_super = is_entity_super, asset_super = is_asset_super)
+                
+                if open_id == super_id:
+                    super_name = user_name
+                    user.asset_super = True
+                
+                user.save()
+
+                log_info = f"用户{super_name} ({department.name}) 在 {get_date()} 新增用户 {user.username}"
+                log = Log(log=log_info, type = 1, entity=user.entity)
+                log.save()
+
+                # 绑定
+                oldbind = UserFeishu.objects.filter(username=user_name).first()
+        
+                userbind = UserFeishu(username=user_name, mobile=mobile, open_id=open_id, user_id=user_id)
+                userbind.save()
+    
+    return request_success()
+
+
+@CheckRequire
+def user_query(req: HttpRequest, description:str):
+    if req.method == 'GET':
+        token, decoded = CheckToken(req)
+        description = str(description)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        users = User.objects.filter(entity=entity, entity_super=False, asset_super=False).filter(username__icontains=description)
+        return_data = []
+        for u in users:
+            return_data.append({
+                'username': u.username,
+                'department': u.department.name
+            })
+        print(return_data)
+        return request_success({
+            'users': return_data
+        })
+    return BAD_METHOD 
