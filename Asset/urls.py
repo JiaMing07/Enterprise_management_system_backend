@@ -37,5 +37,6 @@ urlpatterns = [
     path('id/<id>', views.asset_id),
     path('list/<page>',views.asset_list_page),
     path('maintain/list', views.maintain_list),
-    path('maintain/use', views.maintain_to_use)
+    path('maintain/use', views.maintain_to_use),
+    path('query/<type>/<description>/<attribute>/<page>', views.asset_query_page)
 ]

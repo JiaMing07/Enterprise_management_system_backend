@@ -8,6 +8,7 @@ from utils.utils_time import get_timestamp, get_date
 from utils.utils_getbody import get_args
 from utils.utils_checklength import checklength
 from utils.utils_checkauthority import CheckAuthority, CheckToken
+from utils.utils_page import page_list
 
 from User.models import User, Menu
 from Department.models import Department, Entity, Log
@@ -864,8 +865,59 @@ def asset_query(req: HttpRequest, type: str, description: str, attribute:str):
         return_data = {
             "assets": [
                 return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
-                                                 "position", "value", "user", "number", "state", "department", "image"])
+                                                 "position", "value", "user", "number", "state", "department", "image", "life"])
             for asset in assets],
+        }
+        return request_success(return_data)
+    else:
+        return BAD_METHOD
+    
+def asset_query_page(req: HttpRequest, type: str, description: str, attribute:str, page:int):
+    try:
+        page = int(page)
+    except:
+        return request_failed(-1, 'page number not correct', 403)
+    if req.method == 'GET':
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        attribute=attribute[:-1]
+        description = description[:-1]
+        if type == "asset_name":
+            assets = Asset.objects.filter(name__icontains=description)
+        elif type == "asset_description":
+            assets = Asset.objects.filter(description__icontains=description)
+        elif type == "asset_position":
+            assets = Asset.objects.filter(position__icontains=description)
+        elif type == "asset_type":
+            assets = Asset.objects.filter(category__name__icontains=description)
+        elif type == "asset_attribute":
+            attribute_assets = AssetAttribute.objects.filter(description__icontains=description, attribute__name__icontains=attribute)
+            asset = []
+            for ass in attribute_assets:
+                asset.append(ass.asset.id)
+            assets = Asset.objects.filter(id__in=asset)
+        elif type == "asset_status":
+            assets = Asset.objects.filter(state__icontains=description)
+        elif type == "asset_department":
+            assets = Asset.objects.filter(department__name__icontains=description)
+        elif type == "asset_owner":
+            assets = Asset.objects.filter(owner__icontains=description)
+        else:
+            return request_failed(1, "此搜索类型不存在", status_code=403)
+        assets = assets.filter(entity=entity).exclude(name=entity.name).order_by('id')
+        department_tree = subtree_department(user.department)
+        all_assets = assets.filter(department__id__in=department_tree)
+        length = len(all_assets)
+        if page < 1 or (page != 1 and page > (length-1)/20 + 1):
+            return request_failed(-1, "超出页数范围", 403)
+        assets = page_list(all_assets, page, length)
+        return_data = {
+            "assets": [
+                return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
+                                                 "position", "value", "user", "number", "state", "department", "image", "life"])
+            for asset in assets],
+            "total_count": length
         }
         return request_success(return_data)
     else:
@@ -1455,16 +1507,7 @@ def asset_list_page(req: HttpRequest, page:int):
         length = len(all_assets)
         if page < 1 or (page != 1 and page > (length-1)/20 + 1):
             return request_failed(-1, "超出页数范围", 403)
-        if length % 20 != 0:
-            if page == int(length/20) + 1:
-                for i in range(length - (page-1)*20):
-                    assets.append(all_assets[(int(page)-1)*20+i])
-            else:
-                for i in range(20):
-                    assets.append(all_assets[(int(page)-1)*20+i])
-        else:
-            for i in range(20):
-                assets.append(all_assets[(int(page)-1)*20+i])
+        assets = page_list(all_assets, page, length)
         return_data = {
             "assets": [
                 return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 

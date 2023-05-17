@@ -13,6 +13,7 @@ from utils.utils_getbody import get_args
 from utils.utils_checklength import checklength
 from utils.utils_checkauthority import CheckAuthority, CheckToken
 from utils.utils_feishu import *
+from utils.utils_page import page_list
 
 from eam_backend.settings import SECRET_KEY
 from utils.utils_startup import init_department, init_entity, add_menu, add_users,admin_user, add_category, add_asset, add_request
@@ -283,23 +284,11 @@ def user_list_page(req: HttpRequest, page:int):
         page = int(page)
         length = len(all_users)
         user_list = []
-        def get_dic(u):
-            dic = return_field(u.serialize(), ["username", "department", "active", "authority"])
-            return dic
         if page < 1 or (page != 1 and page > (length-1)/20 + 1):
             return request_failed(-1, "超出页数范围", 403)
-        if length % 20 != 0:
-            if page == int(length/20) + 1:
-                for i in range(length - (page-1)*20):
-                    user_list.append(get_dic(all_users[(int(page)-1)*20+i]))
-            else:
-                for i in range(20):
-                    user_list.append(get_dic(all_users[(int(page)-1)*20+i]))
-        else:
-            for i in range(20):
-                user_list.append(get_dic(all_users[(int(page)-1)*20+i]))
+        user_list = page_list(all_users, page, length)
         return_data = {
-            "users": user_list,
+            "users": [return_field(u.serialize(), ["username", "department", "active", "authority"]) for u in user_list],
             "total_count": length
         }
         return request_success(return_data)
