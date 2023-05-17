@@ -777,14 +777,13 @@ def feishu_sync():
         # 父部门不存在
         if parent is None:
             print("Should not be here!")
-            parent = Department(name=parent_name, entity=entity)
-            parent.save()
+            parent = Department.objects.filter(name="Ent_Feishu", entity=entity).first()
 
         # 创建部门
         department = Department.objects.filter(name=depart_name, entity=entity, parent=parent).first()
         if department is None:
             department = Department(name=depart_name, entity=entity, parent=parent)
-            print(f"飞书用户{super_id}  在 {get_date()} 新增部门 {department.name}")
+            print(f"飞书用户{super_id}  在 {get_date()} 新增部门 {department.name}, 父部门为 {parent.name}")
             department.save()
 
         log_info = f"飞书用户{super_id}  在 {get_date()} 新增部门 {department.name}"
@@ -815,7 +814,7 @@ def feishu_sync():
             # mobile = user["mobile"]
 
             # 飞书名用户对应的原有用户是否存在
-            staff = UserFeishu.objects.filter(open_id=open_id)
+            staff = User.objects.filter(username=user_name)
 
             print(f"staff = {staff}")
 
@@ -845,12 +844,13 @@ def feishu_sync():
                 log.save()
 
                 # 绑定
-                oldbind = UserFeishu.objects.filter(username=user_name).first()
-        
-                # userbind = UserFeishu(username=user_name, mobile=mobile, open_id=open_id, user_id=user_id)
-                userbind = UserFeishu(username=user_name, open_id=open_id, user_id=user_id)
-                userbind.save()
+                # oldbind = UserFeishu.objects.filter(username=user_name).first()
+                # if oldbind is None:
+                #     # userbind = UserFeishu(username=user_name, mobile=mobile, open_id=open_id, user_id=user_id)
+                #     userbind = UserFeishu(username=user_name, open_id=open_id, user_id=user_id)
+                #     userbind.save()
     
+    print("cur")
     return request_success()
 
 # 实例化调度器
