@@ -204,8 +204,8 @@ class AttributeTests(TestCase):
     
     def delete_asset_attribute(self, asset, attribute):
         payload = {
-            'asset': asset,
-            'attribute': attribute
+            'name': asset,
+            'key': attribute
         }
 
         payload = {k: v for k, v in payload.items() if v is not None}
