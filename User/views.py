@@ -687,7 +687,7 @@ def feishu_sync():
         print(11111)
 
         # add root department
-        department = Department(name="Ent_Feishu", entity=entity, parent=Department.root())
+        department = Department(name="Ent_Feishu", entity=entity, parent=None)
         department.save()
         print(22222)
     
@@ -818,10 +818,9 @@ def test_add_task(request):
         second = int(start_time[2])
         # s = content['s']  # 接收执行任务的各种参数
         # 创建任务
-        scheduler.add_job(feishu_sync, 'cron', hour=8, minute=25, second=0, id='my_job_id')
-
-        my_job = scheduler.get_job('my_job_id')  # 根据作业的 id 获取作业对象
-        my_job.reschedule('cron', hour=hour, minute=minute, second=second)
+        scheduler.add_job(feishu_sync, 'cron', hour=hour, minute=minute, second=second)
+        # my_job = scheduler.get_job('my_job_id')  # 根据作业的 id 获取作业对象
+        # my_job.reschedule('cron', hour=hour, minute=minute, second=second)
         
         return request_success()
     
