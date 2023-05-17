@@ -311,6 +311,9 @@ class AttributeTests(TestCase):
     def get_asset_list_page(self, page):
         return self.client.get(f"/asset/list/{page}")
     
+    def get_unretired_list_page(self, page):
+        return self.client.get(f"/asset/unretired/{page}")
+    
     def get_maintain_list(self):
         return self.client.get(f"/asset/maintain/list")
     
@@ -2322,8 +2325,7 @@ class AttributeTests(TestCase):
     def test_asset_list_page(self):
         self.create_token('test_user', 'entity_super')
         res = self.get_asset_list_page(1)
-        print(Asset.objects.all())
-        print(res)
+
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
 
@@ -2446,3 +2448,14 @@ class AttributeTests(TestCase):
         res = self.get_asset_query_page(type, description, attribute, page)
         self.assertEqual(res.json()['code'], -1)
         self.assertEqual(res.json()['info'], '超出页数范围')
+
+    def test_unretired_list_page(self):
+        self.create_token('test_user', 'entity_super')
+        res = self.get_unretired_list_page(1)
+
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.get_unretired_list_page(0)
+        self.assertEqual(res.json()['info'], '超出页数范围')
+        self.assertEqual(res.json()['code'], -1)

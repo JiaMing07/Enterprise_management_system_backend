@@ -38,5 +38,6 @@ urlpatterns = [
     path('list/<page>',views.asset_list_page),
     path('maintain/list', views.maintain_list),
     path('maintain/use', views.maintain_to_use),
-    path('query/<type>/<description>/<attribute>/<page>', views.asset_query_page)
+    path('query/<type>/<description>/<attribute>/<page>', views.asset_query_page),
+    path('unretired/<page>', views.unretired_list_page),
 ]

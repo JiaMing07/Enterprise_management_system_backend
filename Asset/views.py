@@ -1566,3 +1566,29 @@ def maintain_to_use(req: HttpRequest):
             return request_failed(-1, err_msg[:-1], status_code=403)
         return request_success()
     return BAD_METHOD
+
+@CheckRequire
+def unretired_list_page(req: HttpRequest, page:int):
+    if req.method == 'GET':
+        token, decoded = CheckToken(req)
+        assets = []
+        page = int(page)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        all_assets = Asset.objects.filter(entity=entity).exclude(name=entity.name).exclude(state="RETIRED").order_by('id')
+        department_tree = subtree_department(user.department)
+        all_assets = all_assets.filter(department__id__in=department_tree)
+        length = len(all_assets)
+        if page < 1 or (page != 1 and page > (length-1)/20 + 1):
+            return request_failed(-1, "超出页数范围", 403)
+        assets = page_list(all_assets, page, length)
+        return_data = {
+            "assets": [
+                return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
+                                                 "position", "value", "user", "number", "state", "department", 
+                                                 "createTime", "life", "image"])
+            for asset in assets],
+            "total_count": length
+        }
+        return request_success(return_data)
+    return BAD_METHOD
