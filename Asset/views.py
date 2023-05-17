@@ -646,10 +646,10 @@ def asset_attribute(req: HttpRequest):
             return request_failed(1, "资产不存在", status_code=403)
         
         # 注意删除的过程
-        old_attri = AssetAttribute.objects.filter(asset=asset).first()
-        while old_attri is not None:
-            old_attri.delete()
-            old_attri = AssetAttribute.objects.filter(asset=asset).first()
+        # old_attri = AssetAttribute.objects.filter(asset=asset).first()
+        # while old_attri is not None:
+        #     old_attri.delete()
+        #     old_attri = AssetAttribute.objects.filter(asset=asset).first()
 
         new_list = []
         for new_attri in attributes_list:
@@ -675,7 +675,7 @@ def asset_attribute(req: HttpRequest):
 
     if req.method == 'DELETE':
         body = json.loads(req.body.decode("utf-8"))
-        asset_name, attribute_name = get_args(body, ['asset', 'attribute'], ['string','string'])
+        asset_name, attribute_name = get_args(body, ['name', 'key'], ['string','string'])
         checklength(asset_name, 0, 50, "asset")
         checklength(attribute_name, 0, 50, "attribute")
         
