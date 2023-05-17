@@ -66,11 +66,11 @@ def requests_return(req: HttpRequest):
             msg = f"{user.username} 退库资产 {asset_name}"
             ids.append("1a"+str(request.id) + "1")
             msgs.append(msg)
-        if len(err_msg) > 0:
-            return request_failed(1, err_msg[:-1], status_code=403)
         if flag:
             tenant = get_tenant()
             create_feishu_task(ids, user.username, msgs,tenant, "退库", "PENDING", request.request_time, 0)
+        if len(err_msg) > 0:
+            return request_failed(1, err_msg[:-1], status_code=403)
         return request_success()
     return BAD_METHOD
 
@@ -149,11 +149,11 @@ def requests_repair(req: HttpRequest):
             msg = f"{request.initiator.username} 维修资产 {asset_name}"
             ids.append("1a"+str(request.id) + "1")
             msgs.append(msg)
-        if len(err_msg) > 0:
-            return request_failed(1, err_msg[:-1], status_code=403)
         if flag:
             tenant = get_tenant()
             create_feishu_task(ids, user.username, msgs,tenant, "维修", "PENDING", request.request_time, 0)
+        if len(err_msg) > 0:
+            return request_failed(1, err_msg[:-1], status_code=403)
         return request_success()
     return BAD_METHOD
 
@@ -204,12 +204,11 @@ def request_transfer(req:HttpRequest):
             msg = f"{user.username} 转移资产 {asset_name} 到 {participant.department.name} {participant.username}"
             ids.append("2a"+str(request.id) + "2")
             msgs.append(msg)
-            
-        if len(err_msg) > 0:
-            return request_failed(1, err_msg[:-1], status_code=403)
         if flag:
             tenant = get_tenant()
             create_feishu_task(ids, user.username, msgs,tenant, "转移", "PENDING", request.request_time, 0)
+        if len(err_msg) > 0:
+            return request_failed(1, err_msg[:-1], status_code=403)
         return request_success()
     return BAD_METHOD
 
@@ -227,10 +226,10 @@ def requests_require(req: HttpRequest):
         err_msg = ""
         ids = []
         msgs = []
-        flag = False
+        flag_feishu = False
         feishu_user = UserFeishu.objects.filter(username=user.username).first()
         if feishu_user is not None:
-            flag = True
+            flag_feishu = True
         for idx, asset_name in enumerate(assets_list):
             asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
             if asset is None:
@@ -257,11 +256,11 @@ def requests_require(req: HttpRequest):
             msg = f"{user.username} 申领资产 {asset_name}"
             ids.append("1a"+str(request.id) + "1")
             msgs.append(msg)
-        if len(err_msg) > 0:
-            return request_failed(1, err_msg[:-1], status_code=403)
-        if flag:
+        if flag_feishu:
             tenant = get_tenant()
             create_feishu_task(ids, user.username, msgs,tenant, "申领", "PENDING", request.request_time, 0)
+        if len(err_msg) > 0:
+            return request_failed(1, err_msg[:-1], status_code=403)
         return request_success()
     return BAD_METHOD
 
@@ -416,11 +415,12 @@ def requests_approve(req: HttpRequest):
             asset.change_value = 0
             asset.save()
 
-        if len(err_msg) > 0:
-            return request_failed(1, err_msg[:-1], status_code=403)
         if len(ids)>0:
             tenant = get_tenant()
             create_feishu_task(ids, user.username, msgs,tenant, "审批完成", "APPROVED", request.request_time, request.review_time)
+
+        if len(err_msg) > 0:
+            return request_failed(1, err_msg[:-1], status_code=403)
 
         return request_success()
     
@@ -504,11 +504,11 @@ def requests_delete(req: HttpRequest):
             else:
                 err_msg += f'第{idx+1}条想要处理的资产 {asset_name} 申请不符合要求; '
 
-        if len(err_msg) > 0:
-            return request_failed(1, err_msg[:-1], status_code=403)
         if len(ids) > 0:
             tenant = get_tenant()
             create_feishu_task(ids, user.username, msgs,tenant, "撤回申请", "DELETED", request.request_time, get_timestamp())
+        if len(err_msg) > 0:
+            return request_failed(1, err_msg[:-1], status_code=403)
         return request_success()
     
     return BAD_METHOD
@@ -612,11 +612,11 @@ def requests_disapprove(req: HttpRequest):
             else:
                 err_msg += f'第{idx+1}条想要处理的资产 {asset_name} 申请不符合要求; '
 
-        if len(err_msg) > 0:
-            return request_failed(1, err_msg[:-1], status_code=403)
         if len(ids) > 0:
             tenant = get_tenant()
             create_feishu_task(ids, request.initiator.username, msgs,tenant, "审批完成", "REJECTED", request.request_time, request.review_time)
+        if len(err_msg) > 0:
+            return request_failed(1, err_msg[:-1], status_code=403)
         # loop.create_task(create_feishu_task(ids, user.entity.name, msgs,tenant, "申领", "REJECTED"))
         return request_success()
     
