@@ -668,88 +668,149 @@ def feishu_sync():
         
     # 创建entity
     entity = Entity.objects.filter(name="Ent_Feishu").first()
-    if entity is None:
-        # add entity
-        entity = Entity(name="Ent_Feishu")
-        entity.save()
 
-        # add entity_super after sync
+    # every day is a new day
+    if entity is not None:
+        entity.delete()
 
-        # add root department
-        department = Department(name="Ent_Feishu", entity=entity, parent=Department.root())
-        department.save()
+    # add entity
+    entity = Entity(name="Ent_Feishu")
+    entity.save()
+
+    # add entity_super after sync
+    print(11111)
+
+    # add root department
+    department = Department(name="Ent_Feishu", entity=entity, parent=None)
+    department.save()
+    print(22222)
     
     # ent_super = User.objects.filter(entity=entity, entity_super=True).first()
 
     # user common info
-    entity = Entity.objects.filter(name="Ent_Feishu").first()
+    print(33333)
+    # entity = Entity.objects.filter(name="Ent_Feishu").first()
     is_system_super = False
     is_entity_super = False
     is_asset_super = False
     
     ## 初始密码都是000
+    print(44444)
     md5 = hashlib.md5()
     md5.update("000".encode('utf-8'))
     pwd = md5.hexdigest()
 
+    print(55555)
     dep_list = get_dep_son(0)
-    dep_name_list = [{"id": 0, "name": "Ent_Feishu"}]   # 记录id对应的部门名字，方便寻找父部门
+    dep0 = get_one_dep(0)
+    dep_name_list = [{"id": dep0["department_id"], 
+                      "name": dep0["name"], 
+                      "open_id": dep0["open_department_id"]}]   # 记录id对应的部门名字，方便寻找父部门
 
+    print(66666)
+    print(dep_list)
     for dep in dep_list:
+        print("my index = ", dep_list.index(dep))
+        open_depart_id = dep["open_department_id"]
         depart_id = dep["department_id"]
         depart_name = dep["name"]
-        dep_name_list.append({"id": depart_id, "name": depart_name})
+
+        cur = {"id": depart_id, "name": depart_name, "open_id": open_depart_id}
+        if cur not in dep_name_list:
+            dep_name_list.append(cur)
 
         super_id = dep["leader_user_id"]
 
         depart_parent_id = dep["parent_department_id"]
+        open_depart_parent_id = ""
         parent_name = ""
+
+        print(77777)
         for dep in dep_name_list:
             ## 应该父部门会先出现？
             if dep["id"] == depart_parent_id:
                 parent_name = dep["name"]
+                open_depart_parent_id = dep["open_id"]
                 break
 
         # 创建部门
-
+        print(88888)
         ## 父部门是dep0
-        if depart_parent_id == "0":
-            parent_name = "Ent_Feishu"
-            parent = Department.objects.filter(name="Ent_Feishu").first()
-            if parent is None:
-                parent = Department(name="Ent_Feishu", entity=entity, parent=Department.root())
+        # if depart_parent_id == "0":
+        #     parent_name = "Ent_Feishu"
+        #     parent = Department.objects.filter(name="Ent_Feishu").first()
+        #     if parent is None:
+        #         parent = Department(name="Ent_Feishu", entity=entity, parent=None)
+        #         parent.save()
+        #     print(99999)
+        
+        ## 父部门不是dep0
+        # else:
+        print(111111111)
+        # 父部门后出现
+        if parent_name == "":
+            pa = get_parent(open_depart_id)
+            if pa is None:
+                parent = Department.objects.filter(name="Ent_Feishu", entity=entity, parent=None).first()
+            else:
+                parent_name = pa["name"]
+                parent_open_id = pa["open_department_id"]
+
+                cur = {"id": depart_parent_id, "name": parent_name, "open_id": parent_open_id}
+                if cur not in dep_name_list:
+                    dep_name_list.append(cur)
+                
+                parent = Department(name=parent_name, entity=entity)
                 parent.save()
 
-        ## 父部门不是dep0
-        else:
-            parent = Department.objects.filter(entity=entity).filter(name=parent_name).first()
-            # 父部门不存在
-            if parent is None:
-                print("Should not be here!")
-                parent = Department(name=parent_name, entity=entity)
+        parent = Department.objects.filter(entity=entity).filter(name=parent_name).first()
+        # 父部门不存在
+        if parent is None:
+            print("Should not be here!")
+            parent = Department.objects.filter(name="Ent_Feishu", entity=entity).first()
 
-            # 创建部门
+        # 创建部门
+        department = Department.objects.filter(name=depart_name, entity=entity, parent=parent).first()
+        if department is None:
             department = Department(name=depart_name, entity=entity, parent=parent)
+            print(f"飞书用户{super_id}  在 {get_date()} 新增部门 {department.name}, 父部门为 {parent.name}")
             department.save()
 
-            log_info = f"飞书用户{super_id}  在 {get_date()} 新增部门 {department.name}"
-            log = Log(log=log_info, type = 1, entity=entity)
-            log.save()
+        log_info = f"飞书用户{super_id}  在 {get_date()} 新增部门 {department.name}"
+        log = Log(log=log_info, type = 1, entity=entity)
+        log.save()
 
         # 添加users
-        users = get_users(depart_id)
+        print(22222222)
+        print(f"depart_id = {depart_id}")
+        print(f"open_depart_id = {open_depart_id}")
+        print(f"depart_name = {depart_name}")
+        users = get_users(open_depart_id)
+
+        if users is None:
+            print("hererererer")
+            continue
+
+        print("aaaaaaaaaaaa")
+
         super_name = ""
         for user in users:
             open_id = user["open_id"]
             user_id = user["user_id"]
             user_name = user["name"]
-            mobile = user["mobile"]
+            
+            # print("mobile_visible", user["mobile_visible"])
+
+            # mobile = user["mobile"]
 
             # 飞书名用户对应的原有用户是否存在
-            staff = UserFeishu.objects.filter(open_id=open_id)
+            staff = User.objects.filter(username=user_name)
+
+            print(f"staff = {staff}")
 
             # 如果未绑定飞书账号
-            if staff is None:
+            if len(staff) == 0:
+                print("有用户吗")
                 # 如果飞书名和原有用户的用户名重复了
                 user = User.objects.filter(username=user_name).first()
             
@@ -765,6 +826,7 @@ def feishu_sync():
                     super_name = user_name
                     user.asset_super = True
                 
+                print(f"用户{super_name} ({department.name}) 在 {get_date()} 新增用户 {user.username}")
                 user.save()
 
                 log_info = f"用户{super_name} ({department.name}) 在 {get_date()} 新增用户 {user.username}"
@@ -772,12 +834,46 @@ def feishu_sync():
                 log.save()
 
                 # 绑定
-                oldbind = UserFeishu.objects.filter(username=user_name).first()
-        
-                userbind = UserFeishu(username=user_name, mobile=mobile, open_id=open_id, user_id=user_id)
-                userbind.save()
+                # oldbind = UserFeishu.objects.filter(username=user_name).first()
+                # if oldbind is None:
+                #     # userbind = UserFeishu(username=user_name, mobile=mobile, open_id=open_id, user_id=user_id)
+                #     userbind = UserFeishu(username=user_name, open_id=open_id, user_id=user_id)
+                #     userbind.save()
     
+    print("cur")
     return request_success()
+
+# 实例化调度器
+scheduler = BackgroundScheduler()
+# 调度器使用默认的DjangoJobStore()
+scheduler.add_jobstore(DjangoJobStore(), 'default')
+
+def test_add_task(request):
+    if request.method == 'POST':
+        content = json.loads(request.body.decode())  # 接收参数
+
+        start_time = content['start_time']  # 用户输入的任务开始时间, '10:00:00'
+        start_time = start_time.split(':')
+        hour = int(start_time[0])
+        minute = int(start_time[1])
+        second = int(start_time[2])
+        # s = content['s']  # 接收执行任务的各种参数
+        # 创建任务
+        scheduler.add_job(feishu_sync, 'cron', hour=hour, minute=minute, second=second)
+        # my_job = scheduler.get_job('my_job_id')  # 根据作业的 id 获取作业对象
+        # my_job.reschedule('cron', hour=hour, minute=minute, second=second)
+        
+        return request_success()
+    
+    return BAD_METHOD()
+    
+# def test_add_task():
+#     scheduler.add_job(feishu_sync, 'interval', minutes=5)
+
+    
+# 注册定时任务并开始
+register_events(scheduler)
+scheduler.start()
 
 
 @CheckRequire
