@@ -1137,6 +1137,7 @@ def idle_page(req: HttpRequest, page):
                 return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
                                                  "position", "value", "user", "number", "state", "department", "image"])
             for asset in assets],
+            "total_count": length
         }
         return request_success(return_data)
     return BAD_METHOD
@@ -1599,6 +1600,7 @@ def maintain_page(req: HttpRequest, page: int):
                                                  "position", "value", "user", "number", "state", "department", 
                                                  "createTime", "life", "image"])
             for asset in assets],
+            "total_count": length
         }
         return request_success(return_data)
     else:
