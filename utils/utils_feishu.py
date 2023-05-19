@@ -15,6 +15,8 @@ def get_asset_super(department, status, title, start_time, end_time):
             if user.open_id == "" or user.open_id is None:
                 user.open_id = get_feishu_id(user)
                 user.save()
+            if user.open_id == "":
+                continue
             task = {
                     "action_configs": [
                         {
@@ -58,12 +60,13 @@ def create_feishu_task(ids, initiator_name, msgs, tenant_access_code, title, sta
         tasks = get_asset_super(initiator.department,status,title,start_time,end_time)
     else:
         tasks = []
-    print(status)
     feishu_user = UserFeishu.objects.filter(username=initiator_name).first()
     if feishu_user is not None:
         if feishu_user.open_id == "" or feishu_user.open_id is None:
             feishu_user.open_id = get_feishu_id(feishu_user)
             feishu_user.save()
+        if feishu_user.open_id == "":
+            return "ok"
         for idx,id in enumerate(ids):
             payload = json.dumps({
                 "approval_code": "27159948-7DCF-4111-A66D-29C9C815CD7E",
@@ -163,7 +166,11 @@ def get_feishu_id(feishu_user):
     }
 
     response = requests.request("POST", url, headers=headers, data=payload)
-    return response.json()['data']['user_list'][0]['user_id']
+    try:
+        open_id = response.json()['data']['user_list'][0]['user_id']
+    except:
+        open_id = ""
+    return open_id
 
 def get_user_id(mobile_):
     mobile = mobile_
@@ -182,7 +189,11 @@ def get_user_id(mobile_):
     }
 
     response = requests.request("POST", url, headers=headers, data=payload)
-    return response.json()['data']['user_list'][0]['user_id']
+    try:
+        user_id = response.json()['data']['user_list'][0]['user_id']
+    except:
+        user_id = ""
+    return user_id
 
 def get_open_id(mobile_):
     mobile = mobile_
@@ -201,7 +212,11 @@ def get_open_id(mobile_):
     }
 
     response = requests.request("POST", url, headers=headers, data=payload)
-    return response.json()['data']['user_list'][0]['user_id']
+    try: 
+        open_id = response.json()['data']['user_list'][0]['user_id']
+    except:
+        open_id = ""
+    return open_id
 
 def get_dep_son(department_id):
     depart_id = department_id

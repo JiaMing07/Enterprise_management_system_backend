@@ -408,6 +408,7 @@ def asset_retire(req: HttpRequest):
             asset.state = "RETIRED"
             asset.change_value = -asset.value
             asset.value = 0
+            asset.owner = ""
             children_list = asset.get_children()
             for child in children_list:
                 child.parent = Asset.objects.filter(name = asset.entity.name).first()
@@ -1542,11 +1543,8 @@ def maintain_list(req: HttpRequest):
 @CheckRequire
 def maintain_to_use(req: HttpRequest):
     if req.method == 'POST':
-        print(req.method)
         CheckAuthority(req, ["asset_super"])
-        print('ok')
         body = json.loads(req.body.decode("utf-8"))
-        print(body)
         assets_list = get_args(body, ["assets"], ["list"])[0]
         err_msg = ""
         for idx, asset in enumerate(assets_list):
