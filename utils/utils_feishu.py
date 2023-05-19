@@ -205,7 +205,7 @@ def get_open_id(mobile_):
 
 def get_dep_son(department_id):
     depart_id = department_id
-    url = f"https://open.feishu.cn/open-apis/contact/v3/departments/:{depart_id}/children?fetch_child=true"
+    url = f"https://open.feishu.cn/open-apis/contact/v3/departments/{depart_id}/children?fetch_child=true"
     tenant = get_tenant()
     headers = {
         'Content-Type': 'application/json',
@@ -217,7 +217,7 @@ def get_dep_son(department_id):
 
 def get_one_dep(department_id):
     depart_id = department_id
-    url = f"https://open.feishu.cn/open-apis/contact/v3/departments/:{depart_id}"
+    url = f"https://open.feishu.cn/open-apis/contact/v3/departments/{depart_id}"
     tenant = get_tenant()
     headers = {
         'Content-Type': 'application/json',
@@ -226,6 +226,21 @@ def get_one_dep(department_id):
 
     response = requests.request("GET", url, headers=headers)
     return response.json()['data']['department']
+
+def get_parent(department_id):
+    url = f"https://open.feishu.cn/open-apis/contact/v3/departments/parent?department_id={department_id}"
+    tenant = get_tenant()
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {tenant}'
+    }
+
+    response = requests.request("GET", url, headers=headers)
+    if "items" in response.json()['data']:
+        print("有的啦!")
+        return response.json()['data']['items'][0]
+    
+    return None
 
 def get_users(department_id):
     depart_id = department_id
@@ -237,4 +252,11 @@ def get_users(department_id):
     }
 
     response = requests.request("GET", url, headers=headers)
-    return response.json()['data']['items']
+    # print(f"msg = {response.json()['msg']}")
+    # print(f"has_more = {response.json()['data']['has_more']}")
+
+    if "items" in response.json()['data']:
+        print("有的啦!")
+        return response.json()['data']['items']
+    
+    return None

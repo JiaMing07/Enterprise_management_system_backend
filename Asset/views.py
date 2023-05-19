@@ -408,6 +408,7 @@ def asset_retire(req: HttpRequest):
             asset.state = "RETIRED"
             asset.change_value = -asset.value
             asset.value = 0
+            asset.owner = ""
             children_list = asset.get_children()
             for child in children_list:
                 child.parent = Asset.objects.filter(name = asset.entity.name).first()
