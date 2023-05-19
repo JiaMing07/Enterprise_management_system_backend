@@ -1663,7 +1663,7 @@ def unretired_list_page(req: HttpRequest, page:int):
     return BAD_METHOD
 
 @CheckRequire
-def idle_asset_query_page(req: HttpRequest, type: str, description: str, attribute:str):
+def idle_asset_query(req: HttpRequest, type: str, description: str, attribute:str, page):
     try:
         page = int(page)
     except:
@@ -1696,7 +1696,7 @@ def idle_asset_query_page(req: HttpRequest, type: str, description: str, attribu
             assets = Asset.objects.filter(owner__icontains=description)
         else:
             return request_failed(1, "此搜索类型不存在", status_code=403)
-        assets = assets.filter(entity=entity).include(state="IDLE").exclude(name=entity.name).order_by('id')
+        assets = assets.filter(entity=entity).filter(state="IDLE").exclude(name=entity.name).order_by('id')
         department_tree = subtree_department(user.department)
         all_assets = assets.filter(department__id__in=department_tree)
         length = len(all_assets)
@@ -1717,7 +1717,7 @@ def idle_asset_query_page(req: HttpRequest, type: str, description: str, attribu
         return BAD_METHOD
     
 @CheckRequire
-def unretired_asset_query_page(req: HttpRequest, type: str, description: str, attribute:str):
+def unretired_asset_query(req: HttpRequest, type: str, description: str, attribute:str, page):
     try:
         page = int(page)
     except:
