@@ -42,4 +42,6 @@ urlpatterns = [
     path('unretired/<page>', views.unretired_list_page),
     path('idle/<page>', views.idle_page),
     path('maintain/<page>', views.maintain_page),
+    path('idle/query/<type>/<description>/<attribute>/<page>', views.idle_asset_query_page),
+    path('unretired/query/<type>/<description>/<attribute>/<page>', views.unretired_asset_query_page),
 ]

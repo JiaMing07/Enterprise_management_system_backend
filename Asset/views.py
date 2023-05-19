@@ -1661,3 +1661,111 @@ def unretired_list_page(req: HttpRequest, page:int):
         }
         return request_success(return_data)
     return BAD_METHOD
+
+@CheckRequire
+def idle_asset_query_page(req: HttpRequest, type: str, description: str, attribute:str):
+    try:
+        page = int(page)
+    except:
+        return request_failed(1, "页码格式有误", status_code = 403)
+    if req.method == 'GET':
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        attribute=attribute[:-1]
+        description = description[:-1]
+        if type == "asset_name":
+            assets = Asset.objects.filter(name__icontains=description)
+        elif type == "asset_description":
+            assets = Asset.objects.filter(description__icontains=description)
+        elif type == "asset_position":
+            assets = Asset.objects.filter(position__icontains=description)
+        elif type == "asset_type":
+            assets = Asset.objects.filter(category__name__icontains=description)
+        elif type == "asset_attribute":
+            attribute_assets = AssetAttribute.objects.filter(description__icontains=description, attribute__name__icontains=attribute)
+            asset = []
+            for ass in attribute_assets:
+                asset.append(ass.asset.id)
+            assets = Asset.objects.filter(id__in=asset)
+        elif type == "asset_status":
+            assets = Asset.objects.filter(state__icontains=description)
+        elif type == "asset_department":
+            assets = Asset.objects.filter(department__name__icontains=description)
+        elif type == "asset_owner":
+            assets = Asset.objects.filter(owner__icontains=description)
+        else:
+            return request_failed(1, "此搜索类型不存在", status_code=403)
+        assets = assets.filter(entity=entity).include(state="IDLE").exclude(name=entity.name).order_by('id')
+        department_tree = subtree_department(user.department)
+        all_assets = assets.filter(department__id__in=department_tree)
+        length = len(all_assets)
+        if length == 0:
+            return request_success({"assets":[],"total_count": 0})
+        if page < 1 or (page != 1 and page > (length-1)/20 + 1):
+            return request_failed(-1, "超出页数范围", 403)
+        assets = page_list(all_assets, page, length)
+        return_data = {
+            "assets": [
+                return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
+                                                 "position", "value", "user", "number", "state", "department", "image", "life"])
+            for asset in assets],
+            "total_count": length
+        }
+        return request_success(return_data)
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
+def unretired_asset_query_page(req: HttpRequest, type: str, description: str, attribute:str):
+    try:
+        page = int(page)
+    except:
+        return request_failed(1, "页码格式有误", status_code = 403)
+    if req.method == 'GET':
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        attribute=attribute[:-1]
+        description = description[:-1]
+        if type == "asset_name":
+            assets = Asset.objects.filter(name__icontains=description)
+        elif type == "asset_description":
+            assets = Asset.objects.filter(description__icontains=description)
+        elif type == "asset_position":
+            assets = Asset.objects.filter(position__icontains=description)
+        elif type == "asset_type":
+            assets = Asset.objects.filter(category__name__icontains=description)
+        elif type == "asset_attribute":
+            attribute_assets = AssetAttribute.objects.filter(description__icontains=description, attribute__name__icontains=attribute)
+            asset = []
+            for ass in attribute_assets:
+                asset.append(ass.asset.id)
+            assets = Asset.objects.filter(id__in=asset)
+        elif type == "asset_status":
+            assets = Asset.objects.filter(state__icontains=description)
+        elif type == "asset_department":
+            assets = Asset.objects.filter(department__name__icontains=description)
+        elif type == "asset_owner":
+            assets = Asset.objects.filter(owner__icontains=description)
+        else:
+            return request_failed(1, "此搜索类型不存在", status_code=403)
+        assets = assets.filter(entity=entity).exclude(state="RETIRED").exclude(name=entity.name).order_by('id')
+        department_tree = subtree_department(user.department)
+        all_assets = assets.filter(department__id__in=department_tree)
+        length = len(all_assets)
+        if length == 0:
+            return request_success({"assets":[],"total_count": 0})
+        if page < 1 or (page != 1 and page > (length-1)/20 + 1):
+            return request_failed(-1, "超出页数范围", 403)
+        assets = page_list(all_assets, page, length)
+        return_data = {
+            "assets": [
+                return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
+                                                 "position", "value", "user", "number", "state", "department", "image", "life"])
+            for asset in assets],
+            "total_count": length
+        }
+        return request_success(return_data)
+    else:
+        return BAD_METHOD
