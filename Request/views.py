@@ -66,7 +66,7 @@ def requests_return(req: HttpRequest):
             msg = f"{user.username} 退库资产 {asset_name}"
             ids.append("1a"+str(request.id) + "1")
             msgs.append(msg)
-        if flag:
+        if len(ids)>0:
             tenant = get_tenant()
             create_feishu_task(ids, user.username, msgs,tenant, "退库", "PENDING", request.request_time, 0)
         if len(err_msg) > 0:
@@ -149,7 +149,7 @@ def requests_repair(req: HttpRequest):
             msg = f"{request.initiator.username} 维修资产 {asset_name}"
             ids.append("1a"+str(request.id) + "1")
             msgs.append(msg)
-        if flag:
+        if len(ids)>0:
             tenant = get_tenant()
             create_feishu_task(ids, user.username, msgs,tenant, "维修", "PENDING", request.request_time, 0)
         if len(err_msg) > 0:
@@ -204,7 +204,7 @@ def request_transfer(req:HttpRequest):
             msg = f"{user.username} 转移资产 {asset_name} 到 {participant.department.name} {participant.username}"
             ids.append("2a"+str(request.id) + "2")
             msgs.append(msg)
-        if flag:
+        if len(ids)>0:
             tenant = get_tenant()
             create_feishu_task(ids, user.username, msgs,tenant, "转移", "PENDING", request.request_time, 0)
         if len(err_msg) > 0:
@@ -230,6 +230,7 @@ def requests_require(req: HttpRequest):
         feishu_user = UserFeishu.objects.filter(username=user.username).first()
         if feishu_user is not None:
             flag_feishu = True
+        print(assets_list)
         for idx, asset_name in enumerate(assets_list):
             asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
             if asset is None:
@@ -238,6 +239,7 @@ def requests_require(req: HttpRequest):
             if asset.state != 'IDLE':
                 err_msg += f'第{idx+1}条想要申领的资产 {asset_name} 不在闲置中；'
                 continue
+            print(asset)
             department_list = subtree_department(user.department)
             flag = False
             for d in department_list:
@@ -249,6 +251,7 @@ def requests_require(req: HttpRequest):
                 continue
             request = NormalRequests.objects.filter(initiator=user, asset=asset, type=1, result=0).first()
             if request is not None:
+                print("True")
                 err_msg += f'第{idx+1}条想要申领的资产 {asset_name} 已提交申领申请；'
                 continue
             request = NormalRequests(initiator=user, asset=asset, type=1, result=0, request_time=get_timestamp(),review_time=0.0)
@@ -256,7 +259,7 @@ def requests_require(req: HttpRequest):
             msg = f"{user.username} 申领资产 {asset_name}"
             ids.append("1a"+str(request.id) + "1")
             msgs.append(msg)
-        if flag_feishu:
+        if len(ids)>0:
             tenant = get_tenant()
             create_feishu_task(ids, user.username, msgs,tenant, "申领", "PENDING", request.request_time, 0)
         if len(err_msg) > 0:
