@@ -34,6 +34,7 @@ from .models import AsyncModel
 
 
 async def add_asset(assets_new, username):
+    print("in")
     user = await User.objects.filter(username=username).afirst()
     entity = await Entity.objects.filter(id=user.entity_id).afirst()
     asy = await AsyncModel.objects.acreate(initiator=username, start_time=get_date(), status = "STARTED", body = {'assets_new': assets_new}, entity=entity)

@@ -217,7 +217,9 @@ def requests_require(req: HttpRequest):
     '''
     申领资产
     '''
+    print("require")
     if req.method == 'POST':
+        print("in")
         CheckAuthority(req, ["staff"])
         token, decoded = CheckToken(req)
         user = User.objects.filter(username=decoded['username']).first()
@@ -226,10 +228,7 @@ def requests_require(req: HttpRequest):
         err_msg = ""
         ids = []
         msgs = []
-        flag_feishu = False
         feishu_user = UserFeishu.objects.filter(username=user.username).first()
-        if feishu_user is not None:
-            flag_feishu = True
         print(assets_list)
         for idx, asset_name in enumerate(assets_list):
             asset = Asset.objects.filter(entity=user.entity, name=asset_name).first()
@@ -259,6 +258,7 @@ def requests_require(req: HttpRequest):
             msg = f"{user.username} 申领资产 {asset_name}"
             ids.append("1a"+str(request.id) + "1")
             msgs.append(msg)
+        print("finish now")
         if len(ids)>0:
             tenant = get_tenant()
             create_feishu_task(ids, user.username, msgs,tenant, "申领", "PENDING", request.request_time, 0)
