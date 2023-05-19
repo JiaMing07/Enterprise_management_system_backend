@@ -314,6 +314,12 @@ class AttributeTests(TestCase):
     def get_unretired_list_page(self, page):
         return self.client.get(f"/asset/unretired/{page}")
     
+    def get_maintain_list_page(self, page):
+        return self.client.get(f"/asset/maintain/{page}")
+    
+    def get_idle_list_page(self, page):
+        return self.client.get(f"/asset/idle/{page}")
+    
     def get_maintain_list(self):
         return self.client.get(f"/asset/maintain/list")
     
@@ -2186,9 +2192,6 @@ class AttributeTests(TestCase):
         id = ass.id
 
         res = self.get_asset_id(id)
-        # ass = Asset.objects.filter(id=1).first()
-        # print(ass.name)
-        # print(id)
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()['code'], 0)
 
@@ -2459,3 +2462,45 @@ class AttributeTests(TestCase):
         res = self.get_unretired_list_page(0)
         self.assertEqual(res.json()['info'], '超出页数范围')
         self.assertEqual(res.json()['code'], -1)
+
+        res = self.get_unretired_list_page('a')
+        self.assertEqual(res.json()['info'], '页码格式有误')
+        self.assertEqual(res.json()['code'], 1)
+
+    def test_maintain_list_page(self):
+        self.create_token('test_user', 'entity_super')
+        res = self.get_maintain_list_page(1)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        ass = Asset.objects.filter(name='ass').first()
+        asset = Asset.objects.create(name='asset1', entity=ass.entity, owner='Alice', category=ass.category, department=ass.department, value=10, state='IN_MAINTAIN')
+        res = self.get_maintain_list_page(1)
+
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.get_maintain_list_page(0)
+        self.assertEqual(res.json()['info'], '超出页数范围')
+        self.assertEqual(res.json()['code'], -1)
+
+        res = self.get_maintain_list_page('a')
+        self.assertEqual(res.json()['info'], '页码格式有误')
+        self.assertEqual(res.json()['code'], 1)
+
+    def test_idle_list_page(self):
+        ass = Asset.objects.filter(name='ass').first()
+        asset = Asset.objects.create(name='asset1', entity=ass.entity, owner='Alice', category=ass.category, department=ass.department, value=10, state='IDLE')
+        self.create_token('test_user', 'entity_super')
+        res = self.get_idle_list_page(1)
+
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.get_idle_list_page(0)
+        self.assertEqual(res.json()['info'], '超出页数范围')
+        self.assertEqual(res.json()['code'], -1)
+
+        res = self.get_idle_list_page('a')
+        self.assertEqual(res.json()['info'], '页码格式有误')
+        self.assertEqual(res.json()['code'], 1)

@@ -811,7 +811,6 @@ def asset_tree(req: HttpRequest):
         return_data = {
             "assets": return_list
         }
-        print(return_data)
         return request_success(return_data)
     return BAD_METHOD
 
@@ -877,7 +876,7 @@ def asset_query_page(req: HttpRequest, type: str, description: str, attribute:st
     try:
         page = int(page)
     except:
-        return request_failed(-1, 'page number not correct', 403)
+        return request_failed(1, "页码格式有误", status_code = 403)
     if req.method == 'GET':
         token, decoded = CheckToken(req)
         user = User.objects.filter(username=decoded['username']).first()
@@ -910,6 +909,8 @@ def asset_query_page(req: HttpRequest, type: str, description: str, attribute:st
         department_tree = subtree_department(user.department)
         all_assets = assets.filter(department__id__in=department_tree)
         length = len(all_assets)
+        if length == 0:
+            return request_success({"assets":[],"total_count": 0})
         if page < 1 or (page != 1 and page > (length-1)/20 + 1):
             return request_failed(-1, "超出页数范围", 403)
         assets = page_list(all_assets, page, length)
@@ -1112,6 +1113,35 @@ def asset_idle(req: HttpRequest):
     return BAD_METHOD
 
 @CheckRequire
+def idle_page(req: HttpRequest, page):
+    if req.method == 'GET':
+        token, decoded = CheckToken(req)
+        try:
+            page = int(page)
+        except:
+            return request_failed(1, "页码格式有误", status_code = 403)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        assets = Asset.objects.filter(entity=entity).exclude(name=entity.name).order_by('id')
+        department_tree = subtree_department(user.department)
+        assets = assets.filter(department__id__in=department_tree)
+        all_assets = assets.filter(state='IDLE')
+        length = len(all_assets)
+        if length == 0:
+            return request_success({"assets":[],"total_count": 0})
+        if page < 1 or (page != 1 and page > (length-1)/20 + 1):
+            return request_failed(-1, "超出页数范围", 403)
+        assets = page_list(all_assets, page, length)
+        return_data = {
+            "assets": [
+                return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
+                                                 "position", "value", "user", "number", "state", "department", "image"])
+            for asset in assets],
+        }
+        return request_success(return_data)
+    return BAD_METHOD
+
+@CheckRequire
 def asset_allocate(req: HttpRequest):
     if req.method == 'PUT':
         CheckAuthority(req, ["entity_super", "asset_super"])
@@ -1260,7 +1290,6 @@ def asset_warning_message(req: HttpRequest):
             dep_children = department.get_children()
             for child in dep_children:
                 departments.append(child)
-        print(messages)
         return_data = {
             'messages': messages,
         }
@@ -1499,13 +1528,18 @@ def asset_list_page(req: HttpRequest, page:int):
     if req.method == 'GET':
         token, decoded = CheckToken(req)
         assets = []
-        page = int(page)
+        try:
+            page = int(page)
+        except:
+            return request_failed(1, "页码格式有误", status_code = 403)
         user = User.objects.filter(username=decoded['username']).first()
         entity = user.entity
         all_assets = Asset.objects.filter(entity=entity).exclude(name=entity.name).order_by('id')
         department_tree = subtree_department(user.department)
         all_assets = all_assets.filter(department__id__in=department_tree)
         length = len(all_assets)
+        if length == 0:
+            return request_success({"assets":[],"total_count": 0})
         if page < 1 or (page != 1 and page > (length-1)/20 + 1):
             return request_failed(-1, "超出页数范围", 403)
         assets = page_list(all_assets, page, length)
@@ -1541,6 +1575,36 @@ def maintain_list(req: HttpRequest):
         return BAD_METHOD
     
 @CheckRequire
+def maintain_page(req: HttpRequest, page: int):
+    if req.method == 'GET':
+        token, decoded = CheckToken(req)
+        try:
+            page = int(page)
+        except:
+            return request_failed(1, "页码格式有误", status_code = 403)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        assets = Asset.objects.filter(entity=entity, state="IN_MAINTAIN").exclude(name=entity.name).order_by('id')
+        department_tree = subtree_department(user.department)
+        all_assets = assets.filter(department__id__in=department_tree)
+        length = len(all_assets)
+        if length == 0:
+            return request_success({"assets":[],"total_count": 0})
+        if page < 1 or (page != 1 and page > (length-1)/20 + 1):
+            return request_failed(-1, "超出页数范围", 403)
+        assets = page_list(all_assets, page, length)
+        return_data = {
+            "assets": [
+                return_field(asset.serialize(), ["id", "assetName", "parentName", "category", "description", 
+                                                 "position", "value", "user", "number", "state", "department", 
+                                                 "createTime", "life", "image"])
+            for asset in assets],
+        }
+        return request_success(return_data)
+    else:
+        return BAD_METHOD
+    
+@CheckRequire
 def maintain_to_use(req: HttpRequest):
     if req.method == 'POST':
         CheckAuthority(req, ["asset_super"])
@@ -1548,7 +1612,6 @@ def maintain_to_use(req: HttpRequest):
         assets_list = get_args(body, ["assets"], ["list"])[0]
         err_msg = ""
         for idx, asset in enumerate(assets_list):
-            print(asset)
             ass = Asset.objects.filter(name=asset).first()
             if ass is None:
                 err_msg = err_msg + f"第 {idx+1} 条资产（{asset}）不存在；"
@@ -1569,6 +1632,10 @@ def maintain_to_use(req: HttpRequest):
 def unretired_list_page(req: HttpRequest, page:int):
     if req.method == 'GET':
         token, decoded = CheckToken(req)
+        try:
+            page = int(page)
+        except:
+            return request_failed(1, "页码格式有误", 403)
         assets = []
         page = int(page)
         user = User.objects.filter(username=decoded['username']).first()
@@ -1577,6 +1644,8 @@ def unretired_list_page(req: HttpRequest, page:int):
         department_tree = subtree_department(user.department)
         all_assets = all_assets.filter(department__id__in=department_tree)
         length = len(all_assets)
+        if length == 0:
+            return request_success({"assets":[],"total_count": 0})
         if page < 1 or (page != 1 and page > (length-1)/20 + 1):
             return request_failed(-1, "超出页数范围", 403)
         assets = page_list(all_assets, page, length)
