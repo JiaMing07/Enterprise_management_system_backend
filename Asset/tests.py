@@ -2603,6 +2603,12 @@ class AttributeTests(TestCase):
         self.assertEqual(res.json()['code'], -1)
         self.assertEqual(res.json()['info'], '超出页数范围')
 
+        page = 'a'
+        res = self.get_idle_query_page(type, description, attribute, page)
+        self.assertEqual(res.json()['info'], '页码格式有误')
+        self.assertEqual(res.json()['code'], 1)
+
+
     def test_unretired_query_page(self):
         user = User.objects.filter(username='test_user').first()
         user.token = user.generate_token()
@@ -2694,3 +2700,8 @@ class AttributeTests(TestCase):
         res = self.get_unretired_query_page(type, description, attribute, page)
         self.assertEqual(res.json()['code'], -1)
         self.assertEqual(res.json()['info'], '超出页数范围')
+
+        page = 'a'
+        res = self.get_unretired_query_page(type, description, attribute, page)
+        self.assertEqual(res.json()['info'], '页码格式有误')
+        self.assertEqual(res.json()['code'], 1)

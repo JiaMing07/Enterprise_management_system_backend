@@ -1663,7 +1663,7 @@ def unretired_list_page(req: HttpRequest, page:int):
     return BAD_METHOD
 
 @CheckRequire
-def idle_asset_query(req: HttpRequest, type: str, description: str, attribute:str, page):
+def idle_asset_query_page(req: HttpRequest, type: str, description: str, attribute:str, page):
     try:
         page = int(page)
     except:
@@ -1717,7 +1717,7 @@ def idle_asset_query(req: HttpRequest, type: str, description: str, attribute:st
         return BAD_METHOD
     
 @CheckRequire
-def unretired_asset_query(req: HttpRequest, type: str, description: str, attribute:str, page):
+def unretired_asset_query_page(req: HttpRequest, type: str, description: str, attribute:str, page):
     try:
         page = int(page)
     except:
