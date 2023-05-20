@@ -856,11 +856,16 @@ def test_add_task(request):
         hour = int(start_time[0])
         minute = int(start_time[1])
         second = int(start_time[2])
-        # s = content['s']  # 接收执行任务的各种参数
-        # 创建任务
-        scheduler.add_job(feishu_sync_click, 'cron', hour=hour, minute=minute, second=second)
+
+        try:
+            scheduler.remove_job('my_job_id')
+        except:
+            pass # 如果任务不存在，直接跳过
+        
+        # 修改任务时间
+        # scheduler.add_job(feishu_sync_click, 'cron', hour=hour, minute=minute, second=second)
         # my_job = scheduler.get_job('my_job_id')  # 根据作业的 id 获取作业对象
-        # my_job.reschedule('cron', hour=hour, minute=minute, second=second)
+        scheduler.add_job(feishu_sync_click, 'cron', hour=hour, minute=minute, second=second, id="my_job_id")
         
         return request_success()
     
