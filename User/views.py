@@ -678,12 +678,10 @@ def feishu_sync():
     entity.save()
 
     # add entity_super after sync
-    print(11111)
 
     # add root department
     department = Department(name="Ent_Feishu", entity=entity, parent=None)
     department.save()
-    print(22222)
     
     # ent_super = User.objects.filter(entity=entity, entity_super=True).first()
 
@@ -751,6 +749,7 @@ def feishu_sync():
         if parent_name == "":
             pa = get_parent(open_depart_id)
             if pa is None:
+                print("————没有父部门")
                 parent = Department.objects.filter(name="Ent_Feishu", entity=entity, parent=None).first()
             else:
                 parent_name = pa["name"]
@@ -857,11 +856,16 @@ def test_add_task(request):
         hour = int(start_time[0])
         minute = int(start_time[1])
         second = int(start_time[2])
-        # s = content['s']  # 接收执行任务的各种参数
-        # 创建任务
-        scheduler.add_job(feishu_sync, 'cron', hour=hour, minute=minute, second=second)
+
+        try:
+            scheduler.remove_job('my_job_id')
+        except:
+            pass # 如果任务不存在，直接跳过
+        
+        # 修改任务时间
+        # scheduler.add_job(feishu_sync_click, 'cron', hour=hour, minute=minute, second=second)
         # my_job = scheduler.get_job('my_job_id')  # 根据作业的 id 获取作业对象
-        # my_job.reschedule('cron', hour=hour, minute=minute, second=second)
+        scheduler.add_job(feishu_sync_click, 'cron', hour=hour, minute=minute, second=second, id="my_job_id")
         
         return request_success()
     
@@ -894,4 +898,173 @@ def user_query(req: HttpRequest, description:str):
         return request_success({
             'users': return_data
         })
-    return BAD_METHOD 
+    return BAD_METHOD
+
+
+def feishu_sync_click():
+        
+    # 创建默认entity, 之后把企业建立好
+    entity = Entity.objects.filter(name="Ent_Feishu").first()
+
+    if entity is None:
+        entity = Entity(name="Ent_Feishu")
+        entity.save()
+    
+    # user common info
+    is_system_super = False
+    is_entity_super = False
+    is_asset_super = False
+    
+    ## 初始密码都是000
+    md5 = hashlib.md5()
+    md5.update("000".encode('utf-8'))
+    pwd = md5.hexdigest()
+
+    dep_list = get_dep_son(0)
+    dep0 = get_one_dep(0)
+    # 记录id对应的部门名字，方便寻找父部门
+    dep_name_list = [{"id": dep0["department_id"], 
+                      "name": dep0["name"], 
+                      "open_id": dep0["open_department_id"]}]
+
+    print(dep_list)
+
+    for dep in dep_list:
+        open_depart_id = dep["open_department_id"]
+        depart_id = dep["department_id"]
+        depart_name = dep["name"]
+
+        cur = {"id": depart_id, "name": depart_name, "open_id": open_depart_id}
+        if cur not in dep_name_list:
+            dep_name_list.append(cur)
+
+        super_id = dep["leader_user_id"]
+
+        # 父部门id
+        depart_parent_id = dep["parent_department_id"]
+        open_depart_parent_id = ""
+        parent_name = ""
+
+        for dep in dep_name_list:
+            if dep["id"] == depart_parent_id:
+                parent_name = dep["name"]
+                open_depart_parent_id = dep["open_id"]
+                break
+
+        print("————创建部门————")
+        
+        # 父部门后出现 或 没有父部门
+        if parent_name == "":
+            pa = get_parent(open_depart_id)
+            if pa is None:
+                print("————没有父部门自己就是企业————")
+                # add entity
+                entity = Entity.objects.filter(name=depart_name).first()
+                if entity is None:
+                    entity = Entity(name=depart_name)
+                    entity.save()
+                    print(f"————创建 {depart_name} 企业")
+
+                # add root department
+                dep_tmp = Department.objects.filter(name=depart_name, entity=entity, parent=None).first()
+                if dep_tmp is None:
+                    Department(name=depart_name, entity=entity, parent=None).save()
+                    print(f"————创建 {depart_name} 根部门")
+                
+                
+            else:
+                print("————有父部门但没出现————")
+                parent_name = pa["name"]
+                parent_id = pa["department_id"]
+                
+                cur = {"id": parent_id, "name": parent_name, "open_id": depart_parent_id}
+                # 父部门还没创建
+                if cur not in dep_name_list:
+                    print("————有父部门但没创建")
+                    dep_name_list.append(cur)
+                    parent = Department(name=parent_name)
+                    parent.save()
+                
+                else:
+                    print("————有父部门并且存在")
+                    parent = Department.objects.filter(name=parent_name).first()
+
+        # 创建部门
+        department = Department.objects.filter(name=depart_name).first()
+        if department is None:
+            department = Department(name=depart_name, entity=parent.entity, parent=parent)
+            department.save()
+            
+            print(f"飞书用户{super_id}  在 {get_date()} 新增部门 {department.name}, 父部门为 {parent.name}")
+
+            log_info = f"飞书用户{super_id}  在 {get_date()} 新增部门 {department.name}"
+            log = Log(log=log_info, type = 1, entity=entity)
+            log.save()
+
+        # 添加users
+        users = get_users(open_depart_id)
+
+        if users is None:
+            print("————该部门没有用户————")
+            continue
+
+        super_name = ""
+        for user in users:
+            open_id = user["open_id"]
+            user_id = user["user_id"]
+            user_name = user["name"]
+            mobile = user["mobile"]
+            
+            # 是否有绑定
+            staff = UserFeishu.objects.filter(open_id=open_id).first()
+
+            # 如果不存在
+            if staff is None:
+                print("————没有绑定用户————")
+
+                # 如果飞书名和原有用户的用户名重复了
+                user = User.objects.filter(username=user_name).first()
+                while user is not None:
+                    random.seed()
+                    user_name = user_name + str(random.randint(1, 100)) # random 1~100
+                    user = User.objects.filter(username=user_name).first()
+                
+                user = User(username=user_name, entity=entity, department=department, password=pwd,
+                            system_super = is_system_super, entity_super = is_entity_super, asset_super = is_asset_super)
+                
+                # 如果是管理员
+                if open_id == super_id:
+                    super_name = user_name
+                    
+                    # 企业管理员
+                    if depart_name == department.name:
+                        user.entity_super = True
+                        print(f"({department.name}企业) 在 {get_date()} 新增企业管理员 {user.username}")
+                    
+                    # 资产部门管理员
+                    else:
+                        user.asset_super = True
+                        print(f"({department.name}部门) 在 {get_date()} 新增资产管理员 {user.username}")
+                
+                else:
+                    print(f"({department.name}部门) 在 {get_date()} 新增用户 {user.username}")
+                
+                user.save()
+                
+                log_info = f"飞书同步: ({department.name}) 在 {get_date()} 新增用户 {user.username}"
+                log = Log(log=log_info, type = 1, entity=user.entity)
+                log.save()
+            
+                # 自动绑定
+                userbind = UserFeishu(username=user_name, mobile=mobile, open_id=open_id, user_id=user_id)
+                userbind.save()
+    
+    print("————完成同步工作————")
+
+    entity = Entity.objects.filter(name="Ent_Feishu").first()
+
+    # every day is a new day
+    if entity is not None:
+        entity.delete()
+    
+    return request_success()

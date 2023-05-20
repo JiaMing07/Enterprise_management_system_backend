@@ -2,7 +2,9 @@ import requests
 import json
 from User.models import *
 from Department.models import *
+from Request.models import *
 from utils.utils_time import *
+from utils.utils_request import *
 
 def get_asset_super(department, status, title, start_time, end_time):
     ancestor_list = department.get_ancestors(include_self=True)
@@ -15,6 +17,8 @@ def get_asset_super(department, status, title, start_time, end_time):
             if user.open_id == "" or user.open_id is None:
                 user.open_id = get_feishu_id(user)
                 user.save()
+            if user.open_id == "":
+                continue
             task = {
                     "action_configs": [
                         {
@@ -58,15 +62,17 @@ def create_feishu_task(ids, initiator_name, msgs, tenant_access_code, title, sta
         tasks = get_asset_super(initiator.department,status,title,start_time,end_time)
     else:
         tasks = []
-    print(status)
     feishu_user = UserFeishu.objects.filter(username=initiator_name).first()
     if feishu_user is not None:
         if feishu_user.open_id == "" or feishu_user.open_id is None:
             feishu_user.open_id = get_feishu_id(feishu_user)
             feishu_user.save()
+        if feishu_user.open_id == "":
+            return "not in entity"
         for idx,id in enumerate(ids):
             payload = json.dumps({
-                "approval_code": "27159948-7DCF-4111-A66D-29C9C815CD7E",
+                # "approval_code": "27159948-7DCF-4111-A66D-29C9C815CD7E",
+                "approval_code": "6506F1FB-8749-4173-BAD6-3FE0EC60BFAD",
                 "end_time": end_time,
                 "extra": "",
                 "form": [
@@ -163,7 +169,11 @@ def get_feishu_id(feishu_user):
     }
 
     response = requests.request("POST", url, headers=headers, data=payload)
-    return response.json()['data']['user_list'][0]['user_id']
+    try:
+        open_id = response.json()['data']['user_list'][0]['user_id']
+    except:
+        open_id = ""
+    return open_id
 
 def get_user_id(mobile_):
     mobile = mobile_
@@ -182,7 +192,11 @@ def get_user_id(mobile_):
     }
 
     response = requests.request("POST", url, headers=headers, data=payload)
-    return response.json()['data']['user_list'][0]['user_id']
+    try:
+        user_id = response.json()['data']['user_list'][0]['user_id']
+    except:
+        user_id = ""
+    return user_id
 
 def get_open_id(mobile_):
     mobile = mobile_
@@ -201,11 +215,15 @@ def get_open_id(mobile_):
     }
 
     response = requests.request("POST", url, headers=headers, data=payload)
-    return response.json()['data']['user_list'][0]['user_id']
+    try: 
+        open_id = response.json()['data']['user_list'][0]['user_id']
+    except:
+        open_id = ""
+    return open_id
 
 def get_dep_son(department_id):
     depart_id = department_id
-    url = f"https://open.feishu.cn/open-apis/contact/v3/departments/:{depart_id}/children?fetch_child=true"
+    url = f"https://open.feishu.cn/open-apis/contact/v3/departments/{depart_id}/children?fetch_child=true"
     tenant = get_tenant()
     headers = {
         'Content-Type': 'application/json',
@@ -217,7 +235,7 @@ def get_dep_son(department_id):
 
 def get_one_dep(department_id):
     depart_id = department_id
-    url = f"https://open.feishu.cn/open-apis/contact/v3/departments/:{depart_id}"
+    url = f"https://open.feishu.cn/open-apis/contact/v3/departments/{depart_id}"
     tenant = get_tenant()
     headers = {
         'Content-Type': 'application/json',
@@ -226,6 +244,21 @@ def get_one_dep(department_id):
 
     response = requests.request("GET", url, headers=headers)
     return response.json()['data']['department']
+
+def get_parent(department_id):
+    url = f"https://open.feishu.cn/open-apis/contact/v3/departments/parent?department_id={department_id}"
+    tenant = get_tenant()
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {tenant}'
+    }
+
+    response = requests.request("GET", url, headers=headers)
+    if "items" in response.json()['data']:
+        print("有的啦!")
+        return response.json()['data']['items'][0]
+    
+    return None
 
 def get_users(department_id):
     depart_id = department_id
@@ -237,4 +270,100 @@ def get_users(department_id):
     }
 
     response = requests.request("GET", url, headers=headers)
-    return response.json()['data']['items']
+    # print(f"msg = {response.json()['msg']}")
+    # print(f"has_more = {response.json()['data']['has_more']}")
+
+    if "items" in response.json()['data']:
+        print("有的啦!")
+        return response.json()['data']['items']
+    
+    return None
+
+def feishu_callback(id, instance_id, status, user_id):
+    try:
+        id = int(id)
+        msg = ""
+        action = "action"
+        user_name = ""
+        code = 0
+        msg = "ok"
+        status_code = 200
+        if instance_id[0] == '1':
+            request = NormalRequests.objects.filter(id=id).first()
+            if request is not None:
+                asset = request.asset
+            else:
+                code = -2
+                msg = "没有对应请求"
+                status_code = 404
+                return code, msg, status_code
+            type = request.type
+            actions = ["", "申领", "退库", "维修"]
+            if status == "APPROVED":
+                request.result=1
+                if type == 1:
+                    action = "申领"
+                    asset.owner = request.initiator.username
+                    asset.state = 'IN_USE'
+                    asset.operation = 'IN_USE'
+                elif type == 2:
+                    action = "退库"
+                    asset.state = 'IDLE'
+                    user_feishu = UserFeishu.objects.filter(user_id=user_id).first()
+                    if user_feishu is not None and user_feishu.user_id != "":
+                        open_id = user_feishu.open_id
+                    else:
+                        open_id = get_open_id(user_id)
+                    feishu_user = UserFeishu.objects.filter(open_id=open_id).first()
+                    username = feishu_user.username
+                    user = User.objects.filter(username=username).first()
+                    asset.owner = user.username
+                    asset.operation = 'IDLE'
+                elif type == 3:
+                    action = "维修"
+                    asset.state = 'IN_MAINTAIN'
+                    asset.operation = 'IN_MAINTAIN'
+                entity = request.initiator.entity.name
+            elif status == "REJECTED":
+                request.result = 2
+                action = actions[type]
+            initiator = request.initiator
+            msg = f"{initiator.username} {action} {request.asset.name}"
+            request.review_time = get_timestamp()
+            request.save()
+            asset.change_time = get_timestamp()
+            asset.change_value = 0
+            asset.save()
+        elif instance_id[0] == '2':
+            request = TransferRequests.objects.filter(id=id).first()
+            if request is not None:
+                asset = request.asset
+            else:
+                code = -2
+                msg = "没有对应请求"
+                status_code = 404
+                return code, msg, status_code
+            action = "转移"
+            request.review_time = get_timestamp()
+            if status == "APPROVED":
+                request.result=1
+                asset.owner = request.participant.username
+                asset.position = request.position
+                asset.operation = 'MOVE'
+            elif status == "REJECTED":
+                action = '拒绝'
+                request.result = 2
+            request.save()
+            asset.change_time = get_timestamp()
+            asset.change_value = 0
+            asset.save()
+            initiator = request.initiator
+            msg = f"{initiator.username} 转移 {request.asset.name} 到 {request.participant.department.name} {request.participant.username}"
+        tenant = get_tenant()
+        create_feishu_task([instance_id], initiator.username,[msg],tenant, action, status,request.request_time, get_timestamp())
+    except Exception as e:
+        print(e)
+        code = -1
+        msg = str(e)
+        status_code = 400
+        return code, msg, status_code

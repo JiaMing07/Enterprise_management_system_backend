@@ -26,4 +26,5 @@ django-apscheduler
 django-simple-history
 daphne
 requests
+asgiref==3.6.0
 # TODO End: [Student] Add dependency on uWSGI
