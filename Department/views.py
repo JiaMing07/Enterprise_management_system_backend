@@ -230,7 +230,6 @@ def entity_log(req: HttpRequest):
 @CheckRequire
 def entity_log_page(req: HttpRequest, page:int):
     if req.method == 'GET':
-        print("in")
         CheckAuthority(req, ['entity_super'])
         token, decoded = CheckToken(req)
         user = User.objects.filter(username=decoded['username']).first()

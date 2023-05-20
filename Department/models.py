@@ -31,8 +31,6 @@ class Entity(models.Model):
                        for department in departments ]
         }
     
-    def __str__(self) -> str:
-        return self.name
     
 
 class Department(MPTTModel):
