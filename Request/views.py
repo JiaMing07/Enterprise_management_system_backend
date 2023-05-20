@@ -238,7 +238,6 @@ def requests_require(req: HttpRequest):
             if asset.state != 'IDLE':
                 err_msg += f'第{idx+1}条想要申领的资产 {asset_name} 不在闲置中；'
                 continue
-            print(asset)
             department_list = subtree_department(user.department)
             flag = False
             for d in department_list:
@@ -250,12 +249,10 @@ def requests_require(req: HttpRequest):
                 continue
             request = NormalRequests.objects.filter(initiator=user, asset=asset, type=1, result=0).first()
             if request is not None:
-                print("True")
                 err_msg += f'第{idx+1}条想要申领的资产 {asset_name} 已提交申领申请；'
                 continue
             request = NormalRequests(initiator=user, asset=asset, type=1, result=0, request_time=get_timestamp(),review_time=0.0)
             request.save()
-            print("save")
             msg = f"{user.username} 申领资产 {asset_name}"
             ids.append("1a"+str(request.id) + "1")
             msgs.append(msg)
