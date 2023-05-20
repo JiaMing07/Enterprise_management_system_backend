@@ -132,7 +132,6 @@ async def add_asset(assets_new, username):
                         category_id=category.id, entity_id=entity.id, department_id=department.id, parent_id=parent.id, image_url=image_url,state=state, life=life, created_time = created_time)
             await asset.asave()
         except Exception as e:
-            print(e)
             continue
     asy.end_time = get_date()
     asy.status = 'SUCCESS'

@@ -324,6 +324,9 @@ class AttributeTests(TestCase):
         payload = {k: v for k, v in payload.items() if v is not None}
         return self.client.post(f"/asset/maintain/use", data=payload, content_type="application/json")
     
+    def get_asset_history_page(self, page):
+        return self.client.get(f"/asset/history/{page}")
+    
     # Now start testcases. 
     def test_asset_category_add(self):
         user = User.objects.filter(username='test_user').first()
@@ -2457,5 +2460,16 @@ class AttributeTests(TestCase):
         self.assertEqual(res.json()['code'], 0)
 
         res = self.get_unretired_list_page(0)
+        self.assertEqual(res.json()['info'], '超出页数范围')
+        self.assertEqual(res.json()['code'], -1)
+
+    def test_asset_history_page(self):
+        self.create_token('test_user', 'entity_super')
+
+        res = self.get_asset_history_page(1)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()['code'], 0)
+
+        res = self.get_asset_history_page(0)
         self.assertEqual(res.json()['info'], '超出页数范围')
         self.assertEqual(res.json()['code'], -1)

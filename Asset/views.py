@@ -408,6 +408,7 @@ def asset_retire(req: HttpRequest):
             asset.state = "RETIRED"
             asset.change_value = -asset.value
             asset.value = 0
+            asset.owner = ''
             children_list = asset.get_children()
             for child in children_list:
                 child.parent = Asset.objects.filter(name = asset.entity.name).first()
@@ -810,7 +811,6 @@ def asset_tree(req: HttpRequest):
         return_data = {
             "assets": return_list
         }
-        print(return_data)
         return request_success(return_data)
     return BAD_METHOD
 
@@ -1259,7 +1259,6 @@ def asset_warning_message(req: HttpRequest):
             dep_children = department.get_children()
             for child in dep_children:
                 departments.append(child)
-        print(messages)
         return_data = {
             'messages': messages,
         }
@@ -1349,11 +1348,10 @@ def asset_history(req: HttpRequest):
             for child in dep_children:
                 departments.append(child)
 
-        historys = []
-        for asset in assets:
-            for history in asset.history.all():
-                historys.append(history)
-        historys = sorted(historys, key=lambda x:x.change_time, reverse=True)
+        historys = assets[0].history.all()
+        for asset in assets[1:]:
+            historys = historys | asset.history.all()
+        historys = historys.order_by('-change_time')
         history_data = []
         for history in historys:
             history_data.append({
@@ -1417,18 +1415,17 @@ def asset_statics(req: HttpRequest):
             "retired": retired_number,
         }
 
-        total_value = 0
-        historys = []
+        total_value = assets[0].value
+        historys = assets[0].history.all()
         value_time = []
-        for asset in assets:
+        for asset in assets[1:]:
             total_value += asset.value
-            for history in asset.history.all():
-                historys.append(history)
+            historys = historys | asset.history.all()
         value_time.append({
             "time": get_timestamp(),
             "value": total_value,
         })
-        historys = sorted(historys, key=lambda x:x.change_time, reverse=True)
+        historys = historys.order_by('-change_time')
         for history in historys:
             value_time.append({
                 "time": history.change_time,
@@ -1542,15 +1539,11 @@ def maintain_list(req: HttpRequest):
 @CheckRequire
 def maintain_to_use(req: HttpRequest):
     if req.method == 'POST':
-        print(req.method)
         CheckAuthority(req, ["asset_super"])
-        print('ok')
         body = json.loads(req.body.decode("utf-8"))
-        print(body)
         assets_list = get_args(body, ["assets"], ["list"])[0]
         err_msg = ""
         for idx, asset in enumerate(assets_list):
-            print(asset)
             ass = Asset.objects.filter(name=asset).first()
             if ass is None:
                 err_msg = err_msg + f"第 {idx+1} 条资产（{asset}）不存在；"
@@ -1592,3 +1585,50 @@ def unretired_list_page(req: HttpRequest, page:int):
         }
         return request_success(return_data)
     return BAD_METHOD
+
+@CheckRequire
+def asset_history_page(req: HttpRequest, page:int):
+    if req.method == 'GET':
+        CheckAuthority(req, ["entity_super", "asset_super"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        page = int(page)
+
+        assets = []
+        departments = []
+        departments.append(user.department)
+        while (len(departments) != 0):
+            department = departments.pop(0)
+            dep_assets = Asset.objects.filter(entity=entity, department=department)
+            for asset in dep_assets:
+                assets.append(asset)
+            dep_children = department.get_children()
+            for child in dep_children:
+                departments.append(child)
+
+        historys = assets[0].history.all()
+        for asset in assets[1:]:
+            historys = historys | asset.history.all()
+        historys = historys.order_by('-change_time')
+        length = len(historys)
+        if page < 1 or (page != 1 and page > (length-1)/20 + 1):
+            return request_failed(-1, "超出页数范围", 403)
+        historys = page_list(historys, page, length)
+        history_data = []
+        for history in historys:
+            history_data.append({
+                'type': history.operation,
+                "assetName": history.name, 
+                "category": history.category.name, 
+                "user": history.owner, 
+                "department": history.department.name, 
+                "changeTime": history.change_time,
+            })
+        return_data = {
+            'history': history_data,
+            "total_count": length,
+        }
+        return request_success(return_data)
+    else:
+        return BAD_METHOD

@@ -707,6 +707,5 @@ def feishu(req: HttpRequest):
         tenant = get_tenant()
         create_feishu_task([instance_id], initiator.username,[msg],tenant, action, status,request.request_time, get_timestamp())
     except Exception as e:
-        print(e)
         return request_failed(-1, str(e), 400)
     return request_success()
