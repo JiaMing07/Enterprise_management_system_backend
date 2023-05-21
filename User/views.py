@@ -904,11 +904,11 @@ def user_query(req: HttpRequest, description:str):
 def feishu_sync_click():
         
     # 创建默认entity, 之后把企业建立好
-    entity = Entity.objects.filter(name="Ent_Feishu").first()
+    # entity = Entity.objects.filter(name="Ent_Feishu").first()
 
-    if entity is None:
-        entity = Entity(name="Ent_Feishu")
-        entity.save()
+    # if entity is None:
+    #     entity = Entity(name="Ent_Feishu")
+    #     entity.save()
     
     # user common info
     is_system_super = False
@@ -938,7 +938,10 @@ def feishu_sync_click():
         if cur not in dep_name_list:
             dep_name_list.append(cur)
 
-        super_id = dep["leader_user_id"]
+        if "leader_user_id" in dep:
+            super_id = dep["leader_user_id"]
+        else:
+            super_id = "nobody"
 
         # 父部门id
         depart_parent_id = dep["parent_department_id"]
@@ -995,9 +998,9 @@ def feishu_sync_click():
             department = Department(name=depart_name, entity=parent.entity, parent=parent)
             department.save()
             
-            print(f"飞书用户{super_id}  在 {get_date()} 新增部门 {department.name}, 父部门为 {parent.name}")
+            print(f"{get_date()} 新增部门 {department.name}, 父部门为 {parent.name}")
 
-            log_info = f"飞书用户{super_id}  在 {get_date()} 新增部门 {department.name}"
+            log_info = f"{get_date()} 新增部门 {department.name}"
             log = Log(log=log_info, type = 1, entity=entity)
             log.save()
 
@@ -1061,10 +1064,10 @@ def feishu_sync_click():
     
     print("————完成同步工作————")
 
-    entity = Entity.objects.filter(name="Ent_Feishu").first()
+    # entity = Entity.objects.filter(name="Ent_Feishu").first()
 
-    # every day is a new day
-    if entity is not None:
-        entity.delete()
+    # # every day is a new day
+    # if entity is not None:
+    #     entity.delete()
     
     return request_success()
