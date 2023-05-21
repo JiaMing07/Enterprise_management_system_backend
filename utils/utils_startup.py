@@ -77,7 +77,7 @@ base_menu = [{
 	"first":"资产标签",
 	"second":"使用标签",
 	"url":"/asset_label_list",
-	"authority":"staff/asset_super"
+	"authority":"staff"
 },
 {
   "first":"资产告警",
@@ -114,6 +114,12 @@ base_menu = [{
 	"second":"用户日志",
 	"url":"/log",
 	"authority":"entity_super"
+},
+{
+  "first":"飞书绑定",
+	"second":"",
+	"url":"/feishu_manage",
+	"authority":"entity_super/asset_super/staff"
 }
 ]
 
