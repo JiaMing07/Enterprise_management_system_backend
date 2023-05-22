@@ -2,7 +2,7 @@ from django.shortcuts import render
 import json
 from django.http import HttpRequest, HttpResponse
 
-from User.models import User
+from User.models import *
 from Department.models import Department, Entity, Log
 from utils.utils_request import BAD_METHOD, request_failed, request_success, return_field
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
@@ -173,6 +173,10 @@ def department_delete(req: HttpRequest):
         
         # delete
         department_name = department_.name
+        users = User.objects.filter(department=department_)
+        for user in users:
+            feishu_user = UserFeishu.objects.filter(username=user.username)
+            feishu_user.delete()
         department_.delete()
         log_info = f"用户{username}  在 {get_date()} 删除部门 {department_name}"
         log = Log(log=log_info, type = 1, entity=entity)
@@ -191,6 +195,10 @@ def entity_delete(req: HttpRequest, entity_name: str):
             return request_failed(1, "企业实体不存在", status_code=403)
         if entity.name == 'admin_entity':
             return request_failed(2, "不可删除超级管理员所在的企业实体", status_code=403)
+        users = User.objects.filter(entity=entity)
+        for user in users:
+            feishu_user = UserFeishu.objects.filter(username=user.username)
+            feishu_user.delete()
         entity.delete()
         return request_success()
     else:

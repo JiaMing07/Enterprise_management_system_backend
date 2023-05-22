@@ -333,6 +333,8 @@ def user_userName(req: HttpRequest, userName: any):
             ass.operation = 'IDLE'
             ass.change_time = get_timestamp()
             ass.save()
+        feishu_user = UserFeishu.objects.filter(username=userName)
+        feishu_user.delete()
         user.delete()
         return request_success()
     else:
