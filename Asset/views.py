@@ -225,9 +225,10 @@ def asset_edit(req: HttpRequest):
     if req.method == 'PUT':
         CheckAuthority(req, ["entity_super", "asset_super"])
         body = json.loads(req.body.decode("utf-8"))
-        oldName, assetName, parentName, description, position, value, owner, number, state, categoryName, life, image_url = get_args(
-            body, ["oldName", "name", "parent", "description", "position", "value", "owner", "number", "state", "category", "life", "image"], 
-            ["string", "string", "string", "string", "string", "int", "string", "int", "string", "string", "int", "string"])
+        oldName, assetName, parentName, description, position, value, owner, number, state, categoryName, life = get_args(
+            body, ["oldName", "name", "parent", "description", "position", "value", "owner", "number", "state", "category", "life"], 
+            ["string", "string", "string", "string", "string", "int", "string", "int", "string", "string", "int"])
+        image_url = body.get("image", "")
         token, decoded = CheckToken(req)
         user = User.objects.filter(username=decoded['username']).first()
         entity = user.entity
@@ -1457,12 +1458,19 @@ def asset_statics(req: HttpRequest):
             "time": get_timestamp(),
             "value": total_value,
         })
+        # assets = Asset.objects.filter(entity=entity)
+        # historys = assets[0].history.all()
+        # for asset in assets[1:]:
+        #     historys = historys | asset.history.all()
         historys = historys.order_by('-change_time')
         for history in historys:
             value_time.append({
                 "time": history.change_time,
                 "value": total_value,
             })
+            # prev = history.prev_record
+            # next = history.next_record
+            # if history.department.id in subtree_department(department):
             if history.operation != 'add':
                 total_value -= history.change_value
             else:
