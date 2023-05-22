@@ -218,7 +218,10 @@ class UserTests(TestCase):
         return self.client.get("/user/feishu/bind")
     
     def get_user_query(self, description):
-        return self.client.get(f"/user/query/name/{description}")
+        return self.client.get(f"/user/query/name/{description}1")
+    
+    def get_user_query_page(self, description, page):
+        return self.client.get(f"/user/query/name/{description}1/{page}")
     
     def get_user_list_page(self, page):
         return self.client.get(f"/user/list/{page}")
@@ -941,3 +944,32 @@ class UserTests(TestCase):
         res = self.get_user_list_page(1)
         self.assertEqual(res.json()['info'], "Succeed")
         self.assertEqual(res.json()['code'], 0)
+
+    def test_user_query_page(self):
+        user = User.objects.filter(username='test_user').first()
+        user.token = user.generate_token()
+        user.system_super, user.entity_super, user.asset_super = user.set_authen("system_super")
+        user.save()
+        Token = user.token
+        c = cookies.SimpleCookie()
+        c['token'] = Token
+        self.client.cookies = c
+
+        res = self.get_user_query_page("test", 1)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
+
+        # length = 0
+        res = self.get_user_query_page("w", 1)
+        self.assertEqual(res.json()['info'], "Succeed")
+        self.assertEqual(res.json()['code'], 0)
+
+        # page out of range
+        res = self.get_user_query_page("test", 0)
+        self.assertEqual(res.json()['info'], "超出页数范围")
+        self.assertEqual(res.json()['code'], -1)
+
+        # page out of range
+        res = self.get_user_query_page("test", 'a')
+        self.assertEqual(res.json()['info'], "页码格式有误")
+        self.assertEqual(res.json()['code'], 1)

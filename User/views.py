@@ -887,6 +887,7 @@ def user_query(req: HttpRequest, description:str):
     if req.method == 'GET':
         token, decoded = CheckToken(req)
         description = str(description)
+        description = description[:-1]
         user = User.objects.filter(username=decoded['username']).first()
         entity = user.entity
         users = User.objects.filter(entity=entity, entity_super=False, asset_super=False).filter(username__icontains=description)
@@ -896,10 +897,37 @@ def user_query(req: HttpRequest, description:str):
                 'username': u.username,
                 'department': u.department.name
             })
-        print(return_data)
         return request_success({
             'users': return_data
         })
+    return BAD_METHOD
+
+@CheckRequire
+def user_query_page(req: HttpRequest, description:str, page):
+    if req.method == 'GET':
+        token, decoded = CheckToken(req)
+        try:
+            page = int(page)
+        except:
+            return request_failed(1, "页码格式有误", status_code = 403)
+        description = str(description)
+        description = description[:-1]
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
+        all_users = User.objects.filter(entity=entity, entity_super=False, asset_super=False).filter(username__icontains=description)
+        length = len(all_users)
+        if length == 0:
+            return request_success({"assets":[],"total_count": 0})
+        if page < 1 or (page != 1 and page > (length-1)/20 + 1):
+            return request_failed(-1, "超出页数范围", 403)
+        users = page_list(all_users, page, length)
+        return_data = {
+            "users": [
+                return_field(user.serialize(), ["username", "department"])
+            for user in users],
+            "total_count": length
+        }
+        return request_success(return_data)
     return BAD_METHOD
 
 
