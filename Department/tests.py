@@ -401,6 +401,13 @@ class DepartmentTests(TestCase):
         self.assertEqual(res.json()['code'], 2)
         self.assertEqual(res.json()['info'], "不可删除超级管理员所在的企业实体")
 
+        # can't delete the entity root department
+        entity_name = 'en0'
+        department_name = 'en0'
+        res = self.delete_department(entity_name, department_name)
+        self.assertEqual(res.json()['info'], "不可删除此部门")
+        self.assertEqual(res.json()['code'], 3)
+
         # delete success
         entity_name = 'en0'
         department_name = 'de0'

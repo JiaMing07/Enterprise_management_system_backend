@@ -170,14 +170,16 @@ def department_delete(req: HttpRequest):
             return request_failed(1, "部门不存在", status_code=403)
         if department_.name == 'admin_department':
             return request_failed(2, "不可删除超级管理员所在的部门", status_code=403)
-        
+        if department_.name == entity.name:
+            return request_failed(3, "不可删除此部门", status_code=403)
         # delete
         department_name = department_.name
-        users = User.objects.filter(department=department_)
-        for user in users:
-            feishu_user = UserFeishu.objects.filter(username=user.username)
-            feishu_user.delete()
-        department_.delete()
+        feishu_users = UserFeishu.objects.all()
+        for feishu_user in feishu_users:
+            username = feishu_user.username
+            user = User.objects.filter(department=department_, username=username).first()
+            if user is not None:
+                feishu_user.delete()
         log_info = f"用户{username}  在 {get_date()} 删除部门 {department_name}"
         log = Log(log=log_info, type = 1, entity=entity)
         log.save()
@@ -195,10 +197,12 @@ def entity_delete(req: HttpRequest, entity_name: str):
             return request_failed(1, "企业实体不存在", status_code=403)
         if entity.name == 'admin_entity':
             return request_failed(2, "不可删除超级管理员所在的企业实体", status_code=403)
-        users = User.objects.filter(entity=entity)
-        for user in users:
-            feishu_user = UserFeishu.objects.filter(username=user.username)
-            feishu_user.delete()
+        feishu_users = UserFeishu.objects.all()
+        for feishu_user in feishu_users:
+            username = feishu_user.username
+            user = User.objects.filter(entity=entity, username=username).first()
+            if user is not None:
+                feishu_user.delete()
         entity.delete()
         return request_success()
     else:
