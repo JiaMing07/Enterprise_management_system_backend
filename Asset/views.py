@@ -318,14 +318,9 @@ def asset_add_list(req:HttpRequest):
         num = 0
         batch_size = 500
         late = Asset.objects.all().order_by('id').last()
-        all_assets = Asset.objects.all()
-        for ass in all_assets:
-            print(f"id {ass.id}")
         ass_id = late.id + 1
-        print(ass_id)
         try:
             for idx, asset_single in enumerate(assets_new):
-                print(idx)
                 name, parentName, description, position, value, department, number, categoryName, life, image_url = get_args(
                 asset_single, ["name", "parent", "description", "position", "value", "department", "number", "category", "life", "image"], 
                 ["string", "string", "string", "string", "int", "string", "int", "string", "int", "string"])
@@ -372,12 +367,9 @@ def asset_add_list(req:HttpRequest):
                     err_msg = err_msg +'第' +str(idx + 1) +"条资产录入失败，资产类型不存在" + '；'
                     continue
                 asset = Asset.objects.filter(entity=entity, name=name).first()
-                print(idx, asset)
                 if asset is not None:
                     err_msg = err_msg +'第' +str(idx + 1) +"条资产录入失败，该资产已存在" + '；'
-                    print(name)
                     continue
-                print(name, idx)
                 if owner == "":
                     owner = User.objects.filter(entity=entity, department=department, asset_super=True).first()
                     if owner is None:
@@ -392,8 +384,6 @@ def asset_add_list(req:HttpRequest):
                 if user.department not in ancestor_list:
                     err_msg = err_msg +'第' +str(idx + 1) +"条资产录入失败，部门不在管理范围内" + '；'
                     continue
-                print(f"ass_id {ass_id}")
-                print(name)
                 asset = Asset(id = ass_id,name=name, description=description, position=position, value=value, owner=owner.username, number=number,
                             category=category, entity=entity, department=department, parent=parent, life=life, image_url=image_url,state=state, lft=0,rght=0,tree_id=0,level=parent.level+1)
                 ass_id +=1
@@ -401,7 +391,6 @@ def asset_add_list(req:HttpRequest):
                 num += 1
                 print(asset.name)
                 print(num)
-                print(err_msg)
                 if num % batch_size == 0:
                     print("in")
                     Asset.objects.bulk_create(asset_list, batch_size)
