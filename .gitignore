@@ -10,3 +10,4 @@ celeryd.log
 mystart.sh
 config.yml
 re.txt
+uwsgi.txt

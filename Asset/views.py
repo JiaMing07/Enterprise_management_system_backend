@@ -1518,10 +1518,10 @@ def asset_statics(req: HttpRequest):
                     if history.operation == 'MOVE' and prev is not None:
                         if prev.department.id in department_tree:
                             total_value += history.value
-                # value_time.append({
-                #     "time": history.change_time,
-                #     "value": total_value,
-                # })
+                value_time.append({
+                    "time": history.change_time,
+                    "value": total_value,
+                })
         return_data = {
             "total_number": total_number,
             "department_number": department_number,
