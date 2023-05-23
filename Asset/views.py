@@ -318,7 +318,7 @@ def asset_add_list(req:HttpRequest):
         num = 0
         batch_size = 500
         late = Asset.objects.all().order_by('id').last()
-        ass_id = late.id + 1
+        ass_id = late.id + 5000
         try:
             for idx, asset_single in enumerate(assets_new):
                 name, parentName, description, position, value, department, number, categoryName, life, image_url = get_args(
@@ -342,7 +342,7 @@ def asset_add_list(req:HttpRequest):
                                     category=AssetCategory.root(), entity=entity, department=Department.objects.filter(entity=entity, name=entity.name).first(), parent=Asset.root())
                         parent.save()
                         late = Asset.objects.all().order_by('id').last()
-                        ass_id = late.id + 1
+                        ass_id = late.id + 5000
                     if department == "":
                         department = user.department
                     else:
