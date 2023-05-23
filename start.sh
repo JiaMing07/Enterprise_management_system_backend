@@ -14,7 +14,7 @@ uwsgi -d --module=eam_backend.wsgi:application \
     --master \
     --http=0.0.0.0:80 \
     --processes=5 \
-    --harakiri=20 \
+    --harakiri=1200 \
     --max-requests=5000 \
     --vacuum &&
 daphne -b 0.0.0.0 -p 80 --application-close-timeout 1200 eam_backend.asgi:application
