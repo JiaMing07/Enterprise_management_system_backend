@@ -85,6 +85,7 @@ async def add_asset(assets_new, username):
                     department = await Department.objects.filter(entity=entity, name=department).afirst()
                     if department is None:
                         err_msg = err_msg +'第' +str(idx + 1) +"条资产录入失败，挂账部门不存在" + '；'
+                        continue
             else:
                 parent = await Asset.objects.filter(entity=entity, name=parentName).afirst()
                 if parent is None:
@@ -129,6 +130,7 @@ async def add_asset(assets_new, username):
             owner_name = owner.username
             if number > 1 and category.is_number == False:
                 err_msg = err_msg + '第' +str(idx + 1) +"条资产录入失败，不是数量型资产却有多件" + '；'
+                continue
             asset = Asset(id=id, name=name, description=description, position=position, value=value, owner=owner_name, number=number,
                         category_id=category.id, entity_id=entity.id, department_id=department.id, parent_id=parent.id, image_url=image_url,state=state, life=life, created_time = created_time)
             await asset.asave()

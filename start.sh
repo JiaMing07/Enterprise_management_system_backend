@@ -17,5 +17,5 @@ uwsgi -d --module=eam_backend.wsgi:application \
     --harakiri=20 \
     --max-requests=5000 \
     --vacuum &&
-daphne -b 0.0.0.0 -p 80 eam_backend.asgi:application
+daphne -b 0.0.0.0 -p 80 --application-close-timeout 1200 eam_backend.asgi:application
 # TODO End: [Student] Run with uWSGI instead
