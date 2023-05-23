@@ -797,7 +797,7 @@ def asset_tree(req: HttpRequest):
         user = User.objects.filter(username=decoded['username']).first()
         entity = user.entity
         department = user.department
-        asset = Asset.objects.filter(entity=entity)
+        asset = Asset.objects.filter(entity=entity).exclude(name=entity.name)
         department_tree = subtree_department(department)
         assets = asset.filter(department__id__in=department_tree).filter(state='IDLE')
         assets_list = []
@@ -1374,7 +1374,7 @@ def asset_history(req: HttpRequest):
         departments.append(user.department)
         while (len(departments) != 0):
             department = departments.pop(0)
-            dep_assets = Asset.objects.filter(entity=entity, department=department)
+            dep_assets = Asset.objects.filter(entity=entity, department=department).exclude(name=entity.name)
             for asset in dep_assets:
                 assets.append(asset)
             dep_children = department.get_children()
@@ -1520,7 +1520,7 @@ def asset_history_query(req: HttpRequest, type: str):
         departments.append(user.department)
         while (len(departments) != 0):
             department = departments.pop(0)
-            dep_assets = Asset.objects.filter(entity=entity, department=department)
+            dep_assets = Asset.objects.filter(entity=entity, department=department).exclude(name=entity.name)
             for asset in dep_assets:
                 assets.append(asset)
             dep_children = department.get_children()
@@ -1812,7 +1812,7 @@ def asset_history_page(req: HttpRequest, page):
         departments.append(user.department)
         while (len(departments) != 0):
             department = departments.pop(0)
-            dep_assets = Asset.objects.filter(entity=entity, department=department)
+            dep_assets = Asset.objects.filter(entity=entity, department=department).exclude(name=entity.name)
             for asset in dep_assets:
                 assets.append(asset)
             dep_children = department.get_children()

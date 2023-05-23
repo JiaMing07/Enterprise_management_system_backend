@@ -80,6 +80,8 @@ class Asset(MPTTModel):
             parent_name = ''
         else:
             parent_name = self.parent.name
+            if parent_name == self.entity.name:
+                parent_name = ''
         return {
             "id": self.id,
             "assetName": self.name,
