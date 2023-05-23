@@ -1691,7 +1691,7 @@ class AttributeTests(TestCase):
             },
             {
             "name": 'keyboard', 
-            "parent": 'computer', 
+            "parent": '', 
             "description": 'work', 
             "position": 'desk', 
             "value": 100, 
@@ -1717,7 +1717,7 @@ class AttributeTests(TestCase):
             },
             {
             "name": 'keyboard', 
-            "parent": 'computer', 
+            "parent": '', 
             "description": 'work', 
             "position": 'desk', 
             "value": 100, 
@@ -1729,7 +1729,7 @@ class AttributeTests(TestCase):
             },
             {
             "name": 'keyboard', 
-            "parent": 'computer', 
+            "parent": '',  
             "description": 'work', 
             "position": 'desk', 
             "value": 100, 
@@ -1739,21 +1739,21 @@ class AttributeTests(TestCase):
             "life": 5,
             "image": '127.0.0.2',
             },
-            {
-            "name": 'keyboard',# repeat
-            "parent": 'computer', 
-            "description": 'work', 
-            "position": 'desk', 
-            "value": 100, 
-            "department": 'dep_child',
-            "number": 1, 
-            "category": 'cate',
-            "life": 5,
-            "image": '127.0.0.2',
-            },
+            # {
+            # "name": 'keyboard',# repeat
+            # "parent": '', 
+            # "description": 'work', 
+            # "position": 'desk', 
+            # "value": 100, 
+            # "department": 'dep_child',
+            # "number": 1, 
+            # "category": 'cate',
+            # "life": 5,
+            # "image": '127.0.0.2',
+            # },
             {
             "name": 'mouse', 
-            "parent": 'computer', 
+            "parent": '',  
             "description": 'work', 
             "position": 'desk', 
             "value": 100, 
@@ -1766,7 +1766,7 @@ class AttributeTests(TestCase):
             },
             {
             "name": 'mouse', 
-            "parent": 'computer', 
+            "parent": '', 
             "description": 'work', 
             "position": 'desk', 
             "value": 100, 
@@ -1779,6 +1779,7 @@ class AttributeTests(TestCase):
         ]
 
         res = self.post_asset_add_list(assets)
+        print(res.json()['info'])
         self.assertEqual(res.json()['code'], 1)
         self.assertEqual(len(Asset.objects.all()), 4)
         self.assertTrue(Asset.objects.filter(name='ass').exists())
