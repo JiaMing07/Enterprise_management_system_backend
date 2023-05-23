@@ -401,7 +401,7 @@ def asset_add_list(req:HttpRequest):
         except Exception as e:
             print(e)
         Asset.objects.bulk_create(asset_list)
-        Asset.objects.rebuild()
+        # Asset.objects.rebuild()
         end = get_timestamp()
         print(start-end)
         if len(err_msg)>0:
