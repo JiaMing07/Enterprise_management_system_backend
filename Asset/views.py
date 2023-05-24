@@ -1499,10 +1499,10 @@ def asset_statics(req: HttpRequest):
             historys = historys.order_by('-change_time')
             department_tree = subtree_department(user.department)
             for history in historys:
-                value_time.append({
-                    "time": history.change_time,
-                    "value": total_value,
-                })
+                # value_time.append({
+                #     "time": history.change_time,
+                #     "value": total_value,
+                # })
                 prev = history.prev_record
                 next = history.next_record
                 if history.department.id in department_tree:
