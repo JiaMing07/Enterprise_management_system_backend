@@ -1475,53 +1475,26 @@ def asset_statics(req: HttpRequest):
             "in_maintain": in_maintain_number,
             "retired": retired_number,
         }
-        total_value = 0
-        if len(assets)>0:
-            total_value = assets[0].value
-            historys = assets[0].history.all()
+        total_value = assets[0].value
+        historys = assets[0].history.all()
         value_time = []
-        if len(assets)>1:
-            for asset in assets[1:]:
-                total_value += asset.value
-                historys = historys | asset.history.all()
+        for asset in assets[1:]:
+            total_value += asset.value
+            historys = historys | asset.history.all()
         value_time.append({
             "time": get_timestamp(),
             "value": total_value,
         })
-        assets = Asset.objects.filter(entity=entity)
-        historys = None
-        if len(assets) > 0:
-            historys = assets[0].history.all()
-        if len(assets)>1:
-            for asset in assets[1:]:
-                historys = historys | asset.history.all()
-        if historys is not None and len(historys) > 0:
-            historys = historys.order_by('-change_time')
-            department_tree = subtree_department(user.department)
-            for history in historys:
-                # value_time.append({
-                #     "time": history.change_time,
-                #     "value": total_value,
-                # })
-                prev = history.prev_record
-                next = history.next_record
-                if history.department.id in department_tree:
-                    if history.operation != 'add':
-                        if history.operation == 'MOVE':
-                            if prev.department.id not in department_tree:
-                                total_value -= history.value
-                        else:
-                            total_value -= history.change_value
-                    else:
-                        total_value -= history.value
-                else:
-                    if history.operation == 'MOVE' and prev is not None:
-                        if prev.department.id in department_tree:
-                            total_value += history.value
-                value_time.append({
-                    "time": history.change_time,
-                    "value": total_value,
-                })
+        historys = historys.order_by('-change_time')
+        for history in historys:
+            value_time.append({
+                "time": history.change_time,
+                "value": total_value,
+            })
+            if history.operation != 'add':
+                total_value -= history.change_value
+            else:
+                total_value -= history.value
         return_data = {
             "total_number": total_number,
             "department_number": department_number,
