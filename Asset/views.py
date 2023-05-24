@@ -203,7 +203,7 @@ def asset_add(req: HttpRequest):
         if category is None:
             return request_failed(2, "资产类型不存在", status_code=404)
         asset = Asset.objects.filter(entity=entity, name=name).first()
-        if asset:
+        if asset is not None:
             return request_failed(4, "该资产已存在", status_code=403)
         owner = User.objects.filter(entity=entity, department=department, asset_super=True).first()
         if owner is None:
@@ -389,8 +389,8 @@ def asset_add_list(req:HttpRequest):
                 ass_id +=1
                 asset_list.append(asset)
                 num += 1
-                print(asset.name)
-                print(num)
+                # print(asset.name)
+                # print(num)
                 if num % batch_size == 0:
                     print("in")
                     Asset.objects.bulk_create(asset_list, batch_size)
@@ -1663,11 +1663,14 @@ def maintain_page(req: HttpRequest, page: int):
 def maintain_to_use(req: HttpRequest):
     if req.method == 'POST':
         CheckAuthority(req, ["asset_super"])
+        token, decoded = CheckToken(req)
+        user = User.objects.filter(username=decoded['username']).first()
+        entity = user.entity
         body = json.loads(req.body.decode("utf-8"))
         assets_list = get_args(body, ["assets"], ["list"])[0]
         err_msg = ""
         for idx, asset in enumerate(assets_list):
-            ass = Asset.objects.filter(name=asset).first()
+            ass = Asset.objects.filter(entity=entity, name=asset).first()
             if ass is None:
                 err_msg = err_msg + f"第 {idx+1} 条资产（{asset}）不存在；"
                 continue
