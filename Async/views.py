@@ -34,13 +34,11 @@ from .models import AsyncModel
 
 
 async def add_asset(assets_new, username):
+    print("in")
     user = await User.objects.filter(username=username).afirst()
     entity = await Entity.objects.filter(id=user.entity_id).afirst()
     asy = await AsyncModel.objects.acreate(initiator=username, start_time=get_date(), status = "STARTED", body = {'assets_new': assets_new}, entity=entity)
     err_msg=""
-    asset_list = []
-    batch_size = 500
-    time = 0
     for idx, asset_single in enumerate(assets_new):
         try:
             try:
@@ -87,7 +85,6 @@ async def add_asset(assets_new, username):
                     department = await Department.objects.filter(entity=entity, name=department).afirst()
                     if department is None:
                         err_msg = err_msg +'第' +str(idx + 1) +"条资产录入失败，挂账部门不存在" + '；'
-                        continue
             else:
                 parent = await Asset.objects.filter(entity=entity, name=parentName).afirst()
                 if parent is None:
@@ -132,21 +129,11 @@ async def add_asset(assets_new, username):
             owner_name = owner.username
             if number > 1 and category.is_number == False:
                 err_msg = err_msg + '第' +str(idx + 1) +"条资产录入失败，不是数量型资产却有多件" + '；'
-                continue
             asset = Asset(id=id, name=name, description=description, position=position, value=value, owner=owner_name, number=number,
                         category_id=category.id, entity_id=entity.id, department_id=department.id, parent_id=parent.id, image_url=image_url,state=state, life=life, created_time = created_time)
-            asset_list.append(asset)
-            time += 1
-            if time % batch_size == 0:
-                print(2)
-                print(asset_list)
-                await Asset.objects.abulk_create(asset_list, batch_size)
-                asset_list = []
-                time = 0
-            # await asset.asave()
+            await asset.asave()
         except Exception as e:
             continue
-    await Asset.objects.abulk_create(asset_list)
     asy.end_time = get_date()
     asy.status = 'SUCCESS'
     asy.result = 'ok'
@@ -154,6 +141,7 @@ async def add_asset(assets_new, username):
         asy.result = err_msg[:-1]
         asy.status = 'FAILED'
     await asy.asave()
+
 
 
 @CheckRequire
