@@ -34,11 +34,15 @@ from .models import AsyncModel
 
 
 async def add_asset(assets_new, username):
-    print("in")
     user = await User.objects.filter(username=username).afirst()
     entity = await Entity.objects.filter(id=user.entity_id).afirst()
     asy = await AsyncModel.objects.acreate(initiator=username, start_time=get_date(), status = "STARTED", body = {'assets_new': assets_new}, entity=entity)
     err_msg=""
+    asset_list = []
+    batch_size = 500
+    time = 0
+    late = await Asset.objects.all().order_by('id').alast()
+    ass_id = late.id + 1
     for idx, asset_single in enumerate(assets_new):
         try:
             try:
@@ -78,6 +82,7 @@ async def add_asset(assets_new, username):
                     p = await Asset.objects.filter(id=1).afirst()
                     parent = Asset(name=entity.name, owner=user.username, 
                                 category_id=c.id, entity_id=entity.id, department_id=d.id, parent_id=p.id)
+                    ass_id += 1
                     await parent.asave()
                 if department == "":
                     department = Department.objects.filter(id=user.department_id).afirst()
@@ -85,6 +90,7 @@ async def add_asset(assets_new, username):
                     department = await Department.objects.filter(entity=entity, name=department).afirst()
                     if department is None:
                         err_msg = err_msg +'第' +str(idx + 1) +"条资产录入失败，挂账部门不存在" + '；'
+                        continue
             else:
                 parent = await Asset.objects.filter(entity=entity, name=parentName).afirst()
                 if parent is None:
@@ -124,16 +130,28 @@ async def add_asset(assets_new, username):
             if flag == False:
                 err_msg = err_msg +'第' +str(idx + 1) +"条资产录入失败，部门不在管理范围内" + '；'
                 continue
-            late = await Asset.objects.all().order_by('id').alast()
-            id = late.id + 1
             owner_name = owner.username
             if number > 1 and category.is_number == False:
                 err_msg = err_msg + '第' +str(idx + 1) +"条资产录入失败，不是数量型资产却有多件" + '；'
-            asset = Asset(id=id, name=name, description=description, position=position, value=value, owner=owner_name, number=number,
-                        category_id=category.id, entity_id=entity.id, department_id=department.id, parent_id=parent.id, image_url=image_url,state=state, life=life, created_time = created_time)
-            await asset.asave()
+                continue
+            asset = Asset(id=ass_id, name=name, description=description, position=position, value=value, owner=owner_name, number=number,
+                        category_id=category.id, entity_id=entity.id, department_id=department.id, parent_id=parent.id, image_url=image_url,state=state, life=life, created_time = created_time,
+                        lft = 0, rght = 0, tree_id = 0, level = parent.level + 1)
+            ass_id += 1
+            asset_list.append(asset)
+            time += 1
+            if time % batch_size == 0:
+                print(2)
+                await Asset.objects.abulk_create(asset_list, batch_size)
+                asset_list = []
+                time = 0
+            # await asset.asave()
         except Exception as e:
             continue
+    print("1")
+    await Asset.objects.abulk_create(asset_list)
+    await sync_to_async(Asset.objects.rebuild)()
+    print("finish")
     asy.end_time = get_date()
     asy.status = 'SUCCESS'
     asy.result = 'ok'
@@ -141,7 +159,6 @@ async def add_asset(assets_new, username):
         asy.result = err_msg[:-1]
         asy.status = 'FAILED'
     await asy.asave()
-
 
 
 @CheckRequire
