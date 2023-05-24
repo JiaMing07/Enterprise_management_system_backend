@@ -1444,7 +1444,7 @@ def asset_statics(req: HttpRequest):
         departments.append(user.department)
         while (len(departments) != 0):
             department = departments.pop(0)
-            dep_assets = Asset.objects.filter(entity=entity, department=department)
+            dep_assets = Asset.objects.filter(entity=entity, department=department).exclude(name=entity.name)
             department_number.append({
                 "departmentName": department.name,
                 "number": len(dep_assets),

@@ -146,8 +146,6 @@ async def add_asset(assets_new, username):
             # await asset.asave()
         except Exception as e:
             continue
-    print(1)
-    print(asset_list)
     await Asset.objects.abulk_create(asset_list)
     asy.end_time = get_date()
     asy.status = 'SUCCESS'
