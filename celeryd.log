@@ -1,0 +1,998 @@
+ 
+ -------------- celery@DESKTOP-83HRKM3 v5.2.7 (dawn-chorus)
+--- ***** ----- 
+-- ******* ---- Linux-5.10.60.1-microsoft-standard-WSL2-x86_64-with-glibc2.31 2023-05-06 17:19:51
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         eam_backend:0x7f385c7171c0
+- ** ---------- .> transport:   redis://172.17.0.2:6379/0
+- ** ---------- .> results:     
+- *** --- * --- .> concurrency: 8 (prefork)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . eam_backend.celery.debug_task
+
+[2023-05-06 17:19:54,747: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 113 connecting to 172.17.0.2:6379. No route to host..
+Trying again in 2.00 seconds... (1/100)
+
+[2023-05-06 17:19:57,867: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 113 connecting to 172.17.0.2:6379. No route to host..
+Trying again in 4.00 seconds... (2/100)
+
+[2023-05-06 17:20:04,987: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 113 connecting to 172.17.0.2:6379. No route to host..
+Trying again in 6.00 seconds... (3/100)
+
+[2023-05-06 17:20:14,107: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 113 connecting to 172.17.0.2:6379. No route to host..
+Trying again in 8.00 seconds... (4/100)
+
+[2023-05-06 17:20:25,227: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 113 connecting to 172.17.0.2:6379. No route to host..
+Trying again in 10.00 seconds... (5/100)
+
+
+worker: Warm shutdown (MainProcess)
+ 
+ -------------- celery@DESKTOP-83HRKM3 v5.2.7 (dawn-chorus)
+--- ***** ----- 
+-- ******* ---- Linux-5.10.60.1-microsoft-standard-WSL2-x86_64-with-glibc2.31 2023-05-07 16:10:45
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         eam_backend:0x7fc0e8c59340
+- ** ---------- .> transport:   redis://redis-bughunters.app.secoder.net:6379/0
+- ** ---------- .> results:     
+- *** --- * --- .> concurrency: 8 (prefork)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . add_assets
+  . eam_backend.celery.debug_task
+  . test
+
+[2023-05-07 16:12:59,795: ERROR/MainProcess] consumer: Cannot connect to redis://redis-bughunters.app.secoder.net:6379/0: Error 110 connecting to redis-bughunters.app.secoder.net:6379. Connection timed out..
+Trying again in 2.00 seconds... (1/100)
+
+[2023-05-07 16:15:12,916: ERROR/MainProcess] consumer: Cannot connect to redis://redis-bughunters.app.secoder.net:6379/0: Error 110 connecting to redis-bughunters.app.secoder.net:6379. Connection timed out..
+Trying again in 4.00 seconds... (2/100)
+
+
+worker: Warm shutdown (MainProcess)
+ 
+ -------------- celery@DESKTOP-83HRKM3 v5.2.7 (dawn-chorus)
+--- ***** ----- 
+-- ******* ---- Linux-5.10.60.1-microsoft-standard-WSL2-x86_64-with-glibc2.31 2023-05-07 16:53:10
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         eam_backend:0x7fa6a147b730
+- ** ---------- .> transport:   redis://172.17.0.2:6379/0
+- ** ---------- .> results:     
+- *** --- * --- .> concurrency: 8 (prefork)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . add_assets
+  . eam_backend.celery.debug_task
+  . test
+
+[2023-05-07 16:53:10,787: INFO/MainProcess] Connected to redis://172.17.0.2:6379/0
+[2023-05-07 16:53:10,798: INFO/MainProcess] mingle: searching for neighbors
+[2023-05-07 16:53:11,813: INFO/MainProcess] mingle: all alone
+[2023-05-07 16:53:11,825: WARNING/MainProcess] /home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/fixups/django.py:203: UserWarning: Using settings.DEBUG leads to a memory
+            leak, never use this setting in production environments!
+  warnings.warn('''Using settings.DEBUG leads to a memory
+
+[2023-05-07 16:53:11,825: INFO/MainProcess] celery@DESKTOP-83HRKM3 ready.
+[2023-05-07 16:55:53,508: INFO/MainProcess] Task add_assets[9fa725c2-177f-4157-bbd7-0539fa827853] received
+[2023-05-07 16:55:53,828: ERROR/ForkPoolWorker-7] Task add_assets[9fa725c2-177f-4157-bbd7-0539fa827853] raised unexpected: TypeError("check_length() missing 1 required positional argument: 'err_msg'")
+Traceback (most recent call last):
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/app/trace.py", line 451, in trace_task
+    R = retval = fun(*args, **kwargs)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/app/trace.py", line 734, in __protected_call__
+    return self.run(*args, **kwargs)
+  File "/mnt/c/Users/86133/Desktop/eam-backend/eam_backend/async/tasks.py", line 32, in add_assets
+    check_length(name, 0, 50, "assetName")
+TypeError: check_length() missing 1 required positional argument: 'err_msg'
+[2023-05-07 17:20:48,454: INFO/MainProcess] sync with celery@64eb49468d7f
+[2023-05-07 17:21:01,194: INFO/MainProcess] Task test[874fef02-536c-477c-9e3a-acb1036229d4] received
+[2023-05-07 17:21:02,115: WARNING/ForkPoolWorker-7] in
+[2023-05-07 17:21:02,141: WARNING/ForkPoolWorker-7] Alice1
+[2023-05-07 17:21:02,141: WARNING/ForkPoolWorker-7]  
+[2023-05-07 17:21:02,141: WARNING/ForkPoolWorker-7] 874fef02-536c-477c-9e3a-acb1036229d4
+[2023-05-07 17:21:07,244: WARNING/ForkPoolWorker-7] created username Alice1
+[2023-05-07 17:21:07,276: INFO/ForkPoolWorker-7] Task test[874fef02-536c-477c-9e3a-acb1036229d4] succeeded in 5.881338354000036s: 'created username Alice1'
+ 
+ -------------- celery@DESKTOP-83HRKM3 v5.2.7 (dawn-chorus)
+--- ***** ----- 
+-- ******* ---- Linux-5.10.60.1-microsoft-standard-WSL2-x86_64-with-glibc2.31 2023-05-08 10:21:20
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         eam_backend:0x7fa9d82b4160
+- ** ---------- .> transport:   redis://172.17.0.2:6379/0
+- ** ---------- .> results:     
+- *** --- * --- .> concurrency: 8 (prefork)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . add_assets
+  . eam_backend.celery.debug_task
+  . test
+
+[2023-05-08 10:23:31,445: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 2.00 seconds... (1/100)
+
+[2023-05-08 10:25:44,564: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 4.00 seconds... (2/100)
+
+[2023-05-08 10:28:02,803: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 6.00 seconds... (3/100)
+
+[2023-05-08 10:30:21,044: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 8.00 seconds... (4/100)
+
+[2023-05-08 10:32:39,284: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 10.00 seconds... (5/100)
+
+[2023-05-08 10:35:02,643: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 12.00 seconds... (6/100)
+
+[2023-05-08 10:37:26,003: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 14.00 seconds... (7/100)
+
+[2023-05-08 10:39:49,363: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 16.00 seconds... (8/100)
+
+[2023-05-08 10:42:17,844: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 18.00 seconds... (9/100)
+
+[2023-05-08 10:44:46,324: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 20.00 seconds... (10/100)
+
+[2023-05-08 10:47:19,924: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 22.00 seconds... (11/100)
+
+[2023-05-08 10:49:53,525: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 24.00 seconds... (12/100)
+
+[2023-05-08 10:52:27,124: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 26.00 seconds... (13/100)
+
+[2023-05-08 11:25:07,199: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 28.00 seconds... (14/100)
+
+[2023-05-08 11:27:46,803: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 30.00 seconds... (15/100)
+
+[2023-05-08 11:30:30,644: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 32.00 seconds... (16/100)
+
+[2023-05-08 11:33:14,483: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 32.00 seconds... (16/100)
+
+[2023-05-08 11:35:58,356: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 32.00 seconds... (16/100)
+
+[2023-05-08 11:36:30,476: INFO/MainProcess] Connected to redis://172.17.0.2:6379/0
+[2023-05-08 11:36:30,516: INFO/MainProcess] mingle: searching for neighbors
+[2023-05-08 11:36:31,555: INFO/MainProcess] mingle: all alone
+[2023-05-08 11:36:31,618: WARNING/MainProcess] /home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/fixups/django.py:203: UserWarning: Using settings.DEBUG leads to a memory
+            leak, never use this setting in production environments!
+  warnings.warn('''Using settings.DEBUG leads to a memory
+
+[2023-05-08 11:36:31,618: INFO/MainProcess] celery@DESKTOP-83HRKM3 ready.
+[2023-05-08 11:36:36,788: INFO/MainProcess] Task test[c0cdfdb3-f2c9-44bb-b61a-3fe956dbd32a] received
+[2023-05-08 11:36:36,795: INFO/MainProcess] Task test[7a1de787-e743-487a-8fb3-9b71ed034862] received
+[2023-05-08 11:36:36,796: INFO/MainProcess] Task test[9a1da510-0ff4-4240-b7e8-1caad39fedbc] received
+[2023-05-08 11:36:37,014: WARNING/ForkPoolWorker-1] in
+[2023-05-08 11:36:37,017: WARNING/ForkPoolWorker-1] Alice2
+[2023-05-08 11:36:37,017: WARNING/ForkPoolWorker-1]  
+[2023-05-08 11:36:37,017: WARNING/ForkPoolWorker-1] 9a1da510-0ff4-4240-b7e8-1caad39fedbc
+[2023-05-08 11:36:37,047: WARNING/ForkPoolWorker-7] in
+[2023-05-08 11:36:37,049: WARNING/ForkPoolWorker-7] Alice0
+[2023-05-08 11:36:37,049: WARNING/ForkPoolWorker-7]  
+[2023-05-08 11:36:37,049: WARNING/ForkPoolWorker-7] c0cdfdb3-f2c9-44bb-b61a-3fe956dbd32a
+[2023-05-08 11:36:37,071: ERROR/ForkPoolWorker-1] Task test[9a1da510-0ff4-4240-b7e8-1caad39fedbc] raised unexpected: TypeError("AsyncTask() got unexpected keyword arguments: 'task_id'")
+Traceback (most recent call last):
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/app/trace.py", line 451, in trace_task
+    R = retval = fun(*args, **kwargs)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/app/trace.py", line 734, in __protected_call__
+    return self.run(*args, **kwargs)
+  File "/mnt/c/Users/86133/Desktop/eam-backend/eam_backend/async/tasks.py", line 96, in test1
+    # AsyncTask.objects.create(task_id=self.request.id, initiator=username, body=body)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/models/query.py", line 656, in create
+    obj = self.model(**kwargs)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/models/base.py", line 567, in __init__
+    raise TypeError(
+TypeError: AsyncTask() got unexpected keyword arguments: 'task_id'
+[2023-05-08 11:36:37,097: ERROR/ForkPoolWorker-7] Task test[c0cdfdb3-f2c9-44bb-b61a-3fe956dbd32a] raised unexpected: TypeError("AsyncTask() got unexpected keyword arguments: 'task_id'")
+Traceback (most recent call last):
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/app/trace.py", line 451, in trace_task
+    R = retval = fun(*args, **kwargs)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/app/trace.py", line 734, in __protected_call__
+    return self.run(*args, **kwargs)
+  File "/mnt/c/Users/86133/Desktop/eam-backend/eam_backend/async/tasks.py", line 96, in test1
+    # AsyncTask.objects.create(task_id=self.request.id, initiator=username, body=body)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/models/query.py", line 656, in create
+    obj = self.model(**kwargs)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/models/base.py", line 567, in __init__
+    raise TypeError(
+TypeError: AsyncTask() got unexpected keyword arguments: 'task_id'
+[2023-05-08 11:36:37,142: WARNING/ForkPoolWorker-8] in
+[2023-05-08 11:36:37,143: WARNING/ForkPoolWorker-8] Alice1
+[2023-05-08 11:36:37,143: WARNING/ForkPoolWorker-8]  
+[2023-05-08 11:36:37,143: WARNING/ForkPoolWorker-8] 7a1de787-e743-487a-8fb3-9b71ed034862
+[2023-05-08 11:36:37,174: ERROR/ForkPoolWorker-8] Task test[7a1de787-e743-487a-8fb3-9b71ed034862] raised unexpected: TypeError("AsyncTask() got unexpected keyword arguments: 'task_id'")
+Traceback (most recent call last):
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/app/trace.py", line 451, in trace_task
+    R = retval = fun(*args, **kwargs)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/app/trace.py", line 734, in __protected_call__
+    return self.run(*args, **kwargs)
+  File "/mnt/c/Users/86133/Desktop/eam-backend/eam_backend/async/tasks.py", line 96, in test1
+    # AsyncTask.objects.create(task_id=self.request.id, initiator=username, body=body)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/models/query.py", line 656, in create
+    obj = self.model(**kwargs)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/models/base.py", line 567, in __init__
+    raise TypeError(
+TypeError: AsyncTask() got unexpected keyword arguments: 'task_id'
+
+worker: Warm shutdown (MainProcess)
+ 
+ -------------- celery@DESKTOP-83HRKM3 v5.2.7 (dawn-chorus)
+--- ***** ----- 
+-- ******* ---- Linux-5.10.60.1-microsoft-standard-WSL2-x86_64-with-glibc2.31 2023-05-08 11:38:31
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         eam_backend:0x7fa670bf8130
+- ** ---------- .> transport:   redis://172.17.0.2:6379/0
+- ** ---------- .> results:     
+- *** --- * --- .> concurrency: 8 (prefork)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . add_assets
+  . eam_backend.celery.debug_task
+  . test
+
+[2023-05-08 11:38:31,748: INFO/MainProcess] Connected to redis://172.17.0.2:6379/0
+[2023-05-08 11:38:31,751: INFO/MainProcess] mingle: searching for neighbors
+[2023-05-08 11:38:32,758: INFO/MainProcess] mingle: all alone
+[2023-05-08 11:38:32,766: WARNING/MainProcess] /home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/fixups/django.py:203: UserWarning: Using settings.DEBUG leads to a memory
+            leak, never use this setting in production environments!
+  warnings.warn('''Using settings.DEBUG leads to a memory
+
+[2023-05-08 11:38:32,767: INFO/MainProcess] celery@DESKTOP-83HRKM3 ready.
+[2023-05-08 11:38:38,735: INFO/MainProcess] Task test[7855569d-984e-4899-b9d2-d5008c057661] received
+[2023-05-08 11:38:38,737: INFO/MainProcess] Task test[0f71f0ba-1229-46a2-a5ea-2a7ed73a1f27] received
+[2023-05-08 11:38:38,739: INFO/MainProcess] Task test[f82d3074-7adc-41c4-81e4-60a91b5e35cd] received
+[2023-05-08 11:38:38,795: WARNING/ForkPoolWorker-7] in
+[2023-05-08 11:38:38,795: WARNING/ForkPoolWorker-7] Alice0
+[2023-05-08 11:38:38,795: WARNING/ForkPoolWorker-7]  
+[2023-05-08 11:38:38,795: WARNING/ForkPoolWorker-7] 7855569d-984e-4899-b9d2-d5008c057661
+[2023-05-08 11:38:38,818: WARNING/ForkPoolWorker-8] in
+[2023-05-08 11:38:38,818: WARNING/ForkPoolWorker-8] Alice1
+[2023-05-08 11:38:38,818: WARNING/ForkPoolWorker-8]  
+[2023-05-08 11:38:38,818: WARNING/ForkPoolWorker-8] 0f71f0ba-1229-46a2-a5ea-2a7ed73a1f27
+[2023-05-08 11:38:38,854: WARNING/ForkPoolWorker-1] in
+[2023-05-08 11:38:38,854: WARNING/ForkPoolWorker-1] Alice2
+[2023-05-08 11:38:38,854: WARNING/ForkPoolWorker-1]  
+[2023-05-08 11:38:38,854: WARNING/ForkPoolWorker-1] f82d3074-7adc-41c4-81e4-60a91b5e35cd
+[2023-05-08 11:38:43,801: WARNING/ForkPoolWorker-7] created username Alice0
+[2023-05-08 11:38:43,823: WARNING/ForkPoolWorker-8] created username Alice1
+[2023-05-08 11:38:43,825: INFO/ForkPoolWorker-7] Task test[7855569d-984e-4899-b9d2-d5008c057661] succeeded in 5.0888546830010455s: 'created username Alice0'
+[2023-05-08 11:38:43,852: INFO/ForkPoolWorker-8] Task test[0f71f0ba-1229-46a2-a5ea-2a7ed73a1f27] succeeded in 5.1146190899999056s: 'created username Alice1'
+[2023-05-08 11:38:43,860: WARNING/ForkPoolWorker-1] created username Alice2
+[2023-05-08 11:38:43,880: INFO/ForkPoolWorker-1] Task test[f82d3074-7adc-41c4-81e4-60a91b5e35cd] succeeded in 5.139432538000619s: 'created username Alice2'
+
+worker: Warm shutdown (MainProcess)
+ 
+ -------------- celery@DESKTOP-83HRKM3 v5.2.7 (dawn-chorus)
+--- ***** ----- 
+-- ******* ---- Linux-5.10.60.1-microsoft-standard-WSL2-x86_64-with-glibc2.31 2023-05-08 11:39:20
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         eam_backend:0x7f006ec87130
+- ** ---------- .> transport:   redis://172.17.0.2:6379/0
+- ** ---------- .> results:     
+- *** --- * --- .> concurrency: 8 (prefork)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . add_assets
+  . eam_backend.celery.debug_task
+  . test
+
+[2023-05-08 11:39:20,671: INFO/MainProcess] Connected to redis://172.17.0.2:6379/0
+[2023-05-08 11:39:20,675: INFO/MainProcess] mingle: searching for neighbors
+[2023-05-08 11:39:21,682: INFO/MainProcess] mingle: all alone
+[2023-05-08 11:39:21,694: WARNING/MainProcess] /home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/fixups/django.py:203: UserWarning: Using settings.DEBUG leads to a memory
+            leak, never use this setting in production environments!
+  warnings.warn('''Using settings.DEBUG leads to a memory
+
+[2023-05-08 11:39:21,694: INFO/MainProcess] celery@DESKTOP-83HRKM3 ready.
+[2023-05-08 11:39:24,300: INFO/MainProcess] Task test[3f3edfc2-c587-4f2e-8232-2d8e0f14ee8f] received
+[2023-05-08 11:39:24,301: INFO/MainProcess] Task test[1be12e01-a9e2-4622-a3c6-f1a4ebd55ac1] received
+[2023-05-08 11:39:24,303: INFO/MainProcess] Task test[13415d71-99b7-4d60-8c58-4ed6fe6f6f01] received
+[2023-05-08 11:39:24,352: WARNING/ForkPoolWorker-7] in
+[2023-05-08 11:39:24,353: WARNING/ForkPoolWorker-7] Alice0
+[2023-05-08 11:39:24,353: WARNING/ForkPoolWorker-7]  
+[2023-05-08 11:39:24,353: WARNING/ForkPoolWorker-7] 3f3edfc2-c587-4f2e-8232-2d8e0f14ee8f
+[2023-05-08 11:39:24,376: WARNING/ForkPoolWorker-1] in
+[2023-05-08 11:39:24,376: WARNING/ForkPoolWorker-1] Alice2
+[2023-05-08 11:39:24,376: WARNING/ForkPoolWorker-1]  
+[2023-05-08 11:39:24,376: WARNING/ForkPoolWorker-1] 13415d71-99b7-4d60-8c58-4ed6fe6f6f01
+[2023-05-08 11:39:24,415: WARNING/ForkPoolWorker-8] in
+[2023-05-08 11:39:24,415: WARNING/ForkPoolWorker-8] Alice1
+[2023-05-08 11:39:24,415: WARNING/ForkPoolWorker-8]  
+[2023-05-08 11:39:24,415: WARNING/ForkPoolWorker-8] 1be12e01-a9e2-4622-a3c6-f1a4ebd55ac1
+[2023-05-08 11:39:29,358: WARNING/ForkPoolWorker-7] created username Alice0
+[2023-05-08 11:39:29,382: WARNING/ForkPoolWorker-1] created username Alice2
+[2023-05-08 11:39:29,385: INFO/ForkPoolWorker-7] Task test[3f3edfc2-c587-4f2e-8232-2d8e0f14ee8f] succeeded in 5.083886833001088s: 'created username Alice0'
+[2023-05-08 11:39:29,400: INFO/ForkPoolWorker-1] Task test[13415d71-99b7-4d60-8c58-4ed6fe6f6f01] succeeded in 5.094579229998999s: 'created username Alice2'
+[2023-05-08 11:39:29,421: WARNING/ForkPoolWorker-8] created username Alice1
+[2023-05-08 11:39:29,444: INFO/ForkPoolWorker-8] Task test[1be12e01-a9e2-4622-a3c6-f1a4ebd55ac1] succeeded in 5.1425942790010595s: 'created username Alice1'
+[2023-05-08 11:41:13,126: INFO/MainProcess] Task test[90cdaac9-adc5-4ef4-997c-2d8311350292] received
+[2023-05-08 11:41:13,127: INFO/MainProcess] Task test[0d72c4e9-594b-407b-98e3-fa1acde6e8c8] received
+[2023-05-08 11:41:13,130: INFO/MainProcess] Task test[09013bf6-5f5d-4059-846f-5d2863cd69b5] received
+[2023-05-08 11:41:13,181: WARNING/ForkPoolWorker-7] in
+[2023-05-08 11:41:13,182: WARNING/ForkPoolWorker-7] Alice0
+[2023-05-08 11:41:13,182: WARNING/ForkPoolWorker-7]  
+[2023-05-08 11:41:13,182: WARNING/ForkPoolWorker-7] 90cdaac9-adc5-4ef4-997c-2d8311350292
+[2023-05-08 11:41:13,221: WARNING/ForkPoolWorker-8] in
+[2023-05-08 11:41:13,221: WARNING/ForkPoolWorker-8] Alice1
+[2023-05-08 11:41:13,221: WARNING/ForkPoolWorker-8]  
+[2023-05-08 11:41:13,221: WARNING/ForkPoolWorker-8] 0d72c4e9-594b-407b-98e3-fa1acde6e8c8
+[2023-05-08 11:41:13,274: WARNING/ForkPoolWorker-1] in
+[2023-05-08 11:41:13,275: WARNING/ForkPoolWorker-1] Alice2
+[2023-05-08 11:41:13,275: WARNING/ForkPoolWorker-1]  
+[2023-05-08 11:41:13,275: WARNING/ForkPoolWorker-1] 09013bf6-5f5d-4059-846f-5d2863cd69b5
+[2023-05-08 11:41:18,187: WARNING/ForkPoolWorker-7] created username Alice0
+[2023-05-08 11:41:18,212: INFO/ForkPoolWorker-7] Task test[90cdaac9-adc5-4ef4-997c-2d8311350292] succeeded in 5.085290781000367s: 'created username Alice0'
+[2023-05-08 11:41:18,227: WARNING/ForkPoolWorker-8] created username Alice1
+[2023-05-08 11:41:18,245: INFO/ForkPoolWorker-8] Task test[0d72c4e9-594b-407b-98e3-fa1acde6e8c8] succeeded in 5.116407131999949s: 'created username Alice1'
+[2023-05-08 11:41:18,277: WARNING/ForkPoolWorker-1] created username Alice2
+[2023-05-08 11:41:18,301: INFO/ForkPoolWorker-1] Task test[09013bf6-5f5d-4059-846f-5d2863cd69b5] succeeded in 5.168683399999281s: 'created username Alice2'
+[2023-05-08 11:44:41,449: WARNING/MainProcess] consumer: Connection to broker lost. Trying to re-establish the connection...
+Traceback (most recent call last):
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/worker/consumer/consumer.py", line 332, in start
+    blueprint.start(self)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/bootsteps.py", line 116, in start
+    step.start(parent)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/worker/consumer/consumer.py", line 628, in start
+    c.loop(*c.loop_args())
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/worker/loops.py", line 97, in asynloop
+    next(loop)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/kombu/asynchronous/hub.py", line 362, in create_loop
+    cb(*cbargs)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/kombu/transport/redis.py", line 1326, in on_readable
+    self.cycle.on_readable(fileno)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/kombu/transport/redis.py", line 562, in on_readable
+    chan.handlers[type]()
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/kombu/transport/redis.py", line 906, in _receive
+    ret.append(self._receive_one(c))
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/kombu/transport/redis.py", line 916, in _receive_one
+    response = c.parse_response()
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/redis/client.py", line 1531, in parse_response
+    response = self._execute(conn, try_read)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/redis/client.py", line 1507, in _execute
+    return conn.retry.call_with_retry(
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/redis/retry.py", line 49, in call_with_retry
+    fail(error)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/redis/client.py", line 1509, in <lambda>
+    lambda error: self._disconnect_raise_connect(conn, error),
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/redis/client.py", line 1496, in _disconnect_raise_connect
+    raise error
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/redis/retry.py", line 46, in call_with_retry
+    return do()
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/redis/client.py", line 1508, in <lambda>
+    lambda: command(*args, **kwargs),
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/redis/client.py", line 1529, in try_read
+    return conn.read_response()
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/redis/connection.py", line 865, in read_response
+    response = self._parser.read_response(disable_decoding=disable_decoding)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/redis/connection.py", line 346, in read_response
+    result = self._read_response(disable_decoding=disable_decoding)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/redis/connection.py", line 356, in _read_response
+    raw = self._buffer.readline()
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/redis/connection.py", line 259, in readline
+    self._read_from_socket()
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/redis/connection.py", line 212, in _read_from_socket
+    raise ConnectionError(SERVER_CLOSED_CONNECTION_ERROR)
+redis.exceptions.ConnectionError: Connection closed by server.
+[2023-05-08 11:44:41,456: WARNING/MainProcess] /home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/worker/consumer/consumer.py:367: CPendingDeprecationWarning: 
+In Celery 5.1 we introduced an optional breaking change which
+on connection loss cancels all currently executed tasks with late acknowledgement enabled.
+These tasks cannot be acknowledged as the connection is gone, and the tasks are automatically redelivered back to the queue.
+You can enable this behavior using the worker_cancel_long_running_tasks_on_connection_loss setting.
+In Celery 5.1 it is set to False by default. The setting will be set to True by default in Celery 6.0.
+
+  warnings.warn(CANCEL_TASKS_BY_DEFAULT, CPendingDeprecationWarning)
+
+[2023-05-08 11:44:41,458: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 111 connecting to 172.17.0.2:6379. Connection refused..
+Trying again in 2.00 seconds... (1/100)
+
+[2023-05-08 11:44:43,463: INFO/MainProcess] Connected to redis://172.17.0.2:6379/0
+[2023-05-08 11:44:43,466: INFO/MainProcess] mingle: searching for neighbors
+[2023-05-08 11:44:44,471: INFO/MainProcess] mingle: all alone
+[2023-05-08 11:49:42,305: INFO/MainProcess] sync with celery@055f80e2fceb
+[2023-05-08 11:49:44,762: INFO/MainProcess] Task test[f29de853-ee88-41ac-ad64-00f15a2be874] received
+[2023-05-08 11:49:44,926: WARNING/ForkPoolWorker-7] in
+[2023-05-08 11:49:44,927: WARNING/ForkPoolWorker-7] Alice0
+[2023-05-08 11:49:44,927: WARNING/ForkPoolWorker-7]  
+[2023-05-08 11:49:44,928: WARNING/ForkPoolWorker-7] f29de853-ee88-41ac-ad64-00f15a2be874
+[2023-05-08 11:49:49,933: WARNING/ForkPoolWorker-7] created username Alice0
+[2023-05-08 11:49:49,963: INFO/ForkPoolWorker-7] Task test[f29de853-ee88-41ac-ad64-00f15a2be874] succeeded in 5.177936009000405s: 'created username Alice0'
+[2023-05-08 11:52:24,601: INFO/MainProcess] missed heartbeat from celery@055f80e2fceb
+[2023-05-08 13:24:28,777: WARNING/MainProcess] consumer: Connection to broker lost. Trying to re-establish the connection...
+Traceback (most recent call last):
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/worker/consumer/consumer.py", line 332, in start
+    blueprint.start(self)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/bootsteps.py", line 116, in start
+    step.start(parent)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/worker/consumer/consumer.py", line 628, in start
+    c.loop(*c.loop_args())
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/worker/loops.py", line 97, in asynloop
+    next(loop)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/kombu/asynchronous/hub.py", line 362, in create_loop
+    cb(*cbargs)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/kombu/transport/redis.py", line 1326, in on_readable
+    self.cycle.on_readable(fileno)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/kombu/transport/redis.py", line 562, in on_readable
+    chan.handlers[type]()
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/kombu/transport/redis.py", line 906, in _receive
+    ret.append(self._receive_one(c))
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/kombu/transport/redis.py", line 916, in _receive_one
+    response = c.parse_response()
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/redis/client.py", line 1531, in parse_response
+    response = self._execute(conn, try_read)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/redis/client.py", line 1507, in _execute
+    return conn.retry.call_with_retry(
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/redis/retry.py", line 49, in call_with_retry
+    fail(error)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/redis/client.py", line 1509, in <lambda>
+    lambda error: self._disconnect_raise_connect(conn, error),
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/redis/client.py", line 1496, in _disconnect_raise_connect
+    raise error
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/redis/retry.py", line 46, in call_with_retry
+    return do()
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/redis/client.py", line 1508, in <lambda>
+    lambda: command(*args, **kwargs),
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/redis/client.py", line 1529, in try_read
+    return conn.read_response()
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/redis/connection.py", line 865, in read_response
+    response = self._parser.read_response(disable_decoding=disable_decoding)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/redis/connection.py", line 346, in read_response
+    result = self._read_response(disable_decoding=disable_decoding)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/redis/connection.py", line 356, in _read_response
+    raw = self._buffer.readline()
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/redis/connection.py", line 259, in readline
+    self._read_from_socket()
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/redis/connection.py", line 212, in _read_from_socket
+    raise ConnectionError(SERVER_CLOSED_CONNECTION_ERROR)
+redis.exceptions.ConnectionError: Connection closed by server.
+[2023-05-08 13:24:28,929: WARNING/MainProcess] /home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/worker/consumer/consumer.py:367: CPendingDeprecationWarning: 
+In Celery 5.1 we introduced an optional breaking change which
+on connection loss cancels all currently executed tasks with late acknowledgement enabled.
+These tasks cannot be acknowledged as the connection is gone, and the tasks are automatically redelivered back to the queue.
+You can enable this behavior using the worker_cancel_long_running_tasks_on_connection_loss setting.
+In Celery 5.1 it is set to False by default. The setting will be set to True by default in Celery 6.0.
+
+  warnings.warn(CANCEL_TASKS_BY_DEFAULT, CPendingDeprecationWarning)
+
+[2023-05-08 13:24:29,067: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 111 connecting to 172.17.0.2:6379. Connection refused..
+Trying again in 2.00 seconds... (1/100)
+
+[2023-05-08 13:24:34,246: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 113 connecting to 172.17.0.2:6379. No route to host..
+Trying again in 4.00 seconds... (2/100)
+
+[2023-05-08 13:24:41,376: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 113 connecting to 172.17.0.2:6379. No route to host..
+Trying again in 6.00 seconds... (3/100)
+
+[2023-05-08 13:24:50,484: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 113 connecting to 172.17.0.2:6379. No route to host..
+Trying again in 8.00 seconds... (4/100)
+
+[2023-05-08 13:25:01,621: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 113 connecting to 172.17.0.2:6379. No route to host..
+Trying again in 10.00 seconds... (5/100)
+
+[2023-05-08 13:25:15,456: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 113 connecting to 172.17.0.2:6379. No route to host..
+Trying again in 12.00 seconds... (6/100)
+
+[2023-05-08 13:25:27,578: INFO/MainProcess] Connected to redis://172.17.0.2:6379/0
+[2023-05-08 13:25:27,621: INFO/MainProcess] mingle: searching for neighbors
+[2023-05-08 13:25:28,751: INFO/MainProcess] mingle: all alone
+[2023-05-08 13:57:24,823: INFO/MainProcess] Task test[8893a4e9-d55a-4d9c-96e2-1d1e62779209] received
+[2023-05-08 13:57:24,915: INFO/MainProcess] Task test[b511b9da-98ab-4337-accc-165ca994cdb4] received
+[2023-05-08 13:57:24,925: INFO/MainProcess] Task test[f0a1fe53-894d-443d-82e9-cf8325e9ea08] received
+[2023-05-08 13:57:25,291: WARNING/ForkPoolWorker-7] in
+[2023-05-08 13:57:25,300: WARNING/ForkPoolWorker-7] Alice0
+[2023-05-08 13:57:25,300: WARNING/ForkPoolWorker-7]  
+[2023-05-08 13:57:25,300: WARNING/ForkPoolWorker-7] 8893a4e9-d55a-4d9c-96e2-1d1e62779209
+[2023-05-08 13:57:25,343: WARNING/ForkPoolWorker-8] in
+[2023-05-08 13:57:25,347: WARNING/ForkPoolWorker-8] Alice1
+[2023-05-08 13:57:25,347: WARNING/ForkPoolWorker-8]  
+[2023-05-08 13:57:25,347: WARNING/ForkPoolWorker-8] b511b9da-98ab-4337-accc-165ca994cdb4
+[2023-05-08 13:57:25,399: WARNING/ForkPoolWorker-1] in
+[2023-05-08 13:57:25,420: WARNING/ForkPoolWorker-1] Alice2
+[2023-05-08 13:57:25,420: WARNING/ForkPoolWorker-1]  
+[2023-05-08 13:57:25,420: WARNING/ForkPoolWorker-1] f0a1fe53-894d-443d-82e9-cf8325e9ea08
+[2023-05-08 13:57:30,306: WARNING/ForkPoolWorker-7] created username Alice0
+[2023-05-08 13:57:30,348: INFO/ForkPoolWorker-7] Task test[8893a4e9-d55a-4d9c-96e2-1d1e62779209] succeeded in 5.319209054003295s: 'created username Alice0'
+[2023-05-08 13:57:30,353: WARNING/ForkPoolWorker-8] created username Alice1
+[2023-05-08 13:57:30,386: INFO/ForkPoolWorker-8] Task test[b511b9da-98ab-4337-accc-165ca994cdb4] succeeded in 5.359910086001037s: 'created username Alice1'
+[2023-05-08 13:57:30,426: WARNING/ForkPoolWorker-1] created username Alice2
+[2023-05-08 13:57:30,459: INFO/ForkPoolWorker-1] Task test[f0a1fe53-894d-443d-82e9-cf8325e9ea08] succeeded in 5.36650451999958s: 'created username Alice2'
+[2023-05-08 14:32:03,399: INFO/MainProcess] sync with celery@aa200edc536c
+[2023-05-08 14:32:13,541: INFO/MainProcess] Task test[2913b93c-9f12-469b-abaf-cae461dda8e0] received
+[2023-05-08 14:32:14,102: WARNING/ForkPoolWorker-7] /home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/app/trace.py:660: RuntimeWarning: Exception raised outside body: OperationalError('no such table: django_celery_results_taskresult'):
+Traceback (most recent call last):
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/backends/utils.py", line 89, in _execute
+    return self.cursor.execute(sql, params)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/backends/sqlite3/base.py", line 328, in execute
+    return super().execute(query, params)
+sqlite3.OperationalError: no such table: django_celery_results_taskresult
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/app/trace.py", line 441, in trace_task
+    task.backend.store_result(
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/backends/base.py", line 528, in store_result
+    self._store_result(task_id, result, state, traceback,
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django_celery_results/backends/database.py", line 147, in _store_result
+    self.TaskModel._default_manager.store_result(**task_props)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django_celery_results/managers.py", line 42, in _inner
+    return fun(*args, **kwargs)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django_celery_results/managers.py", line 164, in store_result
+    obj, created = self.using(using).get_or_create(task_id=task_id,
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/models/query.py", line 916, in get_or_create
+    return self.get(**kwargs), False
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/models/query.py", line 633, in get
+    num = len(clone)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/models/query.py", line 380, in __len__
+    self._fetch_all()
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/models/query.py", line 1881, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/models/query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/models/sql/compiler.py", line 1560, in execute_sql
+    cursor.execute(sql, params)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/backends/utils.py", line 102, in execute
+    return super().execute(sql, params)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/backends/utils.py", line 67, in execute
+    return self._execute_with_wrappers(
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/backends/utils.py", line 80, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/backends/utils.py", line 89, in _execute
+    return self.cursor.execute(sql, params)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/backends/utils.py", line 89, in _execute
+    return self.cursor.execute(sql, params)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/backends/sqlite3/base.py", line 328, in execute
+    return super().execute(query, params)
+django.db.utils.OperationalError: no such table: django_celery_results_taskresult
+
+  warn(RuntimeWarning(
+
+[2023-05-08 14:32:14,909: ERROR/MainProcess] Pool callback raised exception: OperationalError('no such table: django_celery_results_taskresult')
+Traceback (most recent call last):
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/backends/utils.py", line 89, in _execute
+    return self.cursor.execute(sql, params)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/backends/sqlite3/base.py", line 328, in execute
+    return super().execute(query, params)
+sqlite3.OperationalError: no such table: django_celery_results_taskresult
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/billiard/pool.py", line 1796, in safe_apply_callback
+    fun(*args, **kwargs)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/worker/request.py", line 577, in on_failure
+    self.task.backend.mark_as_failure(
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/backends/base.py", line 172, in mark_as_failure
+    self.store_result(task_id, exc, state,
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/backends/base.py", line 528, in store_result
+    self._store_result(task_id, result, state, traceback,
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django_celery_results/backends/database.py", line 147, in _store_result
+    self.TaskModel._default_manager.store_result(**task_props)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django_celery_results/managers.py", line 42, in _inner
+    return fun(*args, **kwargs)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django_celery_results/managers.py", line 164, in store_result
+    obj, created = self.using(using).get_or_create(task_id=task_id,
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/models/query.py", line 916, in get_or_create
+    return self.get(**kwargs), False
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/models/query.py", line 633, in get
+    num = len(clone)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/models/query.py", line 380, in __len__
+    self._fetch_all()
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/models/query.py", line 1881, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/models/query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/models/sql/compiler.py", line 1560, in execute_sql
+    cursor.execute(sql, params)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/backends/utils.py", line 102, in execute
+    return super().execute(sql, params)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/backends/utils.py", line 67, in execute
+    return self._execute_with_wrappers(
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/backends/utils.py", line 80, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/backends/utils.py", line 89, in _execute
+    return self.cursor.execute(sql, params)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/backends/utils.py", line 89, in _execute
+    return self.cursor.execute(sql, params)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/db/backends/sqlite3/base.py", line 328, in execute
+    return super().execute(query, params)
+django.db.utils.OperationalError: no such table: django_celery_results_taskresult
+[2023-05-08 15:14:25,732: INFO/MainProcess] missed heartbeat from celery@aa200edc536c
+ 
+ -------------- celery@DESKTOP-83HRKM3 v5.2.7 (dawn-chorus)
+--- ***** ----- 
+-- ******* ---- Linux-5.10.60.1-microsoft-standard-WSL2-x86_64-with-glibc2.31 2023-05-08 16:41:52
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         eam_backend:0x7fe38959e790
+- ** ---------- .> transport:   redis://172.17.0.2:6379/0
+- ** ---------- .> results:     
+- *** --- * --- .> concurrency: 8 (prefork)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . add_assets
+  . eam_backend.celery.debug_task
+  . test
+
+
+worker: Warm shutdown (MainProcess)
+ 
+ -------------- celery@DESKTOP-83HRKM3 v5.2.7 (dawn-chorus)
+--- ***** ----- 
+-- ******* ---- Linux-5.10.60.1-microsoft-standard-WSL2-x86_64-with-glibc2.31 2023-05-08 16:43:01
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         eam_backend:0x7f0ef43d3790
+- ** ---------- .> transport:   redis://172.17.0.2:6379/0
+- ** ---------- .> results:     
+- *** --- * --- .> concurrency: 8 (prefork)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . add_assets
+  . eam_backend.celery.debug_task
+  . test
+
+[2023-05-08 16:43:38,250: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 113 connecting to 172.17.0.2:6379. No route to host..
+Trying again in 2.00 seconds... (1/100)
+
+[2023-05-08 16:43:43,370: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 113 connecting to 172.17.0.2:6379. No route to host..
+Trying again in 4.00 seconds... (2/100)
+
+[2023-05-08 16:43:50,490: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 113 connecting to 172.17.0.2:6379. No route to host..
+Trying again in 6.00 seconds... (3/100)
+
+[2023-05-08 16:43:59,610: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 113 connecting to 172.17.0.2:6379. No route to host..
+Trying again in 8.00 seconds... (4/100)
+
+[2023-05-08 16:44:07,627: INFO/MainProcess] Connected to redis://172.17.0.2:6379/0
+[2023-05-08 16:44:07,634: INFO/MainProcess] mingle: searching for neighbors
+[2023-05-08 16:44:08,646: INFO/MainProcess] mingle: all alone
+[2023-05-08 16:44:08,669: WARNING/MainProcess] /home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/fixups/django.py:203: UserWarning: Using settings.DEBUG leads to a memory
+            leak, never use this setting in production environments!
+  warnings.warn('''Using settings.DEBUG leads to a memory
+
+[2023-05-08 16:44:08,669: INFO/MainProcess] celery@DESKTOP-83HRKM3 ready.
+[2023-05-08 16:44:09,304: INFO/MainProcess] Task test[e27d5889-a53d-4b47-a720-fc409b4fca01] received
+[2023-05-08 16:44:09,306: INFO/MainProcess] Task test[851e53ec-795b-41bf-adfb-3819fa44acbc] received
+[2023-05-08 16:44:09,309: INFO/MainProcess] Task test[679fd4ac-59b8-4e12-be7b-03af438e3dd3] received
+[2023-05-08 16:44:09,424: WARNING/ForkPoolWorker-7] in
+[2023-05-08 16:44:09,425: WARNING/ForkPoolWorker-7] Alice0
+[2023-05-08 16:44:09,425: WARNING/ForkPoolWorker-7]  
+[2023-05-08 16:44:09,425: WARNING/ForkPoolWorker-7] e27d5889-a53d-4b47-a720-fc409b4fca01
+[2023-05-08 16:44:09,498: WARNING/ForkPoolWorker-8] in
+[2023-05-08 16:44:09,499: WARNING/ForkPoolWorker-8] Alice1
+[2023-05-08 16:44:09,499: WARNING/ForkPoolWorker-8]  
+[2023-05-08 16:44:09,499: WARNING/ForkPoolWorker-8] 851e53ec-795b-41bf-adfb-3819fa44acbc
+[2023-05-08 16:44:09,590: WARNING/ForkPoolWorker-1] in
+[2023-05-08 16:44:09,591: WARNING/ForkPoolWorker-1] Alice2
+[2023-05-08 16:44:09,591: WARNING/ForkPoolWorker-1]  
+[2023-05-08 16:44:09,591: WARNING/ForkPoolWorker-1] 679fd4ac-59b8-4e12-be7b-03af438e3dd3
+[2023-05-08 16:44:14,460: WARNING/ForkPoolWorker-7] created username Alice0
+[2023-05-08 16:44:14,513: INFO/ForkPoolWorker-7] Task test[e27d5889-a53d-4b47-a720-fc409b4fca01] succeeded in 5.2046808959999s: 'created username Alice0'
+[2023-05-08 16:44:14,529: WARNING/ForkPoolWorker-8] created username Alice1
+[2023-05-08 16:44:14,585: INFO/ForkPoolWorker-8] Task test[851e53ec-795b-41bf-adfb-3819fa44acbc] succeeded in 5.264360305000082s: 'created username Alice1'
+[2023-05-08 16:44:14,643: WARNING/ForkPoolWorker-1] created username Alice2
+[2023-05-08 16:44:14,683: INFO/ForkPoolWorker-1] Task test[679fd4ac-59b8-4e12-be7b-03af438e3dd3] succeeded in 5.370844472000044s: 'created username Alice2'
+[2023-05-08 17:03:09,798: INFO/MainProcess] Task add_assets[fccb9576-912c-48b3-a042-bff5891c8841] received
+[2023-05-08 17:03:10,420: WARNING/ForkPoolWorker-7] <TreeQuerySet [<Asset: Asset object (1)>, <Asset: Asset object (6)>, <Asset: Asset object (7)>, <Asset: Asset object (2)>, <Asset: Asset object (3)>, <Asset: Asset object (4)>, <Asset: Asset object (5)>]>
+[2023-05-08 17:03:10,481: INFO/ForkPoolWorker-7] Task add_assets[fccb9576-912c-48b3-a042-bff5891c8841] succeeded in 0.6457029240000338s: '第2条资产录入失败，父资产不存在；'
+[2023-05-08 17:22:43,596: INFO/MainProcess] Task add_assets[8d7c4a8a-97b1-4614-a26e-78368561cdc0] received
+[2023-05-08 17:22:45,343: ERROR/ForkPoolWorker-7] Task add_assets[8d7c4a8a-97b1-4614-a26e-78368561cdc0] raised unexpected: AttributeError("'str' object has no attribute 'keys'")
+Traceback (most recent call last):
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/app/trace.py", line 451, in trace_task
+    R = retval = fun(*args, **kwargs)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/app/trace.py", line 734, in __protected_call__
+    return self.run(*args, **kwargs)
+  File "/mnt/c/Users/86133/Desktop/eam-backend/eam_backend/async/tasks.py", line 24, in add_assets
+    name, parentName, description, position, value, department, number, categoryName, image_url = get_args(
+  File "/mnt/c/Users/86133/Desktop/eam-backend/eam_backend/utils/utils_getbody.py", line 11, in get_args
+    value = require(body, args[i], type = types[i], err_msg=err_message)
+  File "/mnt/c/Users/86133/Desktop/eam-backend/eam_backend/utils/utils_require.py", line 24, in require
+    if key not in body.keys():
+AttributeError: 'str' object has no attribute 'keys'
+ 
+ -------------- celery@DESKTOP-83HRKM3 v5.2.7 (dawn-chorus)
+--- ***** ----- 
+-- ******* ---- Linux-5.10.60.1-microsoft-standard-WSL2-x86_64-with-glibc2.31 2023-05-09 02:26:30
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         eam_backend:0x7f7ea246f190
+- ** ---------- .> transport:   redis://172.17.0.2:6379/0
+- ** ---------- .> results:     
+- *** --- * --- .> concurrency: 8 (prefork)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . add_assets
+  . eam_backend.celery.debug_task
+  . test
+
+[2023-05-09 02:28:42,860: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 2.00 seconds... (1/100)
+
+[2023-05-09 02:30:55,980: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 4.00 seconds... (2/100)
+
+[2023-05-09 02:33:14,220: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 6.00 seconds... (3/100)
+
+[2023-05-09 02:35:32,460: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 8.00 seconds... (4/100)
+
+[2023-05-09 02:37:50,700: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 10.00 seconds... (5/100)
+
+[2023-05-09 02:40:14,060: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 12.00 seconds... (6/100)
+
+[2023-05-09 02:42:37,419: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 14.00 seconds... (7/100)
+
+[2023-05-09 02:45:00,779: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 16.00 seconds... (8/100)
+
+[2023-05-09 02:47:29,259: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 18.00 seconds... (9/100)
+
+[2023-05-09 02:49:57,739: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 20.00 seconds... (10/100)
+
+[2023-05-09 02:52:31,340: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 22.00 seconds... (11/100)
+
+[2023-05-09 02:55:04,940: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 24.00 seconds... (12/100)
+
+[2023-05-09 02:57:38,540: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 26.00 seconds... (13/100)
+
+[2023-05-09 03:00:17,260: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 28.00 seconds... (14/100)
+
+[2023-05-09 03:02:55,980: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 30.00 seconds... (15/100)
+
+[2023-05-09 03:05:39,820: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 32.00 seconds... (16/100)
+
+[2023-05-09 03:08:23,659: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 32.00 seconds... (16/100)
+
+[2023-05-09 03:11:07,500: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 32.00 seconds... (16/100)
+
+[2023-05-09 03:13:51,340: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 32.00 seconds... (16/100)
+
+[2023-05-09 03:16:35,181: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 32.00 seconds... (16/100)
+
+[2023-05-09 03:19:19,021: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 32.00 seconds... (16/100)
+
+[2023-05-09 03:22:02,860: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 32.00 seconds... (16/100)
+
+[2023-05-09 03:24:46,701: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 32.00 seconds... (16/100)
+
+[2023-05-09 03:27:30,540: ERROR/MainProcess] consumer: Cannot connect to redis://172.17.0.2:6379/0: Error 110 connecting to 172.17.0.2:6379. Connection timed out..
+Trying again in 32.00 seconds... (16/100)
+
+Usage: celery [OPTIONS] COMMAND [ARGS]...
+Try 'celery --help' for help.
+
+Error: Invalid value for '-A' / '--app': 
+Unable to load celery application.
+While trying to load the module eam_backend the following error occurred:
+Traceback (most recent call last):
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/bin/celery.py", line 57, in convert
+    return find_app(value)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/app/utils.py", line 384, in find_app
+    sym = symbol_by_name(app, imp=imp)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/kombu/utils/imports.py", line 56, in symbol_by_name
+    module = imp(module_name, package=package, **kwargs)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/utils/imports.py", line 105, in import_from_cwd
+    return imp(module, package=package)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1030, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1007, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 986, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 680, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 850, in exec_module
+  File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+  File "/mnt/c/Users/86133/Desktop/eam-backend/eam_backend/eam_backend/__init__.py", line 2, in <module>
+    from .celery import app as celery_app
+  File "/mnt/c/Users/86133/Desktop/eam-backend/eam_backend/eam_backend/celery.py", line 8, in <module>
+    django.setup()
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/__init__.py", line 24, in setup
+    apps.populate(settings.INSTALLED_APPS)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/apps/registry.py", line 91, in populate
+    app_config = AppConfig.create(entry)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/apps/config.py", line 193, in create
+    import_module(entry)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+ModuleNotFoundError: No module named 'simple_history'
+
+Usage: celery [OPTIONS] COMMAND [ARGS]...
+Try 'celery --help' for help.
+
+Error: Invalid value for '-A' / '--app': 
+Unable to load celery application.
+While trying to load the module eam_backend the following error occurred:
+Traceback (most recent call last):
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/bin/celery.py", line 57, in convert
+    return find_app(value)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/app/utils.py", line 384, in find_app
+    sym = symbol_by_name(app, imp=imp)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/kombu/utils/imports.py", line 56, in symbol_by_name
+    module = imp(module_name, package=package, **kwargs)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/utils/imports.py", line 105, in import_from_cwd
+    return imp(module, package=package)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1030, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1007, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 986, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 680, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 850, in exec_module
+  File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+  File "/mnt/c/Users/86133/Desktop/eam-backend/eam_backend/eam_backend/__init__.py", line 2, in <module>
+    from .celery import app as celery_app
+  File "/mnt/c/Users/86133/Desktop/eam-backend/eam_backend/eam_backend/celery.py", line 8, in <module>
+    django.setup()
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/__init__.py", line 24, in setup
+    apps.populate(settings.INSTALLED_APPS)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/apps/registry.py", line 91, in populate
+    app_config = AppConfig.create(entry)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/apps/config.py", line 193, in create
+    import_module(entry)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+ModuleNotFoundError: No module named 'simple_history'
+
+Usage: celery [OPTIONS] COMMAND [ARGS]...
+Try 'celery --help' for help.
+
+Error: Invalid value for '-A' / '--app': 
+Unable to load celery application.
+While trying to load the module eam_backend the following error occurred:
+Traceback (most recent call last):
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/bin/celery.py", line 57, in convert
+    return find_app(value)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/app/utils.py", line 384, in find_app
+    sym = symbol_by_name(app, imp=imp)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/kombu/utils/imports.py", line 56, in symbol_by_name
+    module = imp(module_name, package=package, **kwargs)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/utils/imports.py", line 105, in import_from_cwd
+    return imp(module, package=package)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1030, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1007, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 986, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 680, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 850, in exec_module
+  File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+  File "/mnt/c/Users/86133/Desktop/eam-backend/eam_backend/eam_backend/__init__.py", line 2, in <module>
+    from .celery import app as celery_app
+  File "/mnt/c/Users/86133/Desktop/eam-backend/eam_backend/eam_backend/celery.py", line 8, in <module>
+    django.setup()
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/__init__.py", line 24, in setup
+    apps.populate(settings.INSTALLED_APPS)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/apps/registry.py", line 91, in populate
+    app_config = AppConfig.create(entry)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/apps/config.py", line 193, in create
+    import_module(entry)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+ModuleNotFoundError: No module named 'simple_history'
+
+Usage: celery [OPTIONS] COMMAND [ARGS]...
+Try 'celery --help' for help.
+
+Error: Invalid value for '-A' / '--app': 
+Unable to load celery application.
+While trying to load the module eam_backend the following error occurred:
+Traceback (most recent call last):
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/bin/celery.py", line 57, in convert
+    return find_app(value)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/app/utils.py", line 384, in find_app
+    sym = symbol_by_name(app, imp=imp)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/kombu/utils/imports.py", line 56, in symbol_by_name
+    module = imp(module_name, package=package, **kwargs)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/celery/utils/imports.py", line 105, in import_from_cwd
+    return imp(module, package=package)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1030, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1007, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 986, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 680, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 850, in exec_module
+  File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+  File "/mnt/c/Users/86133/Desktop/eam-backend/eam_backend/eam_backend/__init__.py", line 2, in <module>
+    from .celery import app as celery_app
+  File "/mnt/c/Users/86133/Desktop/eam-backend/eam_backend/eam_backend/celery.py", line 8, in <module>
+    django.setup()
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/__init__.py", line 24, in setup
+    apps.populate(settings.INSTALLED_APPS)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/apps/registry.py", line 91, in populate
+    app_config = AppConfig.create(entry)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/site-packages/django/apps/config.py", line 193, in create
+    import_module(entry)
+  File "/home/jasmine/miniconda3/envs/eam/lib/python3.9/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+ModuleNotFoundError: No module named 'simple_history'
+
